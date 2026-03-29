@@ -50,6 +50,19 @@ export default function Page() {
   const [sent, setSent] = useState(false);
   const [spark, setSpark] = useState(false);
 
+  const submitEmail = async () => {
+    if (!email.includes("@")) return;
+    setSpark(true);
+    try {
+      await fetch("https://formspree.io/f/mbdpgjvq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } catch (e) {}
+    setTimeout(() => { setSent(true); setSpark(false); }, 600);
+  };
+
   const navItems = ["SERVICES", "PROJECTS", "TEAM", "CONTACTS"];
 
   return (
@@ -319,22 +332,14 @@ export default function Page() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === "Enter" && email.includes("@")) {
-                    setSpark(true);
-                    setTimeout(() => { setSent(true); setSpark(false); }, 600);
-                  }
+                  if (e.key === "Enter") submitEmail();
                 }}
                 style={{ borderRadius: 40 }}
               />
               <button
                 className="cta-btn primary"
                 style={{ position: "relative" }}
-                onClick={() => {
-                  if (email.includes("@")) {
-                    setSpark(true);
-                    setTimeout(() => { setSent(true); setSpark(false); }, 600);
-                  }
-                }}
+                onClick={submitEmail}
               >
                 {spark && (
                   <svg className="lightning-bolt" width="28" height="36" viewBox="0 0 28 36" fill="none">
