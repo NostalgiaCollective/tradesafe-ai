@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__higgsfield__generate_image",
+      "mcp__higgsfield__debug_credentials",
+      "Bash(find /c/Users/USER/AppData -type f -name *higgsfield*)",
+      "Bash(cat /c/Users/USER/.claude/*.json)",
+      "Bash(claude mcp:*)",
+      "Bash(curl:*)",
+      "mcp__gmail__search_emails",
+      "Bash(python3:*)",
+      "mcp__gmail__read_email",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\USER\\\\.claude\\\\projects\\\\C--Users-USER-Documents-tradesafe-ai\\\\04d409be-f8b9-4355-9ae4-99d085217302\\\\tool-results\\\\toolu_01PvhkjZKFD6chprvz326xMn.json'' -TotalCount 50\")",
+      "Bash(npx skills:*)",
+      "mcp__stitch__get_project",
+      "mcp__stitch__get_screen",
+      "Bash(npm run:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(where gh:*)",
+      "Bash(npm i:*)",
+      "Bash(npm list:*)",
+      "Bash(omc --help)",
+      "Bash(omc install:*)",
+      "Bash(winget install:*)",
+      "Bash(ls -la /c/Users/USER/Documents/tradesafe-ai/*.*)",
+      "Bash(npm install:*)",
+      "Bash(cat /c/Users/USER/Documents/tradesafe-ai/app/components/*.jsx)",
+      "Bash(ls /c/Users/USER/Documents/tradesafe-ai/.env*)",
+      "Bash(node:*)",
+      "Bash(git -C /c/Users/USER/Documents/tradesafe-ai log --oneline -3)",
+      "Bash(git -C /c/Users/USER/Documents/tradesafe-ai status)",
+      "Bash(npx next:*)"
+    ]
+  }
+}
