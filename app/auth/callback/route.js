@@ -16,13 +16,13 @@ export async function GET(request) {
       if (user) {
         const { data: profile } = await supabase
           .from('contractor_profiles')
-          .select('id')
-          .eq('id', user.id)
+          .select('user_id')
+          .eq('user_id', user.id)
           .single()
 
         if (!profile) {
           await supabase.from('contractor_profiles').insert({
-            id: user.id,
+            user_id: user.id,
             contact_email: user.email,
             business_name: '',
           })

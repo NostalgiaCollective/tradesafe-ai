@@ -363,25 +363,26 @@ export default function NewReportClient() {
         .insert({
           user_id: user.id,
           trade: selectedTrade,
+          status: 'draft',
           business_name: jobDetails.businessName,
-          license_number: jobDetails.licenseNumber,
-          cot_cert_number: jobDetails.cotCertNumber,
+          license_number: jobDetails.licenseNumber || null,
+          cot_cert_number: jobDetails.cotCertNumber || null,
           job_address: jobDetails.jobAddress,
           homeowner_name: jobDetails.homeownerName,
           date_of_work: jobDetails.dateOfWork,
           supervising_journeyperson: jobDetails.supervisingJourneyperson,
-          permit_number: jobDetails.permitNumber,
-          wah_cert_number: selectedTrade === 'roofing' ? jobDetails.wahCertNumber : null,
-          wah_cert_expiry: selectedTrade === 'roofing' ? jobDetails.wahCertExpiry : null,
-          wsib_clearance_number: selectedTrade === 'roofing' ? jobDetails.wsibClearanceNumber : null,
+          permit_number: jobDetails.permitNumber || null,
+          wah_cert_number: selectedTrade === 'roofing' ? (jobDetails.wahCertNumber || null) : null,
+          wah_cert_expiry: selectedTrade === 'roofing' ? (jobDetails.wahCertExpiry || null) : null,
+          wsib_clearance_number: selectedTrade === 'roofing' ? (jobDetails.wsibClearanceNumber || null) : null,
           checklist: checklist,
           declared: true,
-          created_at: new Date().toISOString(),
         })
         .select()
         .single()
 
       if (error) throw error
+      if (!data) throw new Error('Report was not returned after save — please check your reports list.')
       router.push(`/report/${data.id}`)
     } catch (err) {
       setSubmitError(err.message || 'Something went wrong. Please try again.')

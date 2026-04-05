@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       .single(),
     supabase
       .from('reports')
-      .select('id, trade_type, job_site_address, status, created_at')
+      .select('id, trade, job_address, status, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10),
@@ -151,10 +151,10 @@ export default async function DashboardPage() {
                 } hover:bg-white/[0.02] transition-colors`}
               >
                 <div>
-                  <Badge value={report.trade_type} map={TRADE_BADGE} />
+                  <Badge value={report.trade} map={TRADE_BADGE} />
                 </div>
                 <p className="text-sm text-gray-300 font-body truncate">
-                  {report.job_site_address ?? '—'}
+                  {report.job_address ?? '—'}
                 </p>
                 <p className="text-xs text-gray-500 font-mono">{formatDate(report.created_at)}</p>
                 <div>
