@@ -147,6 +147,8 @@ create table if not exists reports (
   checklist jsonb not null default '[]',
   -- Declaration
   declared boolean not null default false,
+  -- Stripe payment
+  stripe_session_id text,
   -- Timestamps
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

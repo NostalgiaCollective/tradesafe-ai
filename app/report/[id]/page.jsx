@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import PrintButton from './PrintButton'
+import PaymentVerifier from './PaymentVerifier'
 
 // ─── Status badge helper ─────────────────────────────────────────────────────
 
@@ -206,6 +207,7 @@ export default async function ReportPage({ params }) {
 
   const tradeLabel = TRADE_LABELS[report.trade] || report.trade
   const permitLabel = PERMIT_LABELS[report.trade] || 'Permit Number'
+  const isPaid = report.status === 'completed'
 
   // Overall pass/fail counts
   const allItems = categories.flatMap((cat) =>
@@ -235,10 +237,12 @@ export default async function ReportPage({ params }) {
             >
               ← DASHBOARD
             </Link>
-            <PrintButton />
+            <PrintButton reportId={id} isPaid={isPaid} />
           </div>
         </div>
       </header>
+
+      <PaymentVerifier reportId={id} />
 
       <main className="max-w-4xl mx-auto px-4 py-10 print:px-8 print:py-6">
         {/* ── Report Header ──────────────────────────────────────────────── */}
@@ -435,7 +439,7 @@ export default async function ReportPage({ params }) {
             </div>
           </div>
           <div className="no-print">
-            <PrintButton variant="secondary" />
+            <PrintButton variant="secondary" reportId={id} isPaid={isPaid} />
           </div>
         </div>
       </main>
