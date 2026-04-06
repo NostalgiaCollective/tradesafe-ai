@@ -41,14 +41,14 @@ function Field({ label, children }) {
 }
 
 const inputCls =
-  'w-full h-12 bg-[#0f0f0f] border border-white/10 rounded-xl px-4 text-white placeholder-gray-600 focus:outline-none focus:border-amber transition'
+  'w-full min-h-[56px] bg-[#0f0f0f] border border-white/10 rounded-xl px-5 py-4 text-white text-base placeholder-gray-600 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20 transition'
 
 // ─── Section Card ──────────────────────────────────────────────────────────────
 
 function SectionCard({ title, children }) {
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-white/10">
-      <h2 className="font-heading font-bold text-lg text-amber tracking-wider mb-5">{title}</h2>
+    <div className="card-base card-accent p-6">
+      <h2 className="text-section text-amber tracking-wider mb-5">{title}</h2>
       {children}
     </div>
   )
@@ -244,7 +244,7 @@ export default function SettingsClient() {
       <main className="max-w-4xl mx-auto px-5 py-10 space-y-6">
 
         <div className="mb-8">
-          <h1 className="font-heading font-black text-4xl text-white tracking-wide">SETTINGS</h1>
+          <h1 className="text-display text-white tracking-wide">SETTINGS</h1>
           <p className="text-gray-500 text-sm mt-1">Manage your business profile, licences, and billing.</p>
         </div>
 
@@ -503,14 +503,14 @@ export default function SettingsClient() {
                 <button
                   type="submit"
                   disabled={addingCrew}
-                  className="h-12 px-6 bg-amber hover:bg-amber-dark text-black font-heading font-bold text-sm tracking-wider rounded-xl transition disabled:opacity-50"
+                  className="min-h-[56px] px-6 bg-amber hover:bg-amber-dark text-black font-heading font-bold text-sm tracking-wider rounded-xl transition disabled:opacity-50"
                 >
                   {addingCrew ? 'ADDING...' : 'ADD MEMBER'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowAddCrew(false); setNewCrew({ name: '', role: '', trade: '', license_number: '' }) }}
-                  className="h-12 px-6 bg-transparent border border-white/10 hover:border-white/30 text-gray-400 hover:text-white font-heading font-bold text-sm tracking-wider rounded-xl transition"
+                  className="min-h-[56px] px-6 bg-transparent border border-white/10 hover:border-white/30 text-gray-400 hover:text-white font-heading font-bold text-sm tracking-wider rounded-xl transition"
                 >
                   CANCEL
                 </button>
@@ -522,7 +522,7 @@ export default function SettingsClient() {
             <button
               type="button"
               onClick={() => setShowAddCrew(true)}
-              className="h-12 px-6 bg-transparent border border-white/10 hover:border-amber/50 hover:text-amber text-gray-400 font-heading font-bold text-sm tracking-wider rounded-xl transition"
+              className="min-h-[56px] px-6 bg-transparent border border-white/10 hover:border-amber/50 hover:text-amber text-gray-400 font-heading font-bold text-sm tracking-wider rounded-xl transition"
             >
               + ADD CREW MEMBER
             </button>
@@ -535,7 +535,7 @@ export default function SettingsClient() {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="h-12 px-10 bg-amber hover:bg-amber-dark text-black font-heading font-black text-sm tracking-[2px] rounded-xl transition disabled:opacity-50 min-w-[160px]"
+            className="min-h-[56px] px-10 bg-amber hover:bg-amber-dark text-black font-heading font-black text-sm tracking-[2px] rounded-xl transition disabled:opacity-50 min-w-[160px]"
           >
             {saving ? 'SAVING...' : 'SAVE CHANGES'}
           </button>

@@ -141,13 +141,13 @@ const PERMIT_LABELS = {
 
 function Section({ title, children }) {
   return (
-    <div className="mb-6 bg-[#1a1a1a] print:bg-white print:border print:border-gray-200 rounded-2xl overflow-hidden">
-      <div className="px-5 py-3 bg-amber/10 print:bg-gray-100 border-b border-amber/20 print:border-gray-200">
-        <h2 className="font-heading font-bold text-sm tracking-widest text-amber print:text-black uppercase">
+    <div className="mb-6 card-base card-accent print:bg-white print:border print:border-gray-200 overflow-hidden">
+      <div className="px-6 py-3.5 bg-amber/10 print:bg-gray-100 border-b border-amber/20 print:border-gray-200">
+        <h2 className="text-section tracking-widest text-amber print:text-black uppercase">
           {title}
         </h2>
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-6 py-5">{children}</div>
     </div>
   )
 }
@@ -157,11 +157,11 @@ function Section({ title, children }) {
 function InfoRow({ label, value }) {
   if (!value) return null
   return (
-    <div className="flex flex-col sm:flex-row sm:gap-4 py-1.5 border-b border-white/5 print:border-gray-100 last:border-0">
+    <div className="flex flex-col sm:flex-row sm:gap-4 py-2 border-b border-white/5 print:border-gray-100 last:border-0">
       <dt className="text-xs font-heading tracking-widest text-gray-400 print:text-gray-500 uppercase w-48 shrink-0">
         {label}
       </dt>
-      <dd className="text-sm text-white print:text-black mt-0.5 sm:mt-0">{value}</dd>
+      <dd className="text-base text-white print:text-black mt-0.5 sm:mt-0">{value}</dd>
     </div>
   )
 }
@@ -233,7 +233,7 @@ export default async function ReportPage({ params }) {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="text-xs font-heading tracking-widest text-gray-400 hover:text-white transition min-h-[48px] flex items-center no-underline"
+              className="text-xs font-heading tracking-widest text-gray-400 hover:text-white transition min-h-[64px] flex items-center no-underline"
             >
               ← DASHBOARD
             </Link>
@@ -246,7 +246,7 @@ export default async function ReportPage({ params }) {
 
       <main className="max-w-4xl mx-auto px-4 py-10 print:px-8 print:py-6">
         {/* ── Report Header ──────────────────────────────────────────────── */}
-        <div className="mb-8 pb-6 border-b border-white/10 print:border-gray-300">
+        <div className="mb-10 pb-8 border-b border-white/10 print:border-gray-300">
           {/* Print-only logo row */}
           <div className="hidden print:flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-black rounded-sm flex items-center justify-center">
@@ -257,15 +257,15 @@ export default async function ReportPage({ params }) {
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div>
-              <div className="text-xs font-heading tracking-[4px] text-gray-500 print:text-gray-400 uppercase mb-2">
+              <div className="text-xs font-heading tracking-[4px] text-gray-500 print:text-gray-400 uppercase mb-3">
                 Ontario Compliance Report
               </div>
-              <h1 className="font-heading font-black text-4xl text-white print:text-black tracking-wide">
+              <h1 className="text-display md:text-[3rem] text-white print:text-black tracking-wide leading-none">
                 {tradeLabel.toUpperCase()} COMPLIANCE
               </h1>
-              <div className="flex items-center gap-3 mt-3">
+              <div className="flex items-center gap-3 mt-4">
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-heading font-bold tracking-widest uppercase ${
                     report.trade === 'electrical'
@@ -277,7 +277,7 @@ export default async function ReportPage({ params }) {
                 >
                   {tradeLabel}
                 </span>
-                <span className="text-xs text-gray-500 print:text-gray-400 font-heading tracking-wide">
+                <span className="text-sm text-gray-500 print:text-gray-400 font-heading tracking-wide">
                   {totalFail > 0 ? (
                     <span className="text-danger print:text-red-600">{totalFail} ITEM{totalFail !== 1 ? 'S' : ''} REQUIRE ATTENTION</span>
                   ) : (
@@ -289,23 +289,23 @@ export default async function ReportPage({ params }) {
             <div className="text-right print:text-right">
               <div className="text-xs font-heading tracking-widest text-gray-500 print:text-gray-400 uppercase mb-1">Report ID</div>
               <div className="font-mono text-xs text-gray-400 print:text-gray-600 break-all max-w-[200px] ml-auto">{id}</div>
-              <div className="text-xs font-heading tracking-widest text-gray-500 print:text-gray-400 uppercase mt-3 mb-1">Generated</div>
-              <div className="text-sm text-white print:text-black font-heading">{generatedDate}</div>
+              <div className="text-xs font-heading tracking-widest text-gray-500 print:text-gray-400 uppercase mt-4 mb-1">Generated</div>
+              <div className="text-base text-white print:text-black font-heading">{generatedDate}</div>
             </div>
           </div>
 
           {/* Quick stats */}
-          <div className="grid grid-cols-3 gap-3 mt-6">
-            <div className="bg-success/10 print:bg-green-50 print:border print:border-green-200 rounded-xl p-3 text-center">
-              <div className="font-heading font-black text-2xl text-success print:text-green-700">{totalPass}</div>
+          <div className="grid grid-cols-3 gap-4 mt-8">
+            <div className="bg-success/10 print:bg-green-50 print:border print:border-green-200 rounded-xl p-4 text-center">
+              <div className="text-display text-success print:text-green-700">{totalPass}</div>
               <div className="text-xs font-heading tracking-wider text-success/70 print:text-green-600 uppercase">Pass</div>
             </div>
-            <div className={`${totalFail > 0 ? 'bg-danger/10 print:bg-red-50 print:border print:border-red-200' : 'bg-white/5 print:bg-gray-50'} rounded-xl p-3 text-center`}>
-              <div className={`font-heading font-black text-2xl ${totalFail > 0 ? 'text-danger print:text-red-700' : 'text-gray-600'}`}>{totalFail}</div>
+            <div className={`${totalFail > 0 ? 'bg-danger/10 print:bg-red-50 print:border print:border-red-200' : 'bg-white/5 print:bg-gray-50'} rounded-xl p-4 text-center`}>
+              <div className={`text-display ${totalFail > 0 ? 'text-danger print:text-red-700' : 'text-gray-600'}`}>{totalFail}</div>
               <div className={`text-xs font-heading tracking-wider uppercase ${totalFail > 0 ? 'text-danger/70 print:text-red-600' : 'text-gray-600'}`}>Fail</div>
             </div>
-            <div className="bg-white/5 print:bg-gray-50 print:border print:border-gray-200 rounded-xl p-3 text-center">
-              <div className="font-heading font-black text-2xl text-gray-400 print:text-gray-600">{totalNa}</div>
+            <div className="bg-white/5 print:bg-gray-50 print:border print:border-gray-200 rounded-xl p-4 text-center">
+              <div className="text-display text-gray-400 print:text-gray-600">{totalNa}</div>
               <div className="text-xs font-heading tracking-wider text-gray-500 uppercase">N/A</div>
             </div>
           </div>
@@ -330,6 +330,8 @@ export default async function ReportPage({ params }) {
           </dl>
         </Section>
 
+        <div className="section-divider print:hidden" />
+
         {/* ── Job Site Information ────────────────────────────────────────── */}
         <Section title="Job Site Information">
           <dl>
@@ -352,12 +354,14 @@ export default async function ReportPage({ params }) {
           </Section>
         )}
 
+        <div className="section-divider print:hidden" />
+
         {/* ── Checklist Results ───────────────────────────────────────────── */}
-        <div className="mb-6">
-          <div className="text-xs font-heading tracking-widest text-gray-400 print:text-gray-500 uppercase mb-3">
+        <div className="mb-8">
+          <div className="text-xs font-heading tracking-widest text-gray-400 print:text-gray-500 uppercase mb-4">
             Checklist Results
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {categories.map((cat) => {
               const catItems = cat.items
               const catPass = catItems.filter((item) => (checklist[`${cat.category}__${item}`]?.status) === 'pass').length
@@ -366,11 +370,11 @@ export default async function ReportPage({ params }) {
               return (
                 <div
                   key={cat.category}
-                  className="bg-[#1a1a1a] print:bg-white print:border print:border-gray-200 rounded-2xl overflow-hidden"
+                  className="card-base card-accent print:bg-white print:border print:border-gray-200 overflow-hidden"
                 >
                   {/* Category header */}
-                  <div className="px-5 py-3 bg-white/5 print:bg-gray-50 border-b border-white/10 print:border-gray-200 flex items-center justify-between">
-                    <h3 className="font-heading font-bold text-sm tracking-widest text-white print:text-black uppercase">
+                  <div className="px-6 py-3.5 bg-white/5 print:bg-gray-50 border-b border-white/10 print:border-gray-200 flex items-center justify-between">
+                    <h3 className="text-section tracking-widest text-white print:text-black uppercase">
                       {cat.category}
                     </h3>
                     <div className="flex gap-3 text-xs font-heading font-bold">
@@ -385,8 +389,8 @@ export default async function ReportPage({ params }) {
                       const key = `${cat.category}__${item}`
                       const val = checklist[key] || { status: 'pass', notes: '' }
                       return (
-                        <div key={item} className="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-2">
-                          <span className="flex-1 text-sm text-gray-300 print:text-gray-800">{item}</span>
+                        <div key={item} className="px-6 py-3.5 flex flex-col sm:flex-row sm:items-start gap-2">
+                          <span className="flex-1 text-base text-gray-300 print:text-gray-800">{item}</span>
                           <div className="flex items-center gap-3 shrink-0">
                             {val.notes && (
                               <span className="text-xs text-gray-500 print:text-gray-600 italic max-w-xs text-right">
@@ -405,25 +409,27 @@ export default async function ReportPage({ params }) {
           </div>
         </div>
 
+        <div className="section-divider print:hidden" />
+
         {/* ── Declaration ─────────────────────────────────────────────────── */}
-        <div className="mb-8 bg-[#1a1a1a] print:bg-white print:border print:border-gray-300 rounded-2xl p-6">
+        <div className="mb-8 card-base card-accent print:bg-white print:border print:border-gray-300 p-6">
           <div className="text-xs font-heading tracking-widest text-amber print:text-gray-500 uppercase mb-3">
             Declaration
           </div>
-          <p className="text-sm text-gray-300 print:text-gray-700 leading-relaxed mb-4">
+          <p className="text-base text-gray-300 print:text-gray-700 leading-relaxed mb-5">
             I hereby declare that the work described in this report was completed in compliance with
             all applicable Ontario codes and regulations.
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-white/10 print:border-gray-200">
             <div>
               <div className="text-xs font-heading tracking-widest text-gray-500 uppercase mb-1">Declared By</div>
-              <div className="text-sm font-heading font-bold text-white print:text-black">
+              <div className="text-base font-heading font-bold text-white print:text-black">
                 {report.business_name || profile?.full_name || 'Contractor'}
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs font-heading tracking-widest text-gray-500 uppercase mb-1">Date</div>
-              <div className="text-sm font-heading text-white print:text-black">{generatedDate}</div>
+              <div className="text-base font-heading text-white print:text-black">{generatedDate}</div>
             </div>
           </div>
         </div>
@@ -431,10 +437,10 @@ export default async function ReportPage({ params }) {
         {/* ── Footer ──────────────────────────────────────────────────────── */}
         <div className="border-t border-white/10 print:border-gray-300 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <div className="font-heading font-black text-sm tracking-widest text-gray-500 print:text-gray-600 uppercase">
+            <div className="text-section tracking-widest text-gray-500 print:text-gray-600 uppercase">
               Generated by TradeSafe AI
             </div>
-            <div className="text-xs text-gray-600 print:text-gray-500 mt-1">
+            <div className="text-sm text-gray-600 print:text-gray-500 mt-1">
               This document reflects compliance with applicable Ontario codes and regulations.
             </div>
           </div>

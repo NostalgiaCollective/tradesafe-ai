@@ -55,9 +55,9 @@ export default async function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#0f0f0f] flex">
       {/* ── Sidebar (desktop) ── */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#1a1a1a] border-r border-white/10 fixed inset-y-0 left-0 z-30">
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#141414] border-r border-white/8 fixed inset-y-0 left-0 z-30">
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-white/10">
+        <div className="h-16 flex items-center px-6 border-b border-white/8">
           <Link href="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-8 h-8 bg-amber rounded-lg flex items-center justify-center shrink-0">
               <span className="font-heading font-black text-sm text-black">TS</span>
@@ -83,7 +83,7 @@ export default async function DashboardLayout({ children }) {
         </nav>
 
         {/* User area */}
-        <div className="px-4 py-4 border-t border-white/10">
+        <div className="px-4 py-4 border-t border-white/8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-full bg-amber/20 flex items-center justify-center shrink-0">
               <span className="text-amber font-heading font-black text-xs">
@@ -104,7 +104,7 @@ export default async function DashboardLayout({ children }) {
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col md:ml-64">
         {/* Mobile header */}
-        <header className="md:hidden sticky top-0 z-20 h-14 bg-[#1a1a1a] border-b border-white/10 flex items-center justify-between px-4">
+        <header className="md:hidden sticky top-0 z-20 h-14 bg-[#141414] border-b border-white/8 flex items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 no-underline">
             <div className="w-7 h-7 bg-amber rounded-md flex items-center justify-center">
               <span className="font-heading font-black text-xs text-black">TS</span>
@@ -119,16 +119,16 @@ export default async function DashboardLayout({ children }) {
           {children}
         </main>
 
-        {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-[#1a1a1a] border-t border-white/10 flex">
+        {/* Mobile bottom nav — large tap targets for gloves */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-[#141414] border-t border-white/8 flex">
           {NAV_LINKS.map(({ href, label, Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex-1 flex flex-col items-center justify-center gap-1 py-3 text-gray-400 hover:text-white transition-colors no-underline min-h-[56px]"
+              className="flex-1 flex flex-col items-center justify-center gap-1 py-3 text-gray-400 hover:text-white transition-colors no-underline min-h-[64px]"
             >
               <Icon />
-              <span className="text-[10px] font-heading font-bold tracking-wider">{label}</span>
+              <span className="text-[11px] font-heading font-bold tracking-wider">{label}</span>
             </Link>
           ))}
         </nav>

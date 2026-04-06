@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -208,7 +208,7 @@ function ProgressBar({ step }) {
           <div key={label} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1.5">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold font-heading transition-all ${
+                className={`w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-sm font-bold font-heading transition-all ${
                   isDone
                     ? 'bg-amber text-black'
                     : isActive
@@ -246,6 +246,190 @@ function ProgressBar({ step }) {
   )
 }
 
+// ─── Photo Upload with AI Analysis ──────────────────────────────────────────
+
+function PhotoAnalysis({ trade }) {
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [observations, setObservations] = useState([])
+  const [error, setError] = useState('')
+  const fileInputRef = useRef(null)
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Preview
+    const reader = new FileReader()
+    reader.onload = (ev) => setPhotoPreview(ev.target.result)
+    reader.readAsDataURL(file)
+
+    // Analyze
+    setAnalyzing(true)
+    setError('')
+    setObservations([])
+
+    try {
+      const formData = new FormData()
+      formData.append('photo', file)
+      formData.append('trade', trade)
+
+      const res = await fetch('/api/analyze-photo', { method: 'POST', body: formData })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || 'Analysis failed')
+      setObservations(data.observations || [])
+    } catch (err) {
+      setError(err.message || 'Failed to analyze photo')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  function handleRemove() {
+    setPhotoPreview(null)
+    setObservations([])
+    setError('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  return (
+    <div className="card-base card-accent p-5 md:p-6">
+      <h3 className="font-heading font-bold text-sm tracking-widest text-amber mb-1 uppercase">
+        AI Photo Analysis
+      </h3>
+      <p className="text-gray-500 text-sm mb-4">
+        Upload or snap a photo. Claude AI will analyze it for {trade} compliance observations.
+      </p>
+
+      {!photoPreview ? (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <label className="flex-1 flex items-center justify-center gap-3 min-h-[64px] bg-[#0f0f0f] border-2 border-dashed border-white/15 hover:border-amber/40 rounded-xl cursor-pointer transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+            <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+            </svg>
+            <span className="font-heading font-bold text-sm tracking-wider text-gray-400">UPLOAD PHOTO</span>
+          </label>
+          <label className="flex-1 flex items-center justify-center gap-3 min-h-[64px] bg-[#0f0f0f] border-2 border-dashed border-white/15 hover:border-amber/40 rounded-xl cursor-pointer transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+            <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+            </svg>
+            <span className="font-heading font-bold text-sm tracking-wider text-gray-400">TAKE PHOTO</span>
+          </label>
+        </div>
+      ) : (
+        <div>
+          <div className="relative mb-4">
+            <img
+              src={photoPreview}
+              alt="Job site photo"
+              className="w-full max-h-[300px] object-cover rounded-xl border border-white/10"
+            />
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute top-2 right-2 w-10 h-10 bg-black/70 hover:bg-black rounded-lg flex items-center justify-center text-white transition"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {analyzing && (
+            <div className="flex items-center gap-3 p-4 bg-amber/5 border border-amber/20 rounded-xl">
+              <div className="w-5 h-5 border-2 border-amber border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-amber font-heading tracking-wide">Claude AI is analyzing your photo...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 bg-danger/10 border border-danger/30 rounded-xl text-danger text-sm">
+              {error}
+            </div>
+          )}
+
+          {observations.length > 0 && (
+            <div className="mt-3">
+              <div className="text-xs font-heading tracking-widest text-amber/70 uppercase mb-2">
+                AI Observations — Suggested Checklist Notes
+              </div>
+              <div className="space-y-2">
+                {observations.map((obs, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 p-3 bg-amber/5 border border-amber/15 rounded-xl"
+                  >
+                    <div className="w-6 h-6 bg-amber/20 rounded-md flex items-center justify-center shrink-0 mt-0.5">
+                      <svg className="w-3.5 h-3.5 text-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-300 leading-relaxed">{obs}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Swipeable checklist section navigator ──────────────────────────────────
+
+function ChecklistNav({ categories, activeIndex, onSelect }) {
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      const activeBtn = scrollRef.current.children[activeIndex]
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
+  }, [activeIndex])
+
+  return (
+    <div
+      ref={scrollRef}
+      className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide"
+      style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}
+    >
+      {categories.map((cat, i) => (
+        <button
+          key={cat.category}
+          type="button"
+          onClick={() => onSelect(i)}
+          className={`shrink-0 min-h-[48px] px-4 rounded-xl text-sm font-heading font-bold tracking-wider transition cursor-pointer whitespace-nowrap ${
+            i === activeIndex
+              ? 'bg-amber text-black'
+              : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300'
+          }`}
+        >
+          {cat.category.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function NewReportClient() {
@@ -257,6 +441,13 @@ export default function NewReportClient() {
   const [profile, setProfile] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+
+  // Checklist section navigation
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
+
+  // Swipe handling
+  const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
 
   // Step 2 form fields
   const today = new Date().toISOString().split('T')[0]
@@ -275,7 +466,7 @@ export default function NewReportClient() {
     wsibClearanceNumber: '',
   })
 
-  // Step 3 checklist state: { "Category__Item": { status: 'pass'|'fail'|'na', notes: '' } }
+  // Step 3 checklist state
   const [checklist, setChecklist] = useState({})
 
   // Step 4
@@ -317,16 +508,39 @@ export default function NewReportClient() {
       cotCertNumber: profile.cot_cert_number || '',
     }))
     setChecklist(buildChecklistState(selectedTrade))
+    setActiveCategoryIndex(0)
   }, [selectedTrade, profile])
 
-  // ── Step 1: trade selection ──────────────────────────────────────────────
+  // Swipe handlers for checklist sections
+  const categories = selectedTrade ? (CHECKLISTS[selectedTrade] || []) : []
+
+  const handleTouchStart = useCallback((e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }, [])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    // Only swipe if horizontal movement > vertical and > 60px
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
+      if (dx < 0 && activeCategoryIndex < categories.length - 1) {
+        setActiveCategoryIndex((i) => i + 1)
+      } else if (dx > 0 && activeCategoryIndex > 0) {
+        setActiveCategoryIndex((i) => i - 1)
+      }
+    }
+    touchStartX.current = null
+    touchStartY.current = null
+  }, [activeCategoryIndex, categories.length])
+
+  // ── Step handlers ─────────────────────────────────────────────────────────
 
   function handleSelectTrade(tradeId) {
     setSelectedTrade(tradeId)
     setStep(2)
   }
-
-  // ── Step 2: job details ──────────────────────────────────────────────────
 
   function handleJobField(field, value) {
     setJobDetails((prev) => ({ ...prev, [field]: value }))
@@ -337,8 +551,6 @@ export default function NewReportClient() {
     setStep(3)
   }
 
-  // ── Step 3: checklist ────────────────────────────────────────────────────
-
   function handleChecklistItem(category, item, field, value) {
     const key = `${category}__${item}`
     setChecklist((prev) => ({
@@ -346,8 +558,6 @@ export default function NewReportClient() {
       [key]: { ...prev[key], [field]: value },
     }))
   }
-
-  // ── Step 4: submit ───────────────────────────────────────────────────────
 
   async function handleSubmit() {
     if (!declared) return
@@ -390,19 +600,17 @@ export default function NewReportClient() {
     }
   }
 
-  // ── Shared input class ───────────────────────────────────────────────────
+  // ── Shared classes ────────────────────────────────────────────────────────
 
   const inputClass =
-    'w-full min-h-[48px] bg-[#0f0f0f] border border-white/10 rounded-xl px-4 text-white placeholder-gray-600 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20 transition text-sm'
+    'w-full min-h-[56px] bg-[#0f0f0f] border border-white/10 rounded-xl px-5 py-4 text-white text-base placeholder-gray-600 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20 transition'
 
   const labelClass = 'block text-xs font-heading tracking-widest text-gray-400 mb-1.5 uppercase'
-
-  // ── Permit label by trade ────────────────────────────────────────────────
 
   const permitLabel =
     selectedTrade === 'electrical' ? 'ESA Permit Number' : 'OBC Permit Number'
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#0f0f0f]">
@@ -419,7 +627,7 @@ export default function NewReportClient() {
           </Link>
           <Link
             href="/dashboard"
-            className="text-xs font-heading tracking-widest text-gray-400 hover:text-white transition min-h-[48px] flex items-center no-underline"
+            className="text-xs font-heading tracking-widest text-gray-400 hover:text-white transition min-h-[64px] flex items-center no-underline"
           >
             CANCEL
           </Link>
@@ -428,10 +636,10 @@ export default function NewReportClient() {
 
       <main className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-6">
-          <h1 className="font-heading font-black text-3xl text-white tracking-wide">
+          <h1 className="text-display text-white tracking-wide">
             NEW COMPLIANCE REPORT
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-400 text-base mt-1">
             Ontario code-compliant documentation in minutes.
           </p>
         </div>
@@ -441,10 +649,10 @@ export default function NewReportClient() {
         {/* ── STEP 1: Select Trade ──────────────────────────────────────── */}
         {step === 1 && (
           <div>
-            <h2 className="font-heading font-bold text-xl text-white tracking-wide mb-1">
+            <h2 className="text-title text-white tracking-wide mb-1">
               SELECT TRADE
             </h2>
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-gray-400 text-base mb-6">
               Choose the trade for this compliance report.
             </p>
             <div className="grid gap-4">
@@ -452,7 +660,7 @@ export default function NewReportClient() {
                 <button
                   key={trade.id}
                   onClick={() => handleSelectTrade(trade.id)}
-                  className="group w-full bg-[#1a1a1a] hover:bg-[#242424] border border-white/10 hover:border-amber/50 rounded-2xl p-6 text-left transition-all cursor-pointer min-h-[96px]"
+                  className="group w-full card-base card-accent hover:bg-[#242424] hover:border-amber/50 p-6 text-left transition-all cursor-pointer min-h-[96px]"
                 >
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-amber/10 group-hover:bg-amber/20 rounded-xl flex items-center justify-center text-3xl transition-all shrink-0">
@@ -465,7 +673,7 @@ export default function NewReportClient() {
                       <div className="text-xs font-heading tracking-widest text-amber/70 mt-0.5">
                         {trade.governingBody}
                       </div>
-                      <div className="text-sm text-gray-400 mt-1">
+                      <div className="text-base text-gray-400 mt-1">
                         {trade.description}
                       </div>
                     </div>
@@ -491,7 +699,7 @@ export default function NewReportClient() {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => setStep(1)}
-                className="text-gray-400 hover:text-white transition min-h-[48px] flex items-center gap-1 text-sm font-heading tracking-wide cursor-pointer bg-transparent border-none"
+                className="text-gray-400 hover:text-white transition min-h-[64px] flex items-center gap-1 text-sm font-heading tracking-wide cursor-pointer bg-transparent border-none"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -499,14 +707,14 @@ export default function NewReportClient() {
                 BACK
               </button>
               <span className="text-gray-600">|</span>
-              <h2 className="font-heading font-bold text-xl text-white tracking-wide">
+              <h2 className="text-title text-white tracking-wide">
                 JOB DETAILS
               </h2>
             </div>
 
             <form onSubmit={handleJobDetailsNext} className="space-y-5">
               {/* Contractor section */}
-              <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-white/10">
+              <div className="card-base card-accent p-5 md:p-6">
                 <h3 className="font-heading font-bold text-sm tracking-widest text-amber mb-4 uppercase">
                   Contractor Information
                 </h3>
@@ -552,7 +760,7 @@ export default function NewReportClient() {
               </div>
 
               {/* Job site section */}
-              <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-white/10">
+              <div className="card-base card-accent p-5 md:p-6">
                 <h3 className="font-heading font-bold text-sm tracking-widest text-amber mb-4 uppercase">
                   Job Site
                 </h3>
@@ -615,7 +823,7 @@ export default function NewReportClient() {
 
               {/* Roofing-specific */}
               {selectedTrade === 'roofing' && (
-                <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-white/10">
+                <div className="card-base card-accent p-5 md:p-6">
                   <h3 className="font-heading font-bold text-sm tracking-widest text-amber mb-4 uppercase">
                     Roofing Certifications
                   </h3>
@@ -655,7 +863,7 @@ export default function NewReportClient() {
 
               <button
                 type="submit"
-                className="w-full min-h-[48px] bg-amber hover:bg-amber-dark text-black font-heading font-bold text-sm tracking-widest rounded-xl transition"
+                className="w-full min-h-[64px] bg-amber hover:bg-amber-dark text-black font-heading font-bold text-base tracking-widest rounded-xl transition"
               >
                 NEXT: CHECKLIST →
               </button>
@@ -669,7 +877,7 @@ export default function NewReportClient() {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => setStep(2)}
-                className="text-gray-400 hover:text-white transition min-h-[48px] flex items-center gap-1 text-sm font-heading tracking-wide cursor-pointer bg-transparent border-none"
+                className="text-gray-400 hover:text-white transition min-h-[64px] flex items-center gap-1 text-sm font-heading tracking-wide cursor-pointer bg-transparent border-none"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -677,78 +885,130 @@ export default function NewReportClient() {
                 BACK
               </button>
               <span className="text-gray-600">|</span>
-              <h2 className="font-heading font-bold text-xl text-white tracking-wide">
+              <h2 className="text-title text-white tracking-wide">
                 COMPLIANCE CHECKLIST
               </h2>
             </div>
 
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-gray-400 text-base mb-4">
               Mark each item as Pass, Fail, or N/A. Add notes where relevant.
             </p>
 
-            <div className="space-y-4">
-              {(CHECKLISTS[selectedTrade] || []).map((cat) => (
-                <div key={cat.category} className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
-                  <div className="px-5 py-3 bg-white/5 border-b border-white/10">
-                    <h3 className="font-heading font-bold text-sm tracking-widest text-amber uppercase">
-                      {cat.category}
-                    </h3>
-                  </div>
-                  <div className="divide-y divide-white/5">
-                    {cat.items.map((item) => {
-                      const key = `${cat.category}__${item}`
-                      const val = checklist[key] || { status: 'pass', notes: '' }
-                      return (
-                        <div key={item} className="px-5 py-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <span className="flex-1 text-sm text-white">{item}</span>
-                            {/* Toggle buttons */}
-                            <div className="flex gap-1 shrink-0">
-                              {[
-                                { value: 'pass', label: 'PASS', activeClass: 'bg-success text-white' },
-                                { value: 'fail', label: 'FAIL', activeClass: 'bg-danger text-white' },
-                                { value: 'na', label: 'N/A', activeClass: 'bg-white/20 text-white' },
-                              ].map((opt) => (
-                                <button
-                                  key={opt.value}
-                                  type="button"
-                                  onClick={() => handleChecklistItem(cat.category, item, 'status', opt.value)}
-                                  className={`min-h-[36px] px-3 rounded-lg text-xs font-heading font-bold tracking-wider transition cursor-pointer ${
-                                    val.status === opt.value
-                                      ? opt.activeClass
-                                      : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300'
-                                  }`}
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          {/* Notes field */}
-                          <div className="mt-2">
-                            <input
-                              type="text"
-                              value={val.notes}
-                              onChange={(e) => handleChecklistItem(cat.category, item, 'notes', e.target.value)}
-                              className="w-full min-h-[36px] bg-[#0f0f0f] border border-white/5 rounded-lg px-3 text-xs text-gray-300 placeholder-gray-700 focus:outline-none focus:border-amber/50 transition"
-                              placeholder="Notes (optional)"
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
+            {/* Swipe hint on mobile */}
+            <div className="flex items-center gap-2 text-xs text-gray-600 mb-3 md:hidden">
+              <span className="swipe-hint">→</span>
+              <span className="font-heading tracking-wider">SWIPE TO NAVIGATE SECTIONS</span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setStep(4)}
-              className="w-full mt-6 min-h-[48px] bg-amber hover:bg-amber-dark text-black font-heading font-bold text-sm tracking-widest rounded-xl transition"
+            {/* Section navigator */}
+            <ChecklistNav
+              categories={categories}
+              activeIndex={activeCategoryIndex}
+              onSelect={setActiveCategoryIndex}
+            />
+
+            {/* Photo Analysis */}
+            <div className="mb-4">
+              <PhotoAnalysis trade={selectedTrade} />
+            </div>
+
+            {/* Active checklist section with swipe */}
+            <div
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
-              NEXT: REVIEW & SUBMIT →
-            </button>
+              {categories.map((cat, catIdx) => {
+                if (catIdx !== activeCategoryIndex) return null
+                return (
+                  <div key={cat.category} className="card-base card-accent overflow-hidden">
+                    <div className="px-5 py-3 bg-white/5 border-b border-white/10">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-heading font-bold text-sm tracking-widest text-amber uppercase">
+                          {cat.category}
+                        </h3>
+                        <span className="text-xs text-gray-600 font-heading">
+                          {catIdx + 1} / {categories.length}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="divide-y divide-white/5">
+                      {cat.items.map((item) => {
+                        const key = `${cat.category}__${item}`
+                        const val = checklist[key] || { status: 'pass', notes: '' }
+                        return (
+                          <div key={item} className="px-5 py-4">
+                            <div className="flex flex-col gap-3">
+                              <span className="text-base text-white">{item}</span>
+                              {/* Toggle buttons — large for gloves */}
+                              <div className="flex gap-2">
+                                {[
+                                  { value: 'pass', label: 'PASS', activeClass: 'bg-success text-white' },
+                                  { value: 'fail', label: 'FAIL', activeClass: 'bg-danger text-white' },
+                                  { value: 'na', label: 'N/A', activeClass: 'bg-white/20 text-white' },
+                                ].map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => handleChecklistItem(cat.category, item, 'status', opt.value)}
+                                    className={`flex-1 min-h-[52px] md:min-h-[44px] px-4 rounded-xl text-sm font-heading font-bold tracking-wider transition cursor-pointer ${
+                                      val.status === opt.value
+                                        ? opt.activeClass
+                                        : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Notes field */}
+                            <div className="mt-3">
+                              <input
+                                type="text"
+                                value={val.notes}
+                                onChange={(e) => handleChecklistItem(cat.category, item, 'notes', e.target.value)}
+                                className="w-full min-h-[48px] bg-[#0f0f0f] border border-white/5 rounded-xl px-4 py-3 text-sm text-gray-300 placeholder-gray-700 focus:outline-none focus:border-amber/50 transition"
+                                placeholder="Notes (optional)"
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Section navigation buttons */}
+            <div className="flex gap-3 mt-4">
+              {activeCategoryIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCategoryIndex((i) => i - 1)}
+                  className="flex-1 min-h-[56px] bg-white/5 hover:bg-white/10 text-white font-heading font-bold text-sm tracking-widest rounded-xl transition"
+                >
+                  ← PREVIOUS
+                </button>
+              )}
+              {activeCategoryIndex < categories.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveCategoryIndex((i) => i + 1)}
+                  className="flex-1 min-h-[56px] bg-amber hover:bg-amber-dark text-black font-heading font-bold text-sm tracking-widest rounded-xl transition"
+                >
+                  NEXT SECTION →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setStep(4)}
+                  className="flex-1 min-h-[64px] bg-amber hover:bg-amber-dark text-black font-heading font-bold text-base tracking-widest rounded-xl transition"
+                >
+                  REVIEW & SUBMIT →
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -758,7 +1018,7 @@ export default function NewReportClient() {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => setStep(3)}
-                className="text-gray-400 hover:text-white transition min-h-[48px] flex items-center gap-1 text-sm font-heading tracking-wide cursor-pointer bg-transparent border-none"
+                className="text-gray-400 hover:text-white transition min-h-[64px] flex items-center gap-1 text-sm font-heading tracking-wide cursor-pointer bg-transparent border-none"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -766,7 +1026,7 @@ export default function NewReportClient() {
                 BACK
               </button>
               <span className="text-gray-600">|</span>
-              <h2 className="font-heading font-bold text-xl text-white tracking-wide">
+              <h2 className="text-title text-white tracking-wide">
                 REVIEW & SUBMIT
               </h2>
             </div>
@@ -774,7 +1034,7 @@ export default function NewReportClient() {
             {/* Summary cards */}
             <div className="space-y-4 mb-6">
               {/* Trade */}
-              <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-white/10">
+              <div className="card-base card-accent p-5">
                 <div className="text-xs font-heading tracking-widest text-gray-500 uppercase mb-1">Trade</div>
                 <div className="font-heading font-black text-xl text-amber tracking-wide">
                   {selectedTrade.toUpperCase()}
@@ -782,7 +1042,7 @@ export default function NewReportClient() {
               </div>
 
               {/* Contractor */}
-              <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-white/10">
+              <div className="card-base card-accent p-5">
                 <div className="text-xs font-heading tracking-widest text-amber mb-3 uppercase">Contractor</div>
                 <div className="grid sm:grid-cols-2 gap-2 text-sm">
                   <SummaryRow label="Business" value={jobDetails.businessName} />
@@ -792,7 +1052,7 @@ export default function NewReportClient() {
               </div>
 
               {/* Job Site */}
-              <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-white/10">
+              <div className="card-base card-accent p-5">
                 <div className="text-xs font-heading tracking-widest text-amber mb-3 uppercase">Job Site</div>
                 <div className="grid sm:grid-cols-2 gap-2 text-sm">
                   <SummaryRow label="Address" value={jobDetails.jobAddress} />
@@ -805,7 +1065,7 @@ export default function NewReportClient() {
 
               {/* Roofing extras */}
               {selectedTrade === 'roofing' && (
-                <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-white/10">
+                <div className="card-base card-accent p-5">
                   <div className="text-xs font-heading tracking-widest text-amber mb-3 uppercase">Roofing Certifications</div>
                   <div className="grid sm:grid-cols-2 gap-2 text-sm">
                     <SummaryRow label="WAH Cert #" value={jobDetails.wahCertNumber} />
@@ -816,7 +1076,7 @@ export default function NewReportClient() {
               )}
 
               {/* Checklist summary */}
-              <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-white/10">
+              <div className="card-base card-accent p-5">
                 <div className="text-xs font-heading tracking-widest text-amber mb-3 uppercase">Checklist Summary</div>
                 {(CHECKLISTS[selectedTrade] || []).map((cat) => {
                   const items = cat.items
@@ -824,8 +1084,8 @@ export default function NewReportClient() {
                   const failed = items.filter((item) => (checklist[`${cat.category}__${item}`]?.status) === 'fail').length
                   const na = items.filter((item) => (checklist[`${cat.category}__${item}`]?.status) === 'na').length
                   return (
-                    <div key={cat.category} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                      <span className="text-sm text-gray-300 font-heading">{cat.category}</span>
+                    <div key={cat.category} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+                      <span className="text-base text-gray-300 font-heading">{cat.category}</span>
                       <div className="flex gap-3 text-xs font-heading font-bold">
                         <span className="text-success">{passed} PASS</span>
                         {failed > 0 && <span className="text-danger">{failed} FAIL</span>}
@@ -838,15 +1098,15 @@ export default function NewReportClient() {
             </div>
 
             {/* Declaration */}
-            <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-amber/20 mb-6">
-              <label className="flex gap-4 cursor-pointer">
+            <div className="card-base p-5 border-amber/20 mb-6">
+              <label className="flex gap-4 cursor-pointer items-start">
                 <input
                   type="checkbox"
                   checked={declared}
                   onChange={(e) => setDeclared(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 accent-amber shrink-0"
+                  className="mt-1 checkbox-glove shrink-0"
                 />
-                <span className="text-sm text-gray-300 leading-relaxed">
+                <span className="text-base text-gray-300 leading-relaxed">
                   I hereby declare that the work described in this report was completed in compliance
                   with all applicable Ontario codes and regulations.
                 </span>
@@ -863,13 +1123,39 @@ export default function NewReportClient() {
               type="button"
               onClick={handleSubmit}
               disabled={!declared || submitting}
-              className="w-full min-h-[48px] bg-amber hover:bg-amber-dark disabled:opacity-40 disabled:cursor-not-allowed text-black font-heading font-bold text-sm tracking-widest rounded-xl transition"
+              className="w-full min-h-[64px] bg-amber hover:bg-amber-dark disabled:opacity-40 disabled:cursor-not-allowed text-black font-heading font-bold text-base tracking-widest rounded-xl transition"
             >
               {submitting ? 'SUBMITTING...' : 'SUBMIT REPORT'}
             </button>
           </div>
         )}
       </main>
+
+      {/* Floating action button — mobile only */}
+      {step === 3 && activeCategoryIndex < categories.length - 1 && (
+        <button
+          type="button"
+          onClick={() => setActiveCategoryIndex((i) => i + 1)}
+          className="fab md:hidden"
+          aria-label="Next section"
+        >
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+      {step === 3 && activeCategoryIndex === categories.length - 1 && (
+        <button
+          type="button"
+          onClick={() => setStep(4)}
+          className="fab md:hidden"
+          aria-label="Review and submit"
+        >
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

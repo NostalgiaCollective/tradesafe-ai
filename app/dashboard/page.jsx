@@ -66,13 +66,13 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <p className="text-xs font-mono tracking-[3px] text-amber/70 mb-1">// DASHBOARD</p>
-          <h1 className="font-heading font-black text-3xl md:text-4xl tracking-tight text-white">
+          <h1 className="text-display md:text-[2.75rem] tracking-tight text-white">
             Welcome back, {businessName}
           </h1>
         </div>
         <Link
           href="/report/new"
-          className="inline-flex items-center justify-center gap-2 min-h-[48px] px-6 bg-amber hover:bg-amber-light text-black font-heading font-black text-sm tracking-[2px] rounded-xl transition-colors no-underline shrink-0"
+          className="inline-flex items-center justify-center gap-2 min-h-[64px] px-6 bg-amber hover:bg-amber-light text-black font-heading font-black text-sm tracking-[2px] rounded-xl transition-colors no-underline shrink-0"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -81,17 +81,32 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* ── Stats row ── */}
+      {/* ── Stats row — amber gradient cards ── */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total Reports', value: totalReports },
-          { label: 'Completed',     value: completedReports },
-          { label: 'Drafts',        value: draftReports },
+          { label: 'Total Reports', value: totalReports, icon: (
+            <svg className="w-5 h-5 text-amber/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          )},
+          { label: 'Completed', value: completedReports, icon: (
+            <svg className="w-5 h-5 text-amber/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )},
+          { label: 'Drafts', value: draftReports, icon: (
+            <svg className="w-5 h-5 text-amber/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+          )},
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-[#1a1a1a] rounded-2xl border border-white/10 px-5 py-5"
+            className="stat-card-gradient card-accent px-5 py-5"
           >
+            <div className="flex items-center justify-between mb-2">
+              {stat.icon}
+            </div>
             <p className="text-2xl md:text-3xl font-heading font-black text-white leading-none mb-1">
               {stat.value}
             </p>
@@ -100,10 +115,12 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      <div className="section-divider" />
+
       {/* ── Recent Reports ── */}
-      <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 overflow-hidden">
+      <div className="card-base card-accent overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <h2 className="font-heading font-black text-lg tracking-wider text-white">Recent Reports</h2>
+          <h2 className="text-section tracking-wider text-white">Recent Reports</h2>
           {totalReports > 0 && (
             <Link
               href="/reports"
@@ -122,13 +139,13 @@ export default async function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
               </svg>
             </div>
-            <h3 className="font-heading font-black text-xl text-white mb-2">No reports yet</h3>
-            <p className="text-gray-500 text-sm mb-6 max-w-sm leading-relaxed">
+            <h3 className="text-title text-white mb-2">No reports yet</h3>
+            <p className="text-gray-500 text-base mb-6 max-w-sm leading-relaxed">
               Generate your first compliance report in under 60 seconds. Pick a trade, complete the checklist, get a signed PDF.
             </p>
             <Link
               href="/report/new"
-              className="inline-flex items-center justify-center gap-2 min-h-[48px] px-8 bg-amber hover:bg-amber-light text-black font-heading font-black text-sm tracking-[2px] rounded-xl transition-colors no-underline"
+              className="inline-flex items-center justify-center gap-2 min-h-[64px] px-8 bg-amber hover:bg-amber-light text-black font-heading font-black text-sm tracking-[2px] rounded-xl transition-colors no-underline"
             >
               Generate your first compliance report
             </Link>
@@ -153,7 +170,7 @@ export default async function DashboardPage() {
                 <div>
                   <Badge value={report.trade} map={TRADE_BADGE} />
                 </div>
-                <p className="text-sm text-gray-300 font-body truncate">
+                <p className="text-base text-gray-300 font-body truncate">
                   {report.job_address ?? '—'}
                 </p>
                 <p className="text-xs text-gray-500 font-mono">{formatDate(report.created_at)}</p>
@@ -162,7 +179,7 @@ export default async function DashboardPage() {
                 </div>
                 <Link
                   href={`/report/${report.id}`}
-                  className="text-xs font-mono text-amber hover:text-amber-light transition-colors no-underline tracking-wider shrink-0"
+                  className="text-xs font-mono text-amber hover:text-amber-light transition-colors no-underline tracking-wider shrink-0 min-h-[48px] flex items-center"
                 >
                   View →
                 </Link>
