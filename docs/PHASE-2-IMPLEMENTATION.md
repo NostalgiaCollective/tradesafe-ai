@@ -90,10 +90,12 @@ See supabase/migrations/README.md for exact ordering, one-company-per-legacy-use
 5. Retained private evidence/generated artifacts and trusted billing are deferred; paid commercial access is unavailable.
 6. Moderate unused-tool SDK advisory and bounded action/history lists remain documented risks.
 
-## Recovery / next exact step
+## Delivery and recovery
 
-At the final precommit checkpoint, Phase 2 files are the intended uncommitted implementation; raw/ remains pre-existing untracked material and must not be staged. No migration or build command remains pending. The temporary static fixture server is a loopback-only review helper, not a deployed app.
+Implementation commit: **91d581577fffc5b3f475efed96c870d02fc3a2f5**, pushed without force to origin/astra/production-mvp. GitHub Actions [run 34644937911](https://github.com/NostalgiaCollective/tradesafe-ai/actions/runs/34644937911) passed install, lint, all tests, typecheck, build, smoke and the dependency gate for that exact SHA.
 
-Next delivery step: commit these reviewed files, verify remote ancestry, push astra/production-mvp without force and inspect GitHub Actions for the resulting SHA. Record delivery below.
+The following small delivery checkpoint records this evidence, replaces damaged display separators, and sets the scoped dark colour scheme so native date controls remain legible. It changes no database or authorization behavior. Use git log -1 for the latest delivery commit; do not reset to the implementation SHA if newer work exists.
+
+All Phase 2 implementation files are committed. The pre-existing raw/ directory remains untracked and must not be staged. Local environment files are unchanged. No migration or build is pending, and the temporary loopback fixture server was stopped after review. The only remaining Phase 2 verification work requires the isolated services below.
 
 Next implementation slice: configure a disposable Supabase project with four verified synthetic identities, execute the reviewed migration sequence, run npm run test:staging, then the authenticated phone/desktop acceptance matrix. Fix real Auth/RLS/concurrency findings before private photo/PDF storage or billing work. Do not use production to unblock these checks.

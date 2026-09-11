@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* Operational field UI: retain charcoal/amber, use a readable body face and real status text. */
-.work-app{font-family:Arial,system-ui,sans-serif;font-size:1rem;line-height:1.6;color:#eeeeee;background:#111;min-height:100vh}
+.work-app{color-scheme:dark;font-family:Arial,system-ui,sans-serif;font-size:1rem;line-height:1.6;color:#eeeeee;background:#111;min-height:100vh}
 .work-app h1{font-size:2rem!important;line-height:1.2;margin:1rem 0;font-weight:750}
 .work-app h2{font-size:1.35rem;margin:.75rem 0;font-weight:700}
 .work-app h3{font-size:1.1rem;font-weight:700;margin:.5rem 0}
