@@ -1,5 +1,13 @@
 # Phase 1 environment contract
 
+## Phase 2 update
+
+The runtime core variable contract below remains in use. Supabase now serves company memberships, reports, invitations and corrective actions. No service-role key is introduced. Stripe is **not required or used** by Phase 2: checkout/verification return an unavailable response even if a key is configured. The previous optional Anthropic endpoint remains, but no photo attachment control or retained-evidence promise is exposed in the report workflow.
+
+Real integration tests additionally require `APP_ENV=staging`, `STAGING_ALLOW_SYNTHETIC_WRITES=yes`, `STAGING_ISOLATED_PROJECT_REF`, and `STAGING_{OWNER,WORKER,SUPERVISOR,OUTSIDER}_{EMAIL,PASSWORD}`. These are test-only server/process variables, never browser configuration. The isolated project reference must exactly match the Supabase URL. Use four verified synthetic accounts; no privileged key or production identity. See STAGING-RUNBOOK.md. Absence is reported as BLOCKED, never a passing mock.
+
+The table below records the original Phase 1 provider configuration contract; its Stripe operations are now disabled as described above.
+
 Implemented in `lib/domain/config.ts`, guarded on the server by `lib/server/config.ts`, and checked at startup by `instrumentation.ts`. This is configuration validation, not a connection test or authorization check.
 
 | Variable | Scope | Required for | Accepted configuration |

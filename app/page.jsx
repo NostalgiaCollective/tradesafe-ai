@@ -130,37 +130,12 @@ const STEPS = [
   },
   {
     num: "04",
-    title: "Stay Compliant",
+    title: "Keep retrievable records",
     desc: "Every report is stored and retrievable. Pull it up on your phone during any inspection.",
   },
 ];
 
-const PRICING = [
-  {
-    name: "Per Report",
-    price: "$10",
-    sub: "per report",
-    featured: false,
-    features: [
-      "Single compliance document",
-      "All three trades supported",
-      "Print-ready PDF format",
-      "Ontario code references included",
-    ],
-  },
-  {
-    name: "Crew Plan",
-    price: "$99",
-    sub: "per month, per crew",
-    featured: true,
-    features: [
-      "Unlimited reports",
-      "Crew member management",
-      "Priority support",
-      "Compliance updates included",
-    ],
-  },
-];
+
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -282,7 +257,7 @@ export default function Page() {
 
             {/* Tagline */}
             <p className="font-heading font-black text-base tracking-widest text-[#f59e0b] mb-10">
-              Stay legal. Stay safe. Stay working.
+              Record observations. Follow up on concerns.
             </p>
 
             {/* CTA */}
@@ -420,65 +395,7 @@ export default function Page() {
       {/* ══════════════════════════════════════════════════
           PRICING
       ══════════════════════════════════════════════════ */}
-      <section id="pricing" className="py-24 px-5 bg-[#0f0f0f]">
-        <div className="max-w-3xl mx-auto">
-          <p className="font-heading text-xs tracking-[0.25em] text-[#f59e0b]/70 mb-4 uppercase">
-            Pricing
-          </p>
-          <h2
-            className="font-heading font-black leading-[0.95] text-white mb-14"
-            style={{ fontSize: "clamp(36px, 5vw, 60px)" }}
-          >
-            Simple pricing.<br />
-            <span className="text-[#f59e0b]">Cheaper than one fine.</span>
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {PRICING.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative bg-[#1a1a1a] rounded p-10 border-2 ${
-                  plan.featured ? "border-[#f59e0b]" : "border-white/10"
-                }`}
-              >
-                {plan.featured && (
-                  <div className="absolute -top-3 left-6 bg-[#f59e0b] text-black font-heading font-black text-xs tracking-wider px-3 py-1 rounded">
-                    Most Popular
-                  </div>
-                )}
-
-                <p className="font-heading text-xs tracking-wider text-gray-500 mb-2">
-                  {plan.name}
-                </p>
-                <div className="font-heading font-black text-6xl text-white leading-none mb-1">
-                  {plan.price}
-                </div>
-                <p className="font-heading text-sm text-gray-500 mb-8">{plan.sub}</p>
-
-                <ul className="space-y-3 mb-10">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 font-heading text-sm text-gray-400">
-                      <CheckIcon className="text-[#f59e0b] shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/auth/login"
-                  className={`flex items-center justify-center font-heading font-black text-sm tracking-wider h-12 rounded no-underline transition-colors ${
-                    plan.featured
-                      ? "bg-[#f59e0b] text-black hover:bg-[#fbbf24]"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
-                >
-                  Get Started
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <section id="pricing" className="py-24 px-5 bg-[#0f0f0f]"><div className="max-w-3xl mx-auto"><h2 className="text-title">Payments are unavailable</h2><p className="text-gray-300 mt-4">TradeSafe is in controlled development. Report payments and subscriptions are unavailable while trusted billing reconciliation is rebuilt. No payment is required or collected by this version.</p><p className="text-gray-300 mt-4">A report records observations. It does not certify compliance or authorize work.</p></div></section>
 
       {/* ══════════════════════════════════════════════════
           FINAL CTA
@@ -489,10 +406,10 @@ export default function Page() {
             className="font-heading font-black text-white leading-tight mb-4"
             style={{ fontSize: "clamp(32px, 5vw, 56px)" }}
           >
-            Ready to stay compliant?
+            Ready to record your observations?
           </h2>
           <p className="font-heading font-black tracking-widest text-[#f59e0b] mb-10 text-base">
-            Stay legal. Stay safe. Stay working.
+            Record observations. Follow up on concerns.
           </p>
           <Link
             href="/auth/login"
@@ -519,7 +436,7 @@ export default function Page() {
               </span>
             </div>
             <p className="font-heading text-sm text-gray-600">
-              Stay legal. Stay safe. Stay working.
+              Record observations. Follow up on concerns.
             </p>
           </div>
 

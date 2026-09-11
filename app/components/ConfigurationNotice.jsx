@@ -2,8 +2,8 @@
 import { publicServicesReady } from '@/lib/domain/config'
 
 export default function ConfigurationNotice() {
-  if (publicServicesReady()) return null
   return <p role="status" className="my-4 p-4 border border-amber/40 rounded-lg text-base text-gray-200">
-    Account access is not configured yet. You can browse TradeSafe while setup is completed.
+    {!publicServicesReady()&&'Account access is not configured yet. '}
+    TradeSafe is in controlled development. Payments are unavailable. Checklist content is pending qualified review; reports record observations and do not certify compliance or authorize work.
   </p>
 }

@@ -1,4 +1,11 @@
 export const ERROR_MESSAGES = {
+  denied: 'You do not have access to this company or permission for this action.',
+  conflict: 'A newer version was saved. Your changes are still here. Open the latest record before trying again.',
+  immutable: 'This record is finalized. Create an amendment to correct an observation.',
+  incomplete: 'Complete the required observations and explanations, then acknowledge their accuracy.',
+  invitation: 'This invitation is unavailable, expired, or belongs to a different verified email address.',
+  last_owner: 'Add another owner before removing or changing the last owner.',
+  deferred: 'Payments and paid access are unavailable while billing reconciliation is being rebuilt. No payment has been taken here.',
   configuration: 'This service is not configured yet. Please try again after setup is complete.',
   unavailable: 'We could not connect to the service. Please try again.',
   unauthorized: 'Please sign in to continue.',
@@ -11,6 +18,7 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  denied: 403, conflict: 409, immutable: 409, incomplete: 422, invitation: 400, last_owner: 409, deferred: 503,
   configuration: 503, unavailable: 503, unauthorized: 401, not_found: 404,
   invalid_request: 400, auth_failed: 400, payment_failed: 502,
   verification_failed: 502, query_failed: 503,

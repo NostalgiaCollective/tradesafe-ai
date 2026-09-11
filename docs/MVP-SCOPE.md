@@ -1,6 +1,14 @@
 # TradeSafe Production MVP v1 scope proposal
 
-Date: 2026-09-10. Status: **proposed, awaiting Daniel's discovery review**. No implementation has started. Prioritize trustworthy job documentation for Ontario electrical, plumbing and roofing contractors. This is not a certification engine, job-management suite or enterprise platform.
+Discovery baseline dated 2026-09-10. The original classifications below are retained for comparison; the following authorized Phase 2 update takes precedence.
+
+## Authorized Phase 2 update — 2026-09-11
+
+Daniel confirmed Ontario trade companies with separately authenticated staff and shared records. Company ownership, owner/supervisor/worker permissions, invitations/removal, versioned truthful observations, durable drafts, immutable finalization/amendments and minimum corrective actions are now required and implemented locally. See PHASE-2-IMPLEMENTATION.md for evidence and blocked live-service checks. Local implementation does not establish release readiness.
+
+Current answer states are unanswered, meets, attention, not_applicable and unable. Report lifecycle, corrective-action state and historical billing information are separate. Roles establish application access only; shared passwords are never the company model.
+
+Retained photos and generated PDFs are explicitly deferred until secure storage is ready. Browser print remains available with truthful snapshot wording. Checkout is disabled pending trusted reconciliation. Full offline synchronization, subscription plans, automated invitation email and enterprise roles are outside this phase. Checklist content remains pending qualified review.
 
 P0 = required before controlled customer use. P1 = high value after the baseline. P2 = later, subject to evidence. REMOVE / DEFER = stop presenting as delivered or avoid introducing complexity. Existing useful behavior should remain until its replacement passes regression checks.
 

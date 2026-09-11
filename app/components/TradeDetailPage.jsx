@@ -125,7 +125,7 @@ export default function TradeDetailPage({ trade }) {
           <div className="bg-[#0f0f0f] border border-white/10 rounded-xl p-8 text-left max-w-md mx-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="font-heading font-bold text-lg text-white tracking-wider">
-                ONTARIO COMPLIANCE REPORT
+                ONTARIO OBSERVATION REPORT
               </div>
               <div className="font-mono text-[10px] text-amber tracking-wider">PDF</div>
             </div>
@@ -148,7 +148,7 @@ export default function TradeDetailPage({ trade }) {
               </div>
               <div className="flex justify-between">
                 <span className="font-mono text-xs text-gray-600">STATUS</span>
-                <span className="font-heading font-bold text-sm text-success">COMPLIANT</span>
+                <span className="font-heading font-bold text-sm text-success">OBSERVATIONS ONLY</span>
               </div>
             </div>
           </div>
@@ -158,11 +158,11 @@ export default function TradeDetailPage({ trade }) {
       {/* CTA */}
       <section className="py-20 px-5 text-center">
         <h2 className="font-heading font-black text-[clamp(24px,4vw,40px)] text-white leading-tight mb-4">
-          START YOUR {trade.name.toUpperCase()} COMPLIANCE REPORT<br />
+          START YOUR {trade.name.toUpperCase()} OBSERVATION REPORT<br />
           <span className="text-amber">IN MINUTES.</span>
         </h2>
         <p className="font-body text-lg text-gray-500 mb-8">
-          Stay legal. Stay safe. Stay working.
+          Record observations. Follow up on concerns.
         </p>
         <Link
           href="/auth/login"

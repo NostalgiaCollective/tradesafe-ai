@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
 
 const migration = await readFile(new URL('../supabase/migrations/20260911000100_staging_baseline.sql', import.meta.url), 'utf8')
@@ -16,9 +16,12 @@ async function database() {
     INSERT INTO auth.users VALUES ('${owner}'), ('${other}');`)
   return db
 }
-test('migration contains no destructive statements', () => {
-  const executable = migration.replace(/--[^\n]*/g, '')
-  assert.doesNotMatch(executable, /\b(DROP|TRUNCATE|CASCADE)\b|\bDELETE\s+FROM\b/i)
+test('all migrations contain no destructive statements', async () => {
+  const directory = new URL('../supabase/migrations/', import.meta.url)
+  for (const file of (await readdir(directory)).filter(name => name.endsWith('.sql'))) {
+    const executable = (await readFile(new URL(file, directory), 'utf8')).replace(/--[^\n]*/g, '')
+    assert.doesNotMatch(executable, /\b(DROP|TRUNCATE|CASCADE)\b|\bDELETE\s+FROM\b/i, file)
+  }
 })
 test('fresh migration runs twice without changing records or existing policies', async () => {
   const db = await database()

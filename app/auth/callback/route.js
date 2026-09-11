@@ -18,10 +18,6 @@ export async function GET(request) {
     if (exchange.error) throw new AppError('auth_failed')
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) throw new AppError('auth_failed')
-    const profile = await supabase.from('contractor_profiles').upsert({
-      user_id: user.id, contact_email: user.email, business_name: '',
-    }, { onConflict: 'user_id', ignoreDuplicates: true })
-    if (profile.error) throw new AppError('query_failed')
     const response = NextResponse.redirect(new URL(destination, origin))
     response.headers.set('Cache-Control', 'no-store')
     return response

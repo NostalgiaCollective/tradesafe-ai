@@ -1,40 +1,43 @@
-# Isolated database baseline
+# Isolated database setup and Phase 2 backfill
 
-`../schema.sql` is historical, destructive reset SQL. Do not run it. It is preserved unchanged for discovery comparison.
+../schema.sql is historical destructive reset SQL. It remains unchanged and must not be executed. Fresh installation and production upgrades are separate workflows; these instructions cover isolated staging only.
 
-`20260911000100_staging_baseline.sql` is an additive **fresh-install staging** migration. It creates the five application tables, owner policies, grants and timestamp triggers only when those tables do not exist. It never replaces existing tables, policies, records or triggers. It has a transaction and bounded lock/statement timeouts. New foreign keys use `RESTRICT`, so removing an auth user cannot silently erase reports. Account deletion needs a separate retention procedure.
+## Migration order
 
-This retains the existing `draft`/`completed` report column and broad owner mutation rules for compatibility. It does **not** establish trusted billing state or safe finalization. There is no company tenant model. Do not interpret these ownership policies as company isolation or production approval.
+| File | Purpose | Executed where |
+| --- | --- | --- |
+| 20260911000100_staging_baseline.sql | Original additive legacy tables, preserving rather than repairing unknown drift | Ephemeral PGlite only |
+| 20260911000200_company_workflow.sql | Company/membership/invitation/report/action/event tables, guarded commands, RLS, legacy backfill and write freeze | Ephemeral PGlite only |
+| 20260911000300_template_v1.sql | Three frozen versioned templates from the shared module | Ephemeral PGlite only |
 
-The application uses `lib/domain/templates.ts`. The unused `checklist_templates` table is retained for schema compatibility and intentionally not seeded with another copy of the definitions.
+Phase 2 migrations run once, transactionally, with recorded history. They intentionally fail if objects already exist unexpectedly. Do not make them silently idempotent over unknown functions/policies. Phase 1's fresh-install replay test does not imply Phase 2 replay is supported.
 
-## Test locally, without Supabase credentials
+Verify the disposable project reference and absence of customer data. Run ../preflight.sql and ../phase-2-preflight.sql, inspect columns/FKs/policies/grants/functions/triggers and stop on drift. Phase 1 does not reconcile older installations; successful execution alone is not upgrade certification.
 
-From the repository root, use Node 24 and run:
+For a fresh isolated project, apply all three numbered files in order using its SQL editor and record filenames/hashes/time. For verified isolated Phase 1 schema, apply only the two Phase 2 files. A CLI alternative explicitly links the disposable project, inspects supabase migration list and supabase db push --dry-run, then applies supabase db push. Never mix SQL-editor and CLI histories without reconciliation. No remote CLI link, migration, push or reset was executed here.
 
-```sh
-npm ci --ignore-scripts
-npm test
-```
+## Explicit backfill rules
 
-The PostgreSQL tests use an ephemeral PGlite database, synthetic UUIDs and a small `auth.uid()` fixture. They execute the actual migration twice, check record/policy preservation, reject anonymous/cross-user operations, and verify that a pre-existing drifted table is not altered. They do not contact Supabase. This does not verify Supabase's real Auth service, PostgREST, default grants, extensions or hosted policies.
+- Each legacy Auth user with a profile, contractor profile, report or roster receives a separate company and owner membership. Names and email domains never merge users.
+- Name precedence: nonempty contractor-profile business name, profile business name, then Imported business.
+- The whole contractor profile takes precedence for initial settings when present; otherwise the original profile is copied. No silent field-level merge occurs. Both full original profiles remain in legacy_profiles and are visible for owner review.
+- Older field names such as electrical_license are retained, not guessed into new registration fields. Owners confirm canonical settings before relying on prefill. No qualification is verified by migration or app role.
+- Old reports link to the original user's company, unchanged and read-only. Payment session fields, legacy status and checklist values are not mapped to safety observations or entitlement.
+- Legacy roster entries remain historical rows. They do not become authenticated memberships. Owners invite people with their individual accounts.
+- New ts_reports copy company identity and template questions/version. Amendments copy the original snapshot and require a reason. Finalized observations are never overwritten.
 
-## Fresh isolated Supabase project
+npm test rehearses synthetic conflicts, separate users with identical business names, profile precedence and payment preservation. Actual production schema reconciliation is separately blocked and unauthorized.
 
-1. Create a disposable Supabase project dedicated to staging. Verify its organization and project reference in the provider console. Do not link a production project or import customer data.
-2. Review `../preflight.sql` in that project's SQL editor. On a fresh project the application tables should be absent. Existing application tables mean this is not a fresh install: stop and inventory drift.
-3. Apply **only** `20260911000100_staging_baseline.sql` through the isolated project's SQL editor. Do not select historical `schema.sql` or a reset command.
-4. Run preflight again. Inspect columns, RLS, policies, grants and constraints. Create two synthetic users through Supabase Auth and perform the staging checks in `docs/STAGING-RUNBOOK.md` with their ordinary public-key sessions.
-5. Record the project reference, migration filename/hash, execution time and test results in your internal release record. Never record keys, passwords or session tokens.
+## Authority and verification
 
-If your team uses the Supabase CLI, initialize local CLI configuration and explicitly link the disposable project. Run `supabase migration list` and `supabase db push --dry-run`, review the linked reference and planned file, then `supabase db push`. The SQL-editor and CLI-history workflows are alternatives: do not mix them without reconciling migration history. No CLI link, push, reset or remote migration was executed during Phase 1.
+New tables enable RLS with authenticated SELECT only. Guarded commands check current membership, ownership, revisions and input. Company locks serialize membership changes with mutations. Server routes repeat authorization; direct Data API calls cannot grant ordinary table-write authority.
 
-## Existing installations and production upgrades
+Finalized report/template/event guards preserve snapshots/history; legacy report writes are frozen. Foreign keys use RESTRICT. No table drop, destructive cascade, legacy data deletion or answer conversion is introduced. These controls do not restrict privileged database administrators; the app has no service-role key.
 
-Fresh-install setup and production upgrades are separate workflows. This initial migration deliberately leaves existing schema drift untouched; a successful replay is not a compatibility certificate. Existing RLS or grants may be weaker than the fresh baseline.
+Run npm test, then npm run test:staging with verified synthetic accounts per docs/STAGING-RUNBOOK.md. Inspect actual grants/policies and attempt direct insert/update/delete with ordinary users. Real Supabase Auth/PostgREST isolation remains BLOCKED until these checks run.
 
-Inventory and export the actual schema/policies/grants, verify backups and restore capability, compare preflight results with expected fields, and write a **new**, explicitly reviewed additive migration for any required reconciliation. Rehearse against an isolated schema copy using synthetic data. Get separate authorization before any production operation. Never replace a previously applied migration file to rewrite history.
+## Template versioning and rollback
 
-## Rollback
+scripts/generate-template-migration.mjs generated the first checked-in seed from lib/domain/templates.ts and refuses overwrite. Future content changes need new stable version IDs and a new additive seed migration. Do not rewrite applied files. Content remains pending qualified review despite software validation.
 
-A failure before commit rolls back the migration transaction. After commit, do not create a destructive down migration. Roll back the app release while leaving additive tables intact, or repair with a reviewed forward migration. For disposable staging, a new isolated project is preferable to resetting an ambiguous linked database. Production recovery requires a verified provider backup/restore procedure; none has been verified here.
+Failed transactions roll back. After commit retain objects/records and use forward repair. Phase 1 is incompatible with the Phase 2 legacy-write freeze and must not be restored against that database. Use matching verified artifacts or pause staging. Never run reset/destructive down SQL. Backup/restore capabilities are unverified.

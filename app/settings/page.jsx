@@ -1,9 +1,11 @@
-import { pageClient } from '@/lib/server/page-auth'
-export const dynamic = 'force-dynamic'
-
-import SettingsClient from './SettingsClient'
-
-export default async function SettingsPage() {
-  await pageClient('/settings')
-  return <SettingsClient />
+import { workspace,databaseError } from '@/lib/server/workspace'
+import WorkspaceShell from '@/app/components/WorkspaceShell'
+import CreateCompany from '@/app/components/CreateCompany'
+import CompanySettings from './CompanySettings'
+export default async function SettingsPage({searchParams}) {
+ const p=await searchParams;const w=await workspace('/settings',p.company)
+ if(!w.company)return <WorkspaceShell><CreateCompany/></WorkspaceShell>
+ const [members,invitations]=await Promise.all([w.supabase.from('ts_members').select('*').eq('company_id',w.company.id).order('joined_at'),w.supabase.from('ts_invitations').select('id,email,role,expires_at,accepted_by,revoked').eq('company_id',w.company.id).order('created_at',{ascending:false}).limit(50)])
+ for(const r of [members,invitations])if(r.error)throw databaseError(r.error)
+ return <WorkspaceShell {...w}><CompanySettings company={w.company} members={members.data} invitations={invitations.data} role={w.membership.role} actor={w.user.id}/></WorkspaceShell>
 }

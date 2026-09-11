@@ -53,12 +53,12 @@ test('centralized runtime labels/order match the discovery commit exactly', () =
     assert.equal(marketingChecklist(trade).flatMap(s => s.items).length, trade === 'plumbing' ? 15 : 18)
   }
 })
-test('legacy checklist state remains independent and compatible, not a safety endorsement', () => {
+test('new checklist answers start unanswered and do not share mutable state', () => {
   const first = buildChecklistState('electrical'), second = buildChecklistState('electrical')
   assert.equal(Object.keys(first).length, 18)
-  assert.ok(Object.values(first).every(answer => answer.status === 'pass' && answer.notes === ''))
-  first[Object.keys(first)[0]].status = 'fail'
-  assert.equal(second[Object.keys(second)[0]].status, 'pass')
+  assert.ok(Object.values(first).every(answer => answer.state === 'unanswered' && answer.note === ''))
+  first[Object.keys(first)[0]].state = 'attention'
+  assert.equal(second[Object.keys(second)[0]].state, 'unanswered')
   assert.deepEqual(buildChecklistState('unknown'), {})
 })
 test('payment transitions do not finalize work and work transitions do not pay', () => {
