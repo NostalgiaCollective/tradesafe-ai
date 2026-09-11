@@ -1,3 +1,4 @@
+import { marketingChecklist } from '@/lib/domain/templates';
 import TradeDetailPage from "../components/TradeDetailPage";
 
 export const metadata = {
@@ -14,53 +15,7 @@ const PLUMBING = {
   checklistTitle: "FULL OBC PART 7\nCHECKLIST.",
   totalChecks: 15,
   samplePermit: "OBC-PLM-2025-XXXX",
-  checklist: [
-    {
-      title: "PERMIT & LICENSING",
-      items: [
-        "OBC permit number recorded",
-        "Certificate of Qualification (C of Q) number recorded",
-        "Ontario College of Trades certificate number recorded",
-      ],
-    },
-    {
-      title: "DRAINAGE",
-      items: [
-        "Drainage slope verified \u2014 minimum 1 in 50 for pipes 3 inches or less",
-        "Drainage slope verified for pipes over 3 inches",
-        "Cleanout access points installed and accessible",
-      ],
-    },
-    {
-      title: "BACKFLOW & FIXTURES",
-      items: [
-        "Backflow prevention device installed and confirmed",
-        "Low-flow toilet compliance \u2014 4.8L per flush or less",
-        "Low-flow faucets and showerheads verified",
-      ],
-    },
-    {
-      title: "MATERIALS",
-      items: [
-        "PE-RT or PEX material certification verified (where used)",
-        "Pipe support and hanging compliant",
-      ],
-    },
-    {
-      title: "VENTING",
-      items: [
-        "Air admittance valve locations documented",
-        "Vent stack sizing and routing verified",
-      ],
-    },
-    {
-      title: "INSPECTION",
-      items: [
-        "Municipal inspection requested",
-        "Inspection sign-off received",
-      ],
-    },
-  ],
+  checklist: marketingChecklist('plumbing'),
   regulations: [
     { code: "OBC PART 7", title: "Ontario Building Code — Plumbing", desc: "The provincial plumbing code governing all plumbing installations in Ontario, updated 2025." },
     { code: "C OF Q", title: "Certificate of Qualification", desc: "Plumbers must hold a C of Q from the Ontario College of Trades or be a registered apprentice." },

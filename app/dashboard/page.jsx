@@ -1,6 +1,7 @@
-import { redirect } from 'next/navigation'
+
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { pageClient } from '@/lib/server/page-auth'
+import { AppError } from '@/lib/domain/errors'
 
 // Maps each trade type to a badge color
 const TRADE_BADGE = {
@@ -33,20 +34,15 @@ function Badge({ value, map }) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/auth/login')
-  }
+  const { supabase, user } = await pageClient('/dashboard')
 
   // Fetch contractor profile and recent reports in parallel
-  const [{ data: profile }, { data: reports }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: reports, error: reportsError }] = await Promise.all([
     supabase
       .from('contractor_profiles')
       .select('*')
       .eq('user_id', user.id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('reports')
       .select('id, trade, job_address, status, created_at')
@@ -54,6 +50,8 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(10),
   ])
+
+  if (profileError || reportsError) throw new AppError('query_failed')
 
   const totalReports = reports?.length ?? 0
   const completedReports = reports?.filter((r) => r.status === 'completed').length ?? 0
@@ -65,7 +63,7 @@ export default async function DashboardPage() {
       {/* ── Header row ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs font-mono tracking-[3px] text-amber/70 mb-1">// DASHBOARD</p>
+          <p className="text-xs font-mono tracking-[3px] text-amber/70 mb-1">{'// '}DASHBOARD</p>
           <h1 className="text-display md:text-[2.75rem] tracking-tight text-white">
             Welcome back, {businessName}
           </h1>

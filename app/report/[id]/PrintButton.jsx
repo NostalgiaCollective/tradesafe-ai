@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 export default function PrintButton({ variant = 'primary', reportId, isPaid }) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleClick() {
     // Already paid — just print
@@ -14,6 +15,7 @@ export default function PrintButton({ variant = 'primary', reportId, isPaid }) {
 
     // Not paid — create Stripe checkout session
     setLoading(true)
+    setError('')
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -21,14 +23,14 @@ export default function PrintButton({ variant = 'primary', reportId, isPaid }) {
         body: JSON.stringify({ reportId }),
       })
       const data = await res.json()
-      if (data.url) {
+      if (res.ok && data.url) {
         window.location.href = data.url
       } else {
-        alert(data.error || 'Something went wrong. Please try again.')
+        setError(data.error || 'We could not start payment. Please try again.')
         setLoading(false)
       }
     } catch {
-      alert('Something went wrong. Please try again.')
+      setError('We could not reach payment services. Please try again.')
       setLoading(false)
     }
   }
@@ -43,7 +45,7 @@ export default function PrintButton({ variant = 'primary', reportId, isPaid }) {
 
   if (variant === 'secondary') {
     return (
-      <button
+      <div><button
         onClick={handleClick}
         disabled={loading}
         className="text-xs font-heading tracking-widest text-gray-400 hover:text-white transition min-h-[48px] flex items-center gap-2 cursor-pointer bg-transparent border-none disabled:opacity-50"
@@ -51,11 +53,13 @@ export default function PrintButton({ variant = 'primary', reportId, isPaid }) {
         {icon}
         {label}
       </button>
+      {error && <p role="alert" className="text-red-400 text-sm max-w-xs">{error}</p>}
+      </div>
     )
   }
 
   return (
-    <button
+    <div><button
       onClick={handleClick}
       disabled={loading}
       className="min-h-[48px] px-5 bg-amber hover:bg-amber-dark text-black font-heading font-bold text-xs tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
@@ -63,5 +67,7 @@ export default function PrintButton({ variant = 'primary', reportId, isPaid }) {
       {icon}
       {label}
     </button>
+    {error && <p role="alert" className="text-red-400 text-sm max-w-xs">{error}</p>}
+    </div>
   )
 }

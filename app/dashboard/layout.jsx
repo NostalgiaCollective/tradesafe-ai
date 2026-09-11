@@ -1,6 +1,7 @@
-import { redirect } from 'next/navigation'
+
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { pageClient } from '@/lib/server/page-auth'
+import { AppError } from '@/lib/domain/errors'
 import SignOutButton from '@/app/components/SignOutButton'
 
 export const metadata = {
@@ -39,18 +40,14 @@ const NAV_LINKS = [
 ]
 
 export default async function DashboardLayout({ children }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await pageClient('/dashboard')
 
-  if (!user) {
-    redirect('/auth/login')
-  }
-
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('contractor_profiles')
     .select('*')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
+  if (profileError) throw new AppError('query_failed')
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] flex">

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import ConfigurationNotice from './components/ConfigurationNotice';
 
 // ─── SVG Icons ───────────────────────────────────────────────────────────────
 
@@ -292,6 +293,7 @@ export default function Page() {
               Get Started Free
             </Link>
 
+            <ConfigurationNotice />
             {/* Stats row */}
             <div className="flex flex-wrap gap-8">
               {[

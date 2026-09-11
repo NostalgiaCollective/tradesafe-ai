@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { isAnonymousError } from '@/lib/domain/authorization'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -57,12 +58,14 @@ function SectionCard({ title, children }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function SettingsClient() {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
 
   const [userId, setUserId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [attempt, setAttempt] = useState(0)
   const [toast, setToast] = useState(null) // { message, type }
 
   // Business Info
@@ -93,118 +96,131 @@ export default function SettingsClient() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        router.push('/auth/login?redirect=/settings')
-        return
-      }
-      setUserId(user.id)
+      setLoading(true)
+      setLoadError('')
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError && !isAnonymousError(userError)) throw new Error()
+        if (!user) {
+          router.push('/auth/login?redirect=/settings')
+          return
+        }
+        setUserId(user.id)
 
-      const { data: profile } = await supabase
-        .from('contractor_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+        const { data: profile, error: profileError } = await supabase
+          .from('contractor_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (profileError) throw new Error()
 
-      if (profile) {
-        setBusinessName(profile.business_name || '')
-        setContactEmail(profile.contact_email || '')
-        setContactPhone(profile.contact_phone || '')
-        setAddress(profile.address || '')
-        setCotCertNumber(profile.cot_cert_number || '')
-        setEcraNumber(profile.ecra_number || '')
-        setCoqNumber(profile.coq_number || '')
-        setWahCertNumber(profile.wah_cert_number || '')
-        setWahExpiry(profile.wah_expiry || '')
-        setWsibNumber(profile.wsib_number || '')
-        setLiabilityPolicyNumber(profile.liability_policy_number || '')
-        setPlan(profile.plan || 'per_report')
-      }
+        if (profile) {
+          setBusinessName(profile.business_name || '')
+          setContactEmail(profile.contact_email || '')
+          setContactPhone(profile.contact_phone || '')
+          setAddress(profile.address || '')
+          setCotCertNumber(profile.cot_cert_number || '')
+          setEcraNumber(profile.ecra_number || '')
+          setCoqNumber(profile.coq_number || '')
+          setWahCertNumber(profile.wah_cert_number || '')
+          setWahExpiry(profile.wah_expiry || '')
+          setWsibNumber(profile.wsib_number || '')
+          setLiabilityPolicyNumber(profile.liability_policy_number || '')
+          setPlan(profile.plan || 'per_report')
+        }
 
-      const { data: crew } = await supabase
-        .from('crew_members')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
+        const { data: crew, error: crewError } = await supabase
+          .from('crew_members')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
 
-      setCrewMembers(crew || [])
-      setLoading(false)
+        if (crewError) throw new Error()
+        setCrewMembers(crew || [])
+      } catch { setLoadError('We could not load your business settings. Retry before making changes.') }
+      finally { setLoading(false) }
     }
     load()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [supabase, router, attempt])
 
   // ── Save Profile ───────────────────────────────────────────────────────────
 
   async function handleSave() {
-    if (!userId) return
-    setSaving(true)
+    try {
+      if (!userId) return
+      setSaving(true)
 
-    const payload = {
-      user_id: userId,
-      business_name: businessName,
-      contact_email: contactEmail,
-      contact_phone: contactPhone,
-      address,
-      cot_cert_number: cotCertNumber,
-      ecra_number: ecraNumber,
-      coq_number: coqNumber,
-      wah_cert_number: wahCertNumber,
-      wah_expiry: wahExpiry || null,
-      wsib_number: wsibNumber,
-      liability_policy_number: liabilityPolicyNumber,
-      plan,
-      updated_at: new Date().toISOString(),
-    }
+      const payload = {
+        user_id: userId,
+        business_name: businessName,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        address,
+        cot_cert_number: cotCertNumber,
+        ecra_number: ecraNumber,
+        coq_number: coqNumber,
+        wah_cert_number: wahCertNumber,
+        wah_expiry: wahExpiry || null,
+        wsib_number: wsibNumber,
+        liability_policy_number: liabilityPolicyNumber,
+        plan,
+        updated_at: new Date().toISOString(),
+      }
 
-    const { error } = await supabase
-      .from('contractor_profiles')
-      .upsert(payload, { onConflict: 'user_id' })
+      const { error } = await supabase
+        .from('contractor_profiles')
+        .upsert(payload, { onConflict: 'user_id' })
 
-    setSaving(false)
+      setSaving(false)
 
-    if (error) {
-      setToast({ message: 'Failed to save changes. Please try again.', type: 'error' })
-    } else {
-      setToast({ message: 'Settings saved successfully.', type: 'success' })
-    }
+      if (error) {
+        setToast({ message: 'Failed to save changes. Please try again.', type: 'error' })
+      } else {
+        setToast({ message: 'Settings saved successfully.', type: 'success' })
+      }
+    } catch { setToast({ message: 'The operation failed. Please check your connection and try again.', type: 'error' }) } finally { setSaving(false) }
   }
 
   // ── Crew: Add ──────────────────────────────────────────────────────────────
 
   async function handleAddCrew(e) {
-    e.preventDefault()
-    if (!newCrew.name.trim()) return
-    setAddingCrew(true)
+    try {
+      e.preventDefault()
+      if (!newCrew.name.trim()) return
+      setAddingCrew(true)
 
-    const { data, error } = await supabase
-      .from('crew_members')
-      .insert({ ...newCrew, user_id: userId })
-      .select()
-      .single()
+      const { data, error } = await supabase
+        .from('crew_members')
+        .insert({ ...newCrew, user_id: userId })
+        .select()
+        .single()
 
-    setAddingCrew(false)
+      setAddingCrew(false)
 
-    if (error) {
-      setToast({ message: 'Failed to add crew member.', type: 'error' })
-    } else {
-      setCrewMembers((prev) => [...prev, data])
-      setNewCrew({ name: '', role: '', trade: '', license_number: '' })
-      setShowAddCrew(false)
-      setToast({ message: 'Crew member added.', type: 'success' })
-    }
+      if (error) {
+        setToast({ message: 'Failed to add crew member.', type: 'error' })
+      } else {
+        setCrewMembers((prev) => [...prev, data])
+        setNewCrew({ name: '', role: '', trade: '', license_number: '' })
+        setShowAddCrew(false)
+        setToast({ message: 'Crew member added.', type: 'success' })
+      }
+    } catch { setToast({ message: 'The operation failed. Please check your connection and try again.', type: 'error' }) } finally { setAddingCrew(false) }
   }
 
   // ── Crew: Delete ───────────────────────────────────────────────────────────
 
   async function handleDeleteCrew(id) {
-    const { error } = await supabase.from('crew_members').delete().eq('id', id)
+    try {
+      const { error } = await supabase.from('crew_members').delete().eq('id', id)
 
-    if (error) {
-      setToast({ message: 'Failed to remove crew member.', type: 'error' })
-    } else {
-      setCrewMembers((prev) => prev.filter((m) => m.id !== id))
-      setToast({ message: 'Crew member removed.', type: 'success' })
-    }
+      if (error) {
+        setToast({ message: 'Failed to remove crew member.', type: 'error' })
+      } else {
+        setCrewMembers((prev) => prev.filter((m) => m.id !== id))
+        setToast({ message: 'Crew member removed.', type: 'success' })
+      }
+    } catch { setToast({ message: 'The operation failed. Please check your connection and try again.', type: 'error' }) }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -216,6 +232,8 @@ export default function SettingsClient() {
       </div>
     )
   }
+
+  if (loadError) return <main className="p-8"><p role="alert">{loadError}</p><button className="min-h-[48px] text-amber" onClick={() => setAttempt(attempt + 1)}>Try again</button></main>
 
   return (
     <div className="min-h-screen bg-[#0f0f0f]">

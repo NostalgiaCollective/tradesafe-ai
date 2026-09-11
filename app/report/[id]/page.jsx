@@ -1,7 +1,11 @@
+import { ownsRecord } from '@/lib/domain/authorization'
+import { isLegacyPaid } from '@/lib/domain/reports'
+import { CHECKLISTS as CHECKLIST_CATEGORIES } from '@/lib/domain/templates'
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { pageClient } from '@/lib/server/page-auth'
+import { AppError } from '@/lib/domain/errors'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PrintButton from './PrintButton'
 import PaymentVerifier from './PaymentVerifier'
@@ -31,99 +35,6 @@ function StatusBadge({ status }) {
 }
 
 // ─── Checklist definitions (same as form — source of truth) ─────────────────
-
-const CHECKLIST_CATEGORIES = {
-  electrical: [
-    {
-      category: 'Permit & Licensing',
-      items: ['ESA permit number recorded', 'LEC number verified', 'College of Trades cert recorded'],
-    },
-    {
-      category: 'GFCI Protection',
-      items: ['Kitchen GFCI', 'Bathroom GFCI', 'Laundry GFCI', 'Exterior GFCI'],
-    },
-    {
-      category: 'AFCI Protection',
-      items: ['AFCI on required circuits', 'Bedroom circuits AFCI'],
-    },
-    {
-      category: 'EV & Energy Storage',
-      items: ['EV charger readiness (new builds)', 'Energy storage compliance (if applicable)'],
-    },
-    {
-      category: 'Panel & Wiring',
-      items: [
-        'Panel upgrade docs',
-        'Panel labelling',
-        'Wire gauge correct',
-        'Junction boxes accessible',
-        'Grounding/bonding verified',
-      ],
-    },
-    {
-      category: 'Inspection',
-      items: ['ESA inspection requested', 'ESA inspection sign-off received'],
-    },
-  ],
-  plumbing: [
-    {
-      category: 'Permit & Licensing',
-      items: ['OBC permit recorded', 'C of Q recorded', 'College of Trades cert recorded'],
-    },
-    {
-      category: 'Drainage',
-      items: ['Slope min 1:50 for 3" or less', 'Slope for pipes over 3"', 'Cleanout access'],
-    },
-    {
-      category: 'Backflow & Fixtures',
-      items: ['Backflow prevention installed', 'Toilets 4.8L/flush or less', 'Low-flow faucets/showerheads'],
-    },
-    {
-      category: 'Materials',
-      items: ['PE-RT/PEX certification', 'Pipe support compliant'],
-    },
-    {
-      category: 'Venting',
-      items: ['Air admittance valve locations documented', 'Vent stack sizing verified'],
-    },
-    {
-      category: 'Inspection',
-      items: ['Municipal inspection requested', 'Inspection sign-off received'],
-    },
-  ],
-  roofing: [
-    {
-      category: 'Permit & Certification',
-      items: [
-        'OBC building permit recorded',
-        'WAH cert number+expiry recorded',
-        'WSIB clearance recorded',
-        'Liability insurance confirmed',
-        'College of Trades cert recorded',
-      ],
-    },
-    {
-      category: 'Structural Compliance',
-      items: ['Snow/ice load compliance', 'Eave protection installed', 'Roof drainage confirmed'],
-    },
-    {
-      category: 'Materials',
-      items: ['Underlayment water resistance', 'Underlayment tear strength', 'Underlayment UV resistance'],
-    },
-    {
-      category: 'Safety',
-      items: ['Fall protection in place', 'Ladder safety met', 'Scaffolding requirements met'],
-    },
-    {
-      category: 'Waste & Environment',
-      items: ['Waste disposal compliant', 'Debris containment measures'],
-    },
-    {
-      category: 'Inspection',
-      items: ['Municipal inspection requested', 'Inspection sign-off received'],
-    },
-  ],
-}
 
 const TRADE_LABELS = {
   electrical: 'Electrical',
@@ -170,31 +81,23 @@ function InfoRow({ label, value }) {
 
 export default async function ReportPage({ params }) {
   const { id } = await params
-  const supabase = await createClient()
+  const { supabase, user } = await pageClient('/dashboard')
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/auth/login')
-  }
-
-  const { data: report } = await supabase
+  const { data: report, error: reportError } = await supabase
     .from('reports')
     .select('*')
     .eq('id', id)
-    .single()
+    .maybeSingle()
 
-  if (!report || report.user_id !== user.id) {
-    redirect('/dashboard')
-  }
+  if (reportError) throw new AppError('query_failed')
+  if (!report || !ownsRecord(user.id, report.user_id)) notFound()
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
+  if (profileError) throw new AppError('query_failed')
 
   const categories = CHECKLIST_CATEGORIES[report.trade] || []
   const checklist = report.checklist || {}
@@ -207,7 +110,7 @@ export default async function ReportPage({ params }) {
 
   const tradeLabel = TRADE_LABELS[report.trade] || report.trade
   const permitLabel = PERMIT_LABELS[report.trade] || 'Permit Number'
-  const isPaid = report.status === 'completed'
+  const isPaid = isLegacyPaid(report.status)
 
   // Overall pass/fail counts
   const allItems = categories.flatMap((cat) =>

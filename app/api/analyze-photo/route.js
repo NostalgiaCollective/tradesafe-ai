@@ -1,5 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@/lib/supabase/server'
+import { authenticatedClient } from '@/lib/server/auth'
+import { requireService } from '@/lib/server/config'
+import { AppError, errorResponse } from '@/lib/domain/errors'
+import { isTrade } from '@/lib/domain/templates'
 
 const TRADE_PROMPTS = {
   electrical: `You are an experienced electrical inspector reviewing a job site photo for Ontario ESA compliance.
@@ -36,25 +39,24 @@ Be specific and practical. Reference Ontario Building Code where relevant.`,
 }
 
 export async function POST(request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
-    const formData = await request.formData()
+    await authenticatedClient()
+    requireService('anthropic')
+    let formData
+    try { formData = await request.formData() }
+    catch { throw new AppError('invalid_request') }
     const file = formData.get('photo')
     const trade = formData.get('trade')
 
-    if (!file || !trade) {
-      return Response.json({ error: 'Photo and trade type are required' }, { status: 400 })
+    if (!(file instanceof File) || !trade) {
+      throw new AppError('invalid_request')
     }
 
-    if (!TRADE_PROMPTS[trade]) {
-      return Response.json({ error: 'Invalid trade type' }, { status: 400 })
+    if (!isTrade(trade)) {
+      throw new AppError('invalid_request')
     }
+
+    if (file.size > 10 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) throw new AppError('invalid_request')
 
     // Convert file to base64
     const bytes = await file.arrayBuffer()
@@ -62,9 +64,6 @@ export async function POST(request) {
 
     // Determine media type
     const mimeType = file.type || 'image/jpeg'
-    if (!mimeType.startsWith('image/')) {
-      return Response.json({ error: 'File must be an image' }, { status: 400 })
-    }
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -92,7 +91,8 @@ export async function POST(request) {
       ],
     })
 
-    const text = response.content[0]?.text || '[]'
+    const text = response.content[0]?.text
+    if (typeof text !== 'string' || !text.trim()) throw new AppError('unavailable')
     // Parse the JSON array from Claude's response
     let observations
     try {
@@ -108,12 +108,7 @@ export async function POST(request) {
         .slice(0, 6)
     }
 
-    return Response.json({ observations })
-  } catch (err) {
-    console.error('Photo analysis error:', err)
-    return Response.json(
-      { error: 'Failed to analyze photo. Please try again.' },
-      { status: 500 }
-    )
-  }
+    if (!Array.isArray(observations) || observations.some(item => typeof item !== 'string')) throw new AppError('unavailable')
+    return Response.json({ observations: observations.slice(0, 6).map(item => item.slice(0, 1000)) }, { headers: { 'Cache-Control': 'no-store' } })
+  } catch (error) { return errorResponse(error) }
 }

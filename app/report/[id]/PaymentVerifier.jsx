@@ -1,59 +1,38 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 export default function PaymentVerifier({ reportId }) {
-  const searchParams = useSearchParams()
+  const sessionId = useSearchParams().get('session_id')
   const router = useRouter()
-  const [verifying, setVerifying] = useState(false)
-  const [verified, setVerified] = useState(false)
-
-  const sessionId = searchParams.get('session_id')
-
+  const [result, setResult] = useState({ status: 'verifying', message: '' })
+  const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     if (!sessionId) return
-
-    setVerifying(true)
-
-    fetch('/api/checkout/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.paid) {
-          setVerified(true)
-          // Refresh the page without query params so the server component re-fetches the updated status
-          router.replace(`/report/${reportId}`)
-        }
-      })
-      .catch(() => {})
-      .finally(() => setVerifying(false))
-  }, [sessionId, reportId, router])
-
+    const controller = new AbortController()
+    async function verify() {
+      try {
+        const response = await fetch('/api/checkout/verify', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }), signal: controller.signal,
+        })
+        const data = await response.json()
+        if (!response.ok || !data.paid) throw new Error()
+        setResult({ status: 'verified', message: 'Payment confirmed. You can now print.' })
+        router.replace('/report/' + reportId)
+        router.refresh()
+      } catch {
+        if (!controller.signal.aborted) setResult({ status: 'failed', message: 'We could not confirm payment. Retry verification before paying again.' })
+      }
+    }
+    verify()
+    return () => controller.abort()
+  }, [sessionId, reportId, router, attempt])
   if (!sessionId) return null
-
-  if (verifying) {
-    return (
-      <div className="no-print max-w-4xl mx-auto px-4 pt-4">
-        <div className="bg-amber/10 border border-amber/30 rounded-xl px-5 py-3 text-center">
-          <span className="text-sm font-heading tracking-widest text-amber">VERIFYING PAYMENT...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (verified) {
-    return (
-      <div className="no-print max-w-4xl mx-auto px-4 pt-4">
-        <div className="bg-success/10 border border-success/30 rounded-xl px-5 py-3 text-center">
-          <span className="text-sm font-heading tracking-widest text-success">PAYMENT CONFIRMED — YOU CAN NOW PRINT</span>
-        </div>
-      </div>
-    )
-  }
-
-  return null
+  return <div className="no-print max-w-4xl mx-auto p-4">
+    <div className="border border-amber/40 p-4 rounded-lg" role={result.status === 'failed' ? 'alert' : 'status'}>
+      {result.status === 'verifying' ? 'Verifying payment...' : result.message}
+      {result.status === 'failed' && <button className="block min-h-[48px] underline" onClick={() => { setResult({ status: 'verifying', message: '' }); setAttempt(attempt + 1) }}>Retry verification</button>}
+    </div>
+  </div>
 }

@@ -4,8 +4,12 @@ import { Suspense, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { safeRedirect } from '@/lib/domain/validation'
+import { publicServicesReady } from '@/lib/domain/config'
+import { ERROR_MESSAGES } from '@/lib/domain/errors'
+import ServiceMessage from '@/app/components/ServiceMessage'
 
-function LoginForm() {
+function ConfiguredLoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState('login') // login | signup | magic
@@ -13,53 +17,39 @@ function LoginForm() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/dashboard'
+  const redirect = safeRedirect(searchParams.get('redirect'))
+  const errorCode = searchParams.get('error')
+  const callbackError = Object.hasOwn(ERROR_MESSAGES, errorCode) ? ERROR_MESSAGES[errorCode] : ''
+  const displayedError = error || callbackError
 
   const supabase = createClient()
 
-  async function handleGoogleLogin() {
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirect=${redirect}`,
-      },
-    })
-    if (error) setError(error.message)
-    setLoading(false)
+  function callbackUrl() {
+    return window.location.origin + '/auth/callback?' + new URLSearchParams({ redirect })
   }
-
-  async function handleEmailLogin(e) {
-    e.preventDefault()
+  async function runAuth(action, onSuccess) {
     setLoading(true)
     setError('')
     setMessage('')
-
+    try {
+      const { error } = await action()
+      if (error) { setError('Sign-in could not be completed. Check your details and connection, then try again.'); return }
+      onSuccess?.()
+    } catch { setError(ERROR_MESSAGES.unavailable) }
+    finally { setLoading(false) }
+  }
+  async function handleGoogleLogin() {
+    await runAuth(() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: callbackUrl() } }))
+  }
+  async function handleEmailLogin(e) {
+    e.preventDefault()
     if (mode === 'magic') {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirect}` },
-      })
-      if (error) setError(error.message)
-      else setMessage('Check your email for a login link.')
-      setLoading(false)
-      return
-    }
-
-    if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirect}` },
-      })
-      if (error) setError(error.message)
-      else setMessage('Check your email to confirm your account.')
+      await runAuth(() => supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: callbackUrl() } }), () => setMessage('Check your email for a login link.'))
+    } else if (mode === 'signup') {
+      await runAuth(() => supabase.auth.signUp({ email, password, options: { emailRedirectTo: callbackUrl() } }), () => setMessage('Check your email to confirm your account.'))
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError(error.message)
-      else window.location.href = redirect
+      await runAuth(() => supabase.auth.signInWithPassword({ email, password }), () => { window.location.href = redirect })
     }
-    setLoading(false)
   }
 
   return (
@@ -110,8 +100,10 @@ function LoginForm() {
           {/* Email form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm text-gray-400 mb-1">Email</label>
               <input
+                id="email"
+                autoComplete="email"
                 type="email"
                 required
                 value={email}
@@ -123,8 +115,10 @@ function LoginForm() {
 
             {mode !== 'magic' && (
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Password</label>
+                <label htmlFor="password" className="block text-sm text-gray-400 mb-1">Password</label>
                 <input
+                  id="password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   type="password"
                   required
                   value={password}
@@ -145,9 +139,9 @@ function LoginForm() {
             </button>
           </form>
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-              {error}
+          {displayedError && (
+            <div role="alert" className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              {displayedError}
             </div>
           )}
           {message && (
@@ -194,7 +188,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
-      <LoginForm />
+      {publicServicesReady() ? <ConfiguredLoginForm /> : <ServiceMessage title="Account setup is incomplete" message={ERROR_MESSAGES.configuration} retry="/auth/login" />}
     </Suspense>
   )
 }

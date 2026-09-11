@@ -3,159 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { CHECKLISTS, buildChecklistState } from '@/lib/domain/templates'
+import { isAnonymousError } from '@/lib/domain/authorization'
+import { AppError, ERROR_MESSAGES } from '@/lib/domain/errors'
 import { createClient } from '@/lib/supabase/client'
 
-// ─── Hardcoded checklists ────────────────────────────────────────────────────
-
-const CHECKLISTS = {
-  electrical: [
-    {
-      category: 'Permit & Licensing',
-      items: [
-        'ESA permit number recorded',
-        'LEC number verified',
-        'College of Trades cert recorded',
-      ],
-    },
-    {
-      category: 'GFCI Protection',
-      items: [
-        'Kitchen GFCI',
-        'Bathroom GFCI',
-        'Laundry GFCI',
-        'Exterior GFCI',
-      ],
-    },
-    {
-      category: 'AFCI Protection',
-      items: [
-        'AFCI on required circuits',
-        'Bedroom circuits AFCI',
-      ],
-    },
-    {
-      category: 'EV & Energy Storage',
-      items: [
-        'EV charger readiness (new builds)',
-        'Energy storage compliance (if applicable)',
-      ],
-    },
-    {
-      category: 'Panel & Wiring',
-      items: [
-        'Panel upgrade docs',
-        'Panel labelling',
-        'Wire gauge correct',
-        'Junction boxes accessible',
-        'Grounding/bonding verified',
-      ],
-    },
-    {
-      category: 'Inspection',
-      items: [
-        'ESA inspection requested',
-        'ESA inspection sign-off received',
-      ],
-    },
-  ],
-  plumbing: [
-    {
-      category: 'Permit & Licensing',
-      items: [
-        'OBC permit recorded',
-        'C of Q recorded',
-        'College of Trades cert recorded',
-      ],
-    },
-    {
-      category: 'Drainage',
-      items: [
-        'Slope min 1:50 for 3" or less',
-        'Slope for pipes over 3"',
-        'Cleanout access',
-      ],
-    },
-    {
-      category: 'Backflow & Fixtures',
-      items: [
-        'Backflow prevention installed',
-        'Toilets 4.8L/flush or less',
-        'Low-flow faucets/showerheads',
-      ],
-    },
-    {
-      category: 'Materials',
-      items: [
-        'PE-RT/PEX certification',
-        'Pipe support compliant',
-      ],
-    },
-    {
-      category: 'Venting',
-      items: [
-        'Air admittance valve locations documented',
-        'Vent stack sizing verified',
-      ],
-    },
-    {
-      category: 'Inspection',
-      items: [
-        'Municipal inspection requested',
-        'Inspection sign-off received',
-      ],
-    },
-  ],
-  roofing: [
-    {
-      category: 'Permit & Certification',
-      items: [
-        'OBC building permit recorded',
-        'WAH cert number+expiry recorded',
-        'WSIB clearance recorded',
-        'Liability insurance confirmed',
-        'College of Trades cert recorded',
-      ],
-    },
-    {
-      category: 'Structural Compliance',
-      items: [
-        'Snow/ice load compliance',
-        'Eave protection installed',
-        'Roof drainage confirmed',
-      ],
-    },
-    {
-      category: 'Materials',
-      items: [
-        'Underlayment water resistance',
-        'Underlayment tear strength',
-        'Underlayment UV resistance',
-      ],
-    },
-    {
-      category: 'Safety',
-      items: [
-        'Fall protection in place',
-        'Ladder safety met',
-        'Scaffolding requirements met',
-      ],
-    },
-    {
-      category: 'Waste & Environment',
-      items: [
-        'Waste disposal compliant',
-        'Debris containment measures',
-      ],
-    },
-    {
-      category: 'Inspection',
-      items: [
-        'Municipal inspection requested',
-        'Inspection sign-off received',
-      ],
-    },
-  ],
-}
+// Trade presentation stays local; checklist definitions live in lib/domain/templates.
 
 const TRADES = [
   {
@@ -180,19 +33,6 @@ const TRADES = [
     description: 'OBC, WAH certification, WSIB, fall protection',
   },
 ]
-
-// ─── Build initial checklist state from hardcoded data ───────────────────────
-
-function buildChecklistState(trade) {
-  const categories = CHECKLISTS[trade] || []
-  const state = {}
-  categories.forEach((cat) => {
-    cat.items.forEach((item) => {
-      state[`${cat.category}__${item}`] = { status: 'pass', notes: '' }
-    })
-  })
-  return state
-}
 
 // ─── Progress indicator ──────────────────────────────────────────────────────
 
@@ -434,13 +274,16 @@ function ChecklistNav({ categories, activeIndex, onSelect }) {
 
 export default function NewReportClient() {
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
   const [step, setStep] = useState(1)
   const [selectedTrade, setSelectedTrade] = useState(null)
   const [profile, setProfile] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [profileError, setProfileError] = useState('')
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [profileAttempt, setProfileAttempt] = useState(0)
 
   // Checklist section navigation
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
@@ -472,26 +315,26 @@ export default function NewReportClient() {
   // Step 4
   const [declared, setDeclared] = useState(false)
 
-  // Load profile on mount
+  // Missing optional profile differs from a failed query.
   useEffect(() => {
+    let cancelled = false
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login?redirect=/report/new')
-        return
-      }
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (data) {
-        setProfile(data)
-      }
+      setProfileLoading(true)
+      setProfileError('')
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError && !isAnonymousError(authError)) throw new AppError('unavailable')
+        if (!user) { router.push('/auth/login?redirect=/report/new'); return }
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+        if (error) throw new Error()
+        if (!cancelled && data) setProfile(data)
+      } catch {
+        if (!cancelled) setProfileError('We could not load your contractor details. Retry before submitting. Your entries are still here.')
+      } finally { if (!cancelled) setProfileLoading(false) }
     }
     loadProfile()
-  }, [])
+    return () => { cancelled = true }
+  }, [supabase, router, profileAttempt])
 
   // Pre-fill job details when trade is selected
   useEffect(() => {
@@ -560,13 +403,14 @@ export default function NewReportClient() {
   }
 
   async function handleSubmit() {
-    if (!declared) return
+    if (!declared || profileError || profileLoading) return
     setSubmitting(true)
     setSubmitError('')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError && !isAnonymousError(authError)) throw new AppError('unavailable')
+      if (!user) throw new AppError('unauthorized')
 
       const { data, error } = await supabase
         .from('reports')
@@ -594,8 +438,10 @@ export default function NewReportClient() {
       if (error) throw error
       if (!data) throw new Error('Report was not returned after save — please check your reports list.')
       router.push(`/report/${data.id}`)
-    } catch (err) {
-      setSubmitError(err.message || 'Something went wrong. Please try again.')
+    } catch (error) {
+      setSubmitError(error instanceof AppError && error.code === 'unauthorized'
+        ? ERROR_MESSAGES.unauthorized + ' Keep this page open to preserve your entries.'
+        : 'We could not save this report. Your entries are still here. Check your connection and try again.')
       setSubmitting(false)
     }
   }
@@ -644,6 +490,7 @@ export default function NewReportClient() {
           </p>
         </div>
 
+        {profileError && <div role="alert" className="p-4 border border-amber rounded-lg mb-4">{profileError}<button onClick={() => setProfileAttempt(profileAttempt + 1)} className="min-h-[48px] block underline">Retry loading details</button></div>}
         <ProgressBar step={step} />
 
         {/* ── STEP 1: Select Trade ──────────────────────────────────────── */}
@@ -1122,7 +969,7 @@ export default function NewReportClient() {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!declared || submitting}
+              disabled={!declared || submitting || profileLoading || Boolean(profileError)}
               className="w-full min-h-[64px] bg-amber hover:bg-amber-dark disabled:opacity-40 disabled:cursor-not-allowed text-black font-heading font-bold text-base tracking-widest rounded-xl transition"
             >
               {submitting ? 'SUBMITTING...' : 'SUBMIT REPORT'}

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import ConfigurationNotice from './ConfigurationNotice';
 
 export default function TradeDetailPage({ trade }) {
   return (
@@ -29,8 +30,9 @@ export default function TradeDetailPage({ trade }) {
       {/* Hero */}
       <section className="pt-28 pb-20 px-5 relative overflow-hidden">
         <div className="max-w-5xl mx-auto relative z-10">
+          <ConfigurationNotice />
           <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">
-            // {trade.code}
+            {'// '}{trade.code}
           </div>
           <div className="flex items-start gap-5 mb-6">
             <span className="text-5xl">{trade.icon}</span>
@@ -59,7 +61,7 @@ export default function TradeDetailPage({ trade }) {
       {/* Checklist Items */}
       <section className="py-20 px-5 bg-[#1a1a1a]">
         <div className="max-w-5xl mx-auto">
-          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">// ONTARIO CHECKLIST</div>
+          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">{'// '}ONTARIO CHECKLIST</div>
           <h2 className="font-heading font-black text-[clamp(28px,5vw,44px)] leading-[0.95] text-white mb-12">
             {trade.checklistTitle}
           </h2>
@@ -91,7 +93,7 @@ export default function TradeDetailPage({ trade }) {
       {/* Regulations */}
       <section className="py-20 px-5">
         <div className="max-w-5xl mx-auto">
-          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">// REGULATIONS COVERED</div>
+          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">{'// '}REGULATIONS COVERED</div>
           <h2 className="font-heading font-black text-[clamp(28px,5vw,44px)] leading-[0.95] text-white mb-12">
             BUILT FROM<br /><span className="text-amber">ONTARIO LAW.</span>
           </h2>
@@ -111,7 +113,7 @@ export default function TradeDetailPage({ trade }) {
       {/* Sample Report Preview */}
       <section className="py-20 px-5 bg-[#1a1a1a]">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">// SAMPLE OUTPUT</div>
+          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">{'// '}SAMPLE OUTPUT</div>
           <h2 className="font-heading font-black text-[clamp(28px,5vw,44px)] leading-[0.95] text-white mb-6">
             YOUR REPORT<br /><span className="text-amber">LOOKS LIKE THIS.</span>
           </h2>
