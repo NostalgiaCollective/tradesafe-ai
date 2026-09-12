@@ -20,6 +20,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm test
+      - run: npm run test:staging:browser:list
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test:smoke

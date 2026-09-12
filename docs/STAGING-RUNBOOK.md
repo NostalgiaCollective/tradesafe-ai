@@ -1,5 +1,11 @@
 # TradeSafe isolated staging runbook — Phase 2
 
+## Staging verification update — 2026-09-12
+
+Use [Daniel's precise console/setup handoff](staging/DANIEL-SETUP.md) and [the current verification record](PHASE-2-STAGING-VERIFICATION.md). The guarded runners now read **.env.staging.local**, not the ordinary .env/.env.local files, and require **.staging/isolation.json** with matching project/app identification and a real operator inventory. Blank ignored files have been prepared without modifying existing local secrets.
+
+Run npm run check:staging first. npm run staging:dev uses a separate .next-staging directory and trusted local HTTPS. npm run test:staging:browser runs the prepared desktop/phone scenarios; list/discovery in CI does not execute them. Missing setup, unused-identity requirements and the absent expired-invitation fixture remain BLOCKED. The earlier sections below describe the acceptance matrix; the linked setup instructions take precedence for configuration and fixture handling.
+
 This supersedes Phase 1 staging expectations. No deployment or real Supabase migration has been performed. Never substitute production services or customer data for staging.
 
 ## Repository and local checks

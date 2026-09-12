@@ -25,6 +25,7 @@ async function fixture({legacy=false}={}) {
   }
  }
  await db.exec(await readFile(new URL('../supabase/phase-2-preflight.sql',import.meta.url),'utf8'))
+ await db.exec(await readFile(new URL('../supabase/staging-verification-preflight.sql',import.meta.url),'utf8'))
  const as = async user => { await db.exec('RESET ROLE; SET ROLE authenticated;'); await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[user]) }
  const cmd = async(command,p={}) => (await db.query('SELECT public.ts_command($1,$2::jsonb) AS value',[command,JSON.stringify({companyId:company,requestId:randomUUID(),...p})])).rows[0].value
  await as(owner); await cmd('create_company',{id:company,name:'Synthetic company A'})

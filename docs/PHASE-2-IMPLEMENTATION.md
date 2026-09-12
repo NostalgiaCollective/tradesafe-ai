@@ -1,5 +1,9 @@
 # Phase 2 implementation — company ownership and truthful reports
 
+## Staging verification follow-up — 2026-09-12
+
+Recovered checkpoint 800cc9ce8e27584d989fade295b2a1987998475d without resetting work. Real Supabase configuration is still unavailable. [PHASE-2-STAGING-VERIFICATION.md](PHASE-2-STAGING-VERIFICATION.md) records the current preparation, guard checks and release blockers. [Daniel's setup handoff](staging/DANIEL-SETUP.md) identifies the exact missing provider setup and ignored configuration files. Expanded API/browser harnesses are preparation, not evidence that hosted authorization or authenticated flows passed.
+
 Updated 2026-09-11. Branch: astra/production-mvp. Baseline commit: 4ea433e99d05a1d1971dcd24a4a8551e2ce532ca. Phase 1 was verified and pushed without force; GitHub Actions run 34606878813 passed for that SHA. Remote comparison after fetch was 0 ahead / 0 behind before the Phase 2 commit.
 
 **Outcome:** Phase 2 implementation and independently executable checks are complete locally. Real Supabase Auth/Data API integration and authenticated browser E2E remain BLOCKED. This is not production readiness. No deployment, merge, customer-data change, remote migration, charge or model request occurred.

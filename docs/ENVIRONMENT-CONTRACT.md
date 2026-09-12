@@ -1,5 +1,9 @@
 # Phase 1 environment contract
 
+## Isolated verification configuration — 2026-09-12
+
+Staging runners load .env.staging.local plus explicit process variables and require .staging/isolation.json with operator-reviewed project reference, app origin and isolation facts. See [the setup guide](staging/DANIEL-SETUP.md). These ignored files are independent of .env/.env.local. The local staging launcher uses TRADESAFE_STAGING_ARTIFACT=1 only in its child process to select .next-staging, keeps test passwords out of that child, and blanks optional billing/model keys. No server-role credential is introduced. Browser tests use system certificate trust, never TLS verification bypass.
+
 ## Phase 2 update
 
 The runtime core variable contract below remains in use. Supabase now serves company memberships, reports, invitations and corrective actions. No service-role key is introduced. Stripe is **not required or used** by Phase 2: checkout/verification return an unavailable response even if a key is configured. The previous optional Anthropic endpoint remains, but no photo attachment control or retained-evidence promise is exposed in the report workflow.

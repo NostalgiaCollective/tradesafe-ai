@@ -33,9 +33,13 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.staging.example
 /.npm-cache/
 /.playwright-mcp/
 /test-results/
+/.staging/
+/certificates/
+/.next-staging/
 
 # vercel
 .vercel

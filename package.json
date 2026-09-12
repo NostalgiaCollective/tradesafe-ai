@@ -12,7 +12,13 @@
     "typecheck": "tsc --noEmit",
     "check:env": "node scripts/check-env.mjs",
     "test:smoke": "node scripts/smoke.mjs",
-    "test:staging": "node scripts/staging-integration.mjs"
+    "test:staging": "node scripts/staging-integration.mjs",
+    "check:staging": "node scripts/staging/check.mjs",
+    "staging:dev": "node scripts/staging/app.mjs",
+    "staging:install-browser": "node scripts/staging/install-browser.mjs",
+    "staging:prepare-expiry": "node scripts/staging/prepare-expiry.mjs",
+    "test:staging:browser": "node scripts/staging/browser.mjs",
+    "test:staging:browser:list": "playwright test --config=playwright.staging.config.mjs --list --reporter=list"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
@@ -26,6 +32,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

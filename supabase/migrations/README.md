@@ -1,5 +1,7 @@
 # Isolated database setup and Phase 2 backfill
 
+Verification follow-up (2026-09-12): numbered migration files remain unchanged and none has been executed in real Supabase by this task. Add ../staging-verification-preflight.sql to the read-only inventory to inspect CLI history without assuming absent history means a fresh database. The optional expiry fixture is generated locally, reviewed and executed once by an isolated-project operator; it is not a migration or an application expiry bypass. See ../../docs/staging/DANIEL-SETUP.md.
+
 ../schema.sql is historical destructive reset SQL. It remains unchanged and must not be executed. Fresh installation and production upgrades are separate workflows; these instructions cover isolated staging only.
 
 ## Migration order
