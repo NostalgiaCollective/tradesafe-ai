@@ -2,6 +2,14 @@
 
 Recovery started 2026-09-13. Working directory: `C:\Users\USER\Documents\tradesafe-ai`.
 
+## Current delivery checkpoint - 2026-09-13 14:25 UTC
+
+**Staging verification complete.** Application commit `f2adbf453050f84b80de7759334a68f64ba6adc1`; final evidence update is documentation-only. Exact-commit API15/15, serial desktop/mobile workflows8/8 and supplemental UI8/8 PASS. Earlier onboarding2/2 PASS retained; not rerun against used identities. Natural expiry5/5 PASS with the unchanged issued JWT and preserved draft; staging lifetime restored/verified3600. Local lint,28 tests,typecheck,build,17 smoke checks and audit gate PASS (one pre-existing lint warning and one moderate unused-tool advisory; zero high/critical). See verification record for precise commit/dirty-state distinctions and timestamped evidence.
+
+All three precrash migrations reconciled and not rerun; only the recorded expired-invitation fixture transaction was executed during recovery. Original project, ignored credentials/configuration, synthetic records and unrelated raw/ preserved. Original Playwright MCP works; no extension required. Only staging HTTPS service remains running (exec67730, localhost3000); all test runners have exited. Inspect process/port before any later restart. No production/main/charge action occurred.
+
+Next concrete operation: commit this documentation-only delivery record, verify application source unchanged from f2adbf4 and divergence has no remote-only commits, then non-force push astra/production-mvp and inspect its quality CI. Final push/CI result will also be saved to ignored `.staging/recovery-delivery.json` so a later interruption can reconcile actual remote state without repeating fixtures. The chronology below is historical; this section and final operation record take precedence.
+
 ## Confirmed local state
 
 - Branch `astra/production-mvp`, HEAD `d79ef1242b93972db7379983ecb8bb7774d93ca4`; fetched origin and confirmed 0 ahead / 0 behind.
@@ -67,3 +75,11 @@ Dashboard /project/yqkiizimbtlygovkscoh/auth/sessions positively shows Access to
 2026-09-13 14:17 UTC: staging access-token lifetime 300 seconds saved and verified by reload. Corrected runner exec 27349 issued a genuine 300-second JWT, expires 14:21:44 UTC; checks start after 14:22:29 UTC. It reused and verified the preserved worker draft, with no new record. Immediately submitted restoration to original 3600 seconds; verify reload before proceeding. Do not stop server/context while timed check runs.
 
 2026-09-13 14:17 UTC: restoration independently verified after Dashboard reload: Access token expiry time = 3600. All other provider settings and local environment files unchanged. Next: commit reviewed source, run exact-commit API and browser workflow checks while corrected expiry run finishes.
+
+## Committed application and completed timed expiry
+
+Application commit f2adbf453050f84b80de7759334a68f64ba6adc1 created after staged credential/excluded-path audit passed (20 files). Exact-commit API evidence at 14:18:03 UTC: all15 cases PASS with workingTreeDirty=false. Supplemental UI at14:19:42 UTC: all8 checks PASS on the same clean commit; actual two-page PDFs rendered and inspected again. Desktop/phone rendered page hashes match each other; all18 observations and original concern/current action/amendment remain readable.
+
+Corrected elapsed-expiry run finished14:22:33 UTC: all5 checks PASS. Unchanged genuine300-second JWT (expires14:21:44) rejected401/PGRST303 after45 seconds; editor input retained, same-account re-login/retry persisted, reload confirmed. Original draft11302142-3883-4422-81dc-910b1cad5b13 reused. Provider access lifetime had already been restored and reload-verified3600. Run began before the commit, so its evidence truthfully records d79ef12/dirty; source was then committed unchanged as f2adbf4. No application expiry fix required.
+
+The 14:18:03 browser run had7 passes and one phone member-removal failure at source line330. Supplemental logout was accidentally run concurrently against the shared OWNER identity; application signOut uses global session scope, invalidating the other session. Failed evidence and partial records retained. Serial full workflow rerun now active exec25366 (started14:22 UTC), after both supplemental/expiry processes finished. Do not start another shared-account browser runner alongside it. Next: record serial result, finish documentation-only evidence commit, push branch without force, verify remote CI. Fetched origin at14:19 UTC: one ahead/zero behind, no remote conflict; raw/configuration untouched.
