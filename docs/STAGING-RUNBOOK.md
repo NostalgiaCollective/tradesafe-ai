@@ -1,5 +1,13 @@
 # TradeSafe isolated staging runbook — Phase 2
 
+## Crash-recovery execution — 2026-09-13
+
+Start with [the live verification record](PHASE-2-STAGING-VERIFICATION.md) and [the durable recovery checkpoint](staging/RECOVERY-CHECKPOINT.md). They supersede the historical setup/BLOCKED statements below. The three migrations were applied through SQL Editor and reconciled after reboot; do not rerun them or the already-applied expiry fixture. Existing synthetic users and records must be retained.
+
+Run `npm run check:staging` and `npm run check:staging:recovery`, inspect active ports/processes and actual catalog/history, then start only the required staging HTTPS server. A new browser process does not imply a missing extension; try the original Playwright MCP and use manual Dashboard sign-in if necessary. Do not proceed if Next falls back to HTTP after certificate setup fails.
+
+For unused configured identities, run `npm run test:staging:browser -- --phase=onboarding` first; desktop uses OWNER and phone uses OUTSIDER. Then use `--phase=workflows` for the remaining cases. These identities have already passed onboarding, so current reruns must select workflows. API/browser evidence is also retained by timestamp under `test-results/staging-runs/`. Supplemental commands are `test:staging:ui` (preserved finalized reports and actual print PDFs) and `test:staging:expiry` (natural expiry, deliberately unavailable refresh, retained input and re-login). Inspect the expiry checkpoint before retrying a long run.
+
 ## Staging verification update — 2026-09-12
 
 Use [Daniel's precise console/setup handoff](staging/DANIEL-SETUP.md) and [the current verification record](PHASE-2-STAGING-VERIFICATION.md). The guarded runners now read **.env.staging.local**, not the ordinary .env/.env.local files, and require **.staging/isolation.json** with matching project/app identification and a real operator inventory. Blank ignored files have been prepared without modifying existing local secrets.

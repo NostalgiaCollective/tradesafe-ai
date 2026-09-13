@@ -11,8 +11,8 @@ import { gitIdentity } from './staging/evidence.mjs'
 const scenarios = [], clients = []
 const config = requireStaging()
 const evidence = { ...gitIdentity(),
-  timestamp: new Date().toISOString(), environment: 'operator-verified isolated Supabase', scenarios }
-function record(name, status) { scenarios.push({ name, status }); console.log(status + ': ' + name) }
+  timestamp: new Date().toISOString(), environment: 'operator-verified isolated Supabase', status: 'running', scenarios }
+function record(name, status) { scenarios.push({ name, status }); saveEvidence(); console.log(status + ': ' + name) }
 async function check(name, run) {
   try { await run(); record(name, 'PASS') } catch { record(name, 'FAIL'); throw new Error('Staging assertion failed') }
 }
@@ -21,8 +21,11 @@ const denied = async (result, code = 'TS_denied') => expectDatabaseError(await r
 function saveEvidence() {
   mkdirSync('test-results', { recursive: true })
   writeFileSync('test-results/staging-integration.json', JSON.stringify(evidence, null, 2))
+  mkdirSync('test-results/staging-runs', { recursive: true })
+  writeFileSync('test-results/staging-runs/integration-' + evidence.timestamp.replaceAll(':', '-') + '.json', JSON.stringify(evidence, null, 2))
 }
 if (!config) {
+  evidence.status = 'BLOCKED'
   record('Real Auth, PostgreSQL and PostgREST suite: isolation/configuration unavailable', 'BLOCKED')
   saveEvidence()
   process.exitCode = 2
@@ -218,6 +221,7 @@ if (!config) {
     for (const entry of clients) {
       try { await entry.client.auth.signOut({ scope: 'local' }) } catch { /* No credentials or raw transport diagnostics printed. */ }
     }
+    evidence.status = process.exitCode === 1 ? 'FAIL' : process.exitCode === 2 ? 'BLOCKED' : 'PASS'
     saveEvidence()
   }
 }

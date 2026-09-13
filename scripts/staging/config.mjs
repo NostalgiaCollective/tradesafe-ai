@@ -18,6 +18,7 @@ export function stagingIssues(env, isolation) {
   if (env.STAGING_ALLOW_SYNTHETIC_WRITES !== 'yes') issues.push('STAGING_ALLOW_SYNTHETIC_WRITES: explicit opt-in required')
   if (!validOrigin(env.NEXT_PUBLIC_APP_URL, false)) issues.push('NEXT_PUBLIC_APP_URL: HTTPS origin required')
   const ref = env.STAGING_ISOLATED_PROJECT_REF
+  if (ref === 'flhsdtshwwuddzyguyhf') issues.push('STAGING_ISOLATED_PROJECT_REF: original project is excluded from staging verification')
   if (!/^[a-z0-9]{20}$/.test(ref || '') || env.NEXT_PUBLIC_SUPABASE_URL !== 'https://' + ref + '.supabase.co') {
     issues.push('NEXT_PUBLIC_SUPABASE_URL: exact isolated project origin required')
   }

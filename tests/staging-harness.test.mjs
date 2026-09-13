@@ -19,6 +19,9 @@ test('staging writes require explicit isolation evidence, public keys and distin
   assert.ok(stagingIssues(env, undefined).length)
   assert.ok(stagingIssues(env, { ...isolation, syntheticOnly: false }).length)
   assert.ok(stagingIssues(env, { ...isolation, projectRef: 'different' }).length)
+  const original = 'flhsdtshwwuddzyguyhf'
+  assert.ok(stagingIssues({ ...env, STAGING_ISOLATED_PROJECT_REF: original,
+    NEXT_PUBLIC_SUPABASE_URL: 'https://' + original + '.supabase.co' }, { ...isolation, projectRef: original }).length)
 })
 test('authorization tests cannot pass because of network, schema or unrelated validation failures', () => {
   expectDatabaseError({ error: { code: 'P0001', message: 'TS_denied' } }, 'TS_denied')

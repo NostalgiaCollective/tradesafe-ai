@@ -3,10 +3,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { command } from '@/lib/client/commands'
 import { canVerify,ACTION_STATES } from '@/lib/domain/inspection'
-function Action({initial,members,events,role,actor,companyId,onSaved}) {
+function Action({initial,members,events,role,actor,companyId,onSaved,onSaving}) {
  const [action,setAction]=useState(initial),[edit,setEdit]=useState(initial),[error,setError]=useState(''),[busy,setBusy]=useState(false),[history,setHistory]=useState(events),[updated,setUpdated]=useState(false)
  const editable=canVerify(role)||(actor===action.responsible_id&&action.state!=='closed')
- async function save(e){e.preventDefault();setBusy(true);setError('');try{
+ async function save(e){e.preventDefault();setBusy(true);setError('');setUpdated(false);onSaving();try{
   const value=await command('update_action',{companyId,id:action.id,revision:action.revision,requestId:crypto.randomUUID(),state:edit.state,controls:edit.controls,responsibleId:edit.responsible_id,targetDate:edit.target_date||'',resolution:edit.resolution})
   setAction(value);setEdit(value);setHistory([]);setUpdated(true);onSaved(value)
  }catch(e){setError(e.message)}finally{setBusy(false)}}
@@ -31,5 +31,5 @@ export default function ActionList({initial,members,events,actor,role,companyId}
  const saved=value=>{setActions(rows=>rows.map(a=>a.id===value.id?value:a));setMessage('Action update saved. Current filters may hide a closed or reassigned action.')}
  return <><div className="work-filters"><label className="work-check"><input type="checkbox" checked={mine} onChange={e=>setMine(e.target.checked)}/>Assigned to me</label><label className="work-check"><input type="checkbox" checked={showClosed} onChange={e=>setShowClosed(e.target.checked)}/>Include closed actions</label></div>
  {message&&<p role="status">{message}</p>}
- {!filtered.length?<section className="work-panel"><h2>No matching actions</h2><p>Actions are created when a report is finalized with a concern. Clear the filters to see other company actions.</p></section>:filtered.map(a=><Action key={a.id} initial={a} members={members} events={events.filter(e=>e.entity_id===a.id)} actor={actor} role={role} companyId={companyId} onSaved={saved}/>)}</>
+ {!filtered.length?<section className="work-panel"><h2>No matching actions</h2><p>Actions are created when a report is finalized with a concern. Clear the filters to see other company actions.</p></section>:filtered.map(a=><Action key={a.id} initial={a} members={members} events={events.filter(e=>e.entity_id===a.id)} actor={actor} role={role} companyId={companyId} onSaved={saved} onSaving={()=>setMessage('')}/>)}</>
 }

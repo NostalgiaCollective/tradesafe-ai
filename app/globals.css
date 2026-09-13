@@ -201,6 +201,26 @@
 
 /* Print styles for compliance reports */
 @media print {
+  /* Let checklist items fragment normally; Chromium overlaps later items with avoid. */
+  .inspection-print .review-list > li {
+    display: block;
+    break-inside: auto;
+  }
+
+  .inspection-print .observation-summary {
+    break-inside: auto;
+  }
+
+  .inspection-print .observation-summary strong,
+  .inspection-print .observation-summary span {
+    display: inline;
+  }
+
+  .inspection-print .observation-summary small::after,
+  .inspection-print .observation-summary strong::after {
+    content: ' | ';
+  }
+
   body {
     background: white !important;
     color: black !important;
