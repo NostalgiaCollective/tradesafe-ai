@@ -1,4 +1,4 @@
-# Proposed new isolated service. Apply only after explicit hosting approval.
+# Approved separate Free staging specification; inspect inventory and no-card eligibility before creation.
 services:
   - type: web
     name: tradesafe-staging-yqkiizimbtlygovkscoh
