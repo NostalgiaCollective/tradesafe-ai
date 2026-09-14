@@ -116,3 +116,6 @@ Provider backup/PITR availability, retention, restore access and Auth-data recov
 ## Release gates
 
 Real Auth/Data API and authenticated browser tests; qualified checklist/content review; password recovery; privacy/retention/support policy; backup/restore/deployment verification; abuse/rate limits. Secure photo/PDF evidence and trusted billing remain later slices. Local passing checks do not establish production readiness.
+# Password recovery continuation
+
+See [password recovery](PASSWORD-RECOVERY.md) and its [durable checkpoint](staging/PASSWORD-RECOVERY-CHECKPOINT.md). Recovery SQL is applied; implementation/diagnostics pass, but actual email delivery is blocked pending custom SMTP/template and an explicitly authorized inbox. No recovery email has been sent. Preserve all earlier Phase 2/3 data and verification evidence.

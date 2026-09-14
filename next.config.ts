@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   distDir: process.env.TRADESAFE_STAGING_ARTIFACT === '1' ? '.next-staging' : '.next',
   // Invitation/callback query strings and browser Auth errors must not enter staging terminal logs.
   logging: process.env.TRADESAFE_STAGING_ARTIFACT === '1' ? false : undefined,
+  async headers() {
+    return [{ source: '/auth/recovery', headers: [
+      { key: 'Cache-Control', value: 'private, no-store' },
+      { key: 'Referrer-Policy', value: 'no-referrer' },
+      { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+    ] }];
+  },
 };
 
 export default nextConfig;

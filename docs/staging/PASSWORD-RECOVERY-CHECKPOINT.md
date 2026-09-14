@@ -1,0 +1,27 @@
+# Password recovery checkpoint
+
+## Current state
+
+Implementation and automated/provider-assisted verification complete; actual email delivery BLOCKED. Read [the recovery report](../PASSWORD-RECOVERY.md) and ignored `.staging/password-recovery-delivery.json` (once written) for final commit/push/CI. Recovery migration is APPLIED once, hash below; six applied files, CLI history still absent. Never replay SQL or resend emails blindly.
+
+7/7 provider-assisted/browser groups passed using one dedicated synthetic identity; no shared passwords changed and zero email dispatched. Desktop/mobile-emulated contexts, independent-browser recovery, wrong logged-in identity, old/new passwords, lost response, reused/tampered tokens, ordinary bypass denial and retained company/photo/PDF access passed. Raw failed harness attempts remain preserved. Follow-up at 15:19 UTC: global logout gives `refresh_token_not_found`, while old JWT direct Data API still returns 200 until expiry. This residual access is explicitly documented.
+
+35 local tests, 30 production smoke checks, lint/typecheck/build PASS. Exact delivery SHA will be tested by GitHub CI; live diagnostics truthfully identify base `fda1b40` plus dirty working tree. Staging server remains at localhost:3000; no service was deliberately restarted, Next may restart itself on config edits. Original browser tabs/config/raw/records preserved.
+
+Next: stage only recovery changes, audit credentials/exclusions, commit, non-force push after divergence check, verify CI, record delivery locally. Then request the missing authorized recipient/inbox and existing no-cost SMTP setup. After that setup, install prepared template/one exact redirect, enable only allowlisted staging recipients and perform real delivered-email verification. The task is not fully complete until that evidence exists.
+
+## Historical operation journal
+
+2026-09-14: resumed clean `fda1b40bff0af3c59c04aa009bd3cb09603e8b88`, branch `astra/production-mvp`, fetched divergence 0/0; unrelated `raw/` preserved. Read AGENTS/CLAUDE, installed Next route/cookie documentation, installed Supabase 2.101.1 SDK recovery methods, official password/email/session/rate-limit documentation, Phase 3 verification and delivery checkpoint. Original Playwright MCP session is available; staging HTTPS listening on localhost:3000, PID 25728. No services restarted and no email sent.
+
+Existing auth uses SSR cookie PKCE callback for ordinary sign-in. Recovery will be separate: provider `verifyOtp(type: recovery)` is required before a server-issued, encrypted HttpOnly recovery cookie and durable one-use grant can authorize `updateUser`. No normal auth cookie, query flag or client state will substitute for recovery verification. A fragment-based email template avoids recovery tokens in HTTP URL logs and permits explicit confirmation before consuming a link. Exact configured application origin and fixed recovery/login paths; no caller-controlled return URL.
+
+Next: inspect staging SMTP/password/OTP/rate-limit settings without secrets; implement durable shared database throttling and recovery grants with local tests. Five existing SQL Editor migrations remain applied; CLI history absent. Reconcile hashes/catalog before any additive recovery migration. Do not send email until an explicitly authorized test inbox is available. Finish implementation/automated checks before requesting missing recipient/provider setup.
+
+2026-09-14: staging Dashboard confirms no custom SMTP (template editing requires it), default 2 emails/hour, token verification 30/5 minutes, sign-up/sign-in 30/5 minutes, refresh 150/5 minutes; minimum password 6, no required character classes, secure/current-password-change switches off, OTP lifetime 3600 seconds. Site URL is exactly https://localhost:3000; existing redirect allowlist only /auth/callback. No recovery recipient or SMTP/inbox credentials exist in the task's ignored configuration. No email sent or provider settings changed.
+
+Implementation and initial targeted tests/lint/typecheck/build pass. Initial full suite caught the generic migration no-delete guard against ephemeral counter pruning; changed the unapplied migration to bounded 4096 hash slots per operation without deleting any rows. Targeted recovery/migration tests now 8/8 PASS. Slot collisions conservatively share a quota. UI/provider diagnostics and final quality gates remain pending.
+
+Read-only SQL preflight: 15 RLS public tables, 3 templates, 54 evidence rows and 11 exports retained; private buckets, both snapshot columns and cleanup guard present; recovery table absent; CLI history absent. All five recorded migration hashes match. Reviewed additive `20260914000200_password_recovery.sql` SHA256 `6ce9dada314ce60f0c2b650ef3704f3359b7f69cf8f1484cfb587734ff7d712e` adds only isolated recovery tables/RPCs; ordinary access denied. Next: execute this migration ONCE through exact staging SQL Editor and verify grants; run diagnostics without email dispatch. Real delivery remains blocked pending authorized inbox + SMTP/template configuration.
+
+Migration executed ONCE; SQL Editor returned Success, no rows. Do not reapply. Full local suite now 34/34 PASS; 23 existing smoke checks PASS; lint/typecheck/build PASS. Next: postcheck grants and dedicated ordinary-session/provider-assisted recovery diagnostics. These diagnostics do not send email and will not count as real delivery evidence.

@@ -14,6 +14,7 @@
     "test:smoke": "node scripts/smoke.mjs",
     "test:staging": "node scripts/staging-integration.mjs",
     "test:staging:phase3": "node --use-system-ca scripts/staging/phase3.mjs",
+    "test:staging:recovery": "node --use-system-ca scripts/staging/password-recovery.mjs",
     "staging:reconcile-evidence": "node --use-system-ca scripts/staging/reconcile-evidence.mjs",
     "check:staging:recovery": "node scripts/staging/recover-state.mjs",
     "test:staging:expiry": "node --use-system-ca scripts/staging/natural-expiry.mjs",

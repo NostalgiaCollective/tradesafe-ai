@@ -1,5 +1,7 @@
 # Isolated database setup and Phase 2 backfill
 
+Password recovery `20260914000200_password_recovery.sql` applied once through verified staging SQL Editor on 2026-09-14, SHA256 `6ce9dada314ce60f0c2b650ef3704f3359b7f69cf8f1484cfb587734ff7d712e`. Six migrations are now applied; CLI history remains absent. It adds only recovery grants/shared throttle controls. See [recovery verification and email blocker](../../docs/PASSWORD-RECOVERY.md). Do not replay historical instructions below.
+
 Current execution record: all three20260911 migrations were applied through staging SQL Editor and reconciled during Phase2 recovery. Phase3 `20260913000100_private_evidence_exports.sql` was subsequently applied once to the same verified staging project, SHA2566153aaf9f97e1ee1e4424bc6821e37e2bb61265274c72122676f5ea149621dcb. It adds private Storage/evidence/export objects and finalization guards, preserving earlier records. See ../../docs/PHASE-3-EVIDENCE-EXPORTS.md and ../../docs/staging/PHASE-3-CHECKPOINT.md for actual verification and the server-only credential contract. CLI migration history is absent. The preparation statements below are historical; never replay files based on those older BLOCKED/unexecuted descriptions.
 
 Forward repair20260914000100_evidence_cleanup_guard.sql also applied once to staging, SHA2567e51eef2d40a27dabdb5d244cf2a0b7cc87396a23fd43b2d2911a1e571c0a22f. It adds a narrow service-only cleanup-candidate check without granting report-table access. No previous migration was edited or replayed.

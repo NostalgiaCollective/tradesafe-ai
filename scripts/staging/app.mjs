@@ -9,14 +9,18 @@ else if (config.env.NEXT_PUBLIC_APP_URL !== 'https://localhost:3000') {
   process.exitCode = 2
 } else {
   let serverKey=''
+  let recoveryConfig={}
   if(existsSync('.staging/server.env')){
-    serverKey=parseEnv(readFileSync('.staging/server.env','utf8')).SUPABASE_SERVICE_ROLE_KEY||''
+    const privateEnv=parseEnv(readFileSync('.staging/server.env','utf8'))
+    serverKey=privateEnv.SUPABASE_SERVICE_ROLE_KEY||''
+    recoveryConfig={RECOVERY_EMAIL_ENABLED:privateEnv.RECOVERY_EMAIL_ENABLED||'',RECOVERY_ALLOWED_EMAILS:privateEnv.RECOVERY_ALLOWED_EMAILS||''}
     let claims
     try{claims=JSON.parse(Buffer.from(serverKey.split('.')[1],'base64url').toString('utf8'))}catch{/* No secret in diagnostics. */}
     if(claims?.role!=='service_role'||claims?.ref!==config.env.STAGING_ISOLATED_PROJECT_REF)throw new Error('Server credential does not match the isolated staging project.')
   }
   const env = { ...process.env, APP_ENV: 'staging', NEXT_TELEMETRY_DISABLED: '1', TRADESAFE_STAGING_ARTIFACT: '1',
     SUPABASE_SERVICE_ROLE_KEY: serverKey,
+    ...recoveryConfig,
     NEXT_PUBLIC_APP_URL: config.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SUPABASE_URL: config.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: config.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

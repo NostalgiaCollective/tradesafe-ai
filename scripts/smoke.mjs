@@ -64,6 +64,13 @@ try {
   assert.equal(callback.headers.get('location'), null)
   assert.match(await callback.text(), /not configured/)
   checks++
+  for(const path of ['/auth/forgot-password','/auth/recovery']){
+    const result=await request(path);assert.equal(result.status,200);checks++
+  }
+  for(const suffix of ['', '/request', '/verify', '/password', '/start']){
+    const result=await request('/api/auth/recovery'+suffix,suffix?{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}:{})
+    assert.equal(result.status,503);assert.match(result.headers.get('cache-control'),/no-store/);checks++
+  }
   assert.equal((await request('/does-not-exist')).status, 404)
   checks++
   console.log(`PASS: ${checks} local HTTP smoke checks; no configured external services.`)

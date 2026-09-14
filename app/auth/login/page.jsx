@@ -152,6 +152,7 @@ function ConfiguredLoginForm() {
 
           {/* Mode switchers */}
           <div className="mt-6 text-center space-y-2">
+            <Link href="/auth/forgot-password" className="text-amber text-sm hover:underline block">Forgot password?</Link>
             {mode === 'login' && (
               <>
                 <button onClick={() => setMode('magic')} className="text-amber text-sm hover:underline block mx-auto">
