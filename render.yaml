@@ -1,0 +1,38 @@
+# Proposed new isolated service. Apply only after explicit hosting approval.
+services:
+  - type: web
+    name: tradesafe-staging-yqkiizimbtlygovkscoh
+    runtime: node
+    plan: free
+    region: ohio
+    repo: https://github.com/NostalgiaCollective/tradesafe-ai
+    branch: astra/production-mvp
+    autoDeployTrigger: off
+    buildCommand: npm ci --ignore-scripts && npm run staging:hosted:build
+    startCommand: npm run staging:hosted:start
+    healthCheckPath: /api/staging/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.0
+      - key: HOSTED_STAGING
+        value: "1"
+      - key: APP_ENV
+        value: staging
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://tradesafe-staging-yqkiizimbtlygovkscoh.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://yqkiizimbtlygovkscoh.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STAGING_ACCESS_SHA256
+        sync: false
+      - key: RECOVERY_EMAIL_ENABLED
+        value: "yes"
+      - key: RECOVERY_ALLOWED_EMAILS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        value: ""
+      - key: ANTHROPIC_API_KEY
+        value: ""

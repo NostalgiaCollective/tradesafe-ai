@@ -21,6 +21,8 @@
     "test:staging:ui": "node --use-system-ca scripts/staging/inspect-ui.mjs",
     "check:staging": "node scripts/staging/check.mjs",
     "staging:dev": "node scripts/staging/app.mjs",
+    "staging:hosted:build": "node scripts/staging/hosted.mjs build",
+    "staging:hosted:start": "node scripts/staging/hosted.mjs start",
     "staging:install-browser": "node scripts/staging/install-browser.mjs",
     "staging:prepare-expiry": "node scripts/staging/prepare-expiry.mjs",
     "test:staging:browser": "node scripts/staging/browser.mjs",
