@@ -1,5 +1,17 @@
 # Phase 3 recovery checkpoint
 
+## Current checkpoint — 2026-09-14
+
+Implementation and real staging verification COMPLETE on clean application commit `d9fdb858dac29e6f8b7f4bc5c4753af3f68d40db`. Final Phase 3 run: 14/14 PASS, 11:14:29–11:15:11 UTC. Exact tombstone cleanup PASS at 11:39:49 UTC; the deliberately late object was removed and a referenced ready photo's hash remained intact. Final original (6 pages), phone (4 pages), and amendment (5 pages) PDFs rendered and every page visually inspected: photos, attribution, text and page breaks readable.
+
+Both additive migrations below are APPLIED; CLI history remains absent. Do not replay them. Existing synthetic data, ignored configuration, `raw/`, and original browser tabs remain preserved. Staging HTTPS launcher session 24254 was left running; verify actual processes/ports again after any interruption. No onboarding or long natural-expiry rerun is needed.
+
+See [final verification](../PHASE-3-VERIFICATION.md) for evidence provenance, actual results and limitations; [implementation/API contract](../PHASE-3-EVIDENCE-EXPORTS.md) for the design handoff and operating rules. The older runner `nextStep` text is superseded by this checkpoint.
+
+Next delivery action: commit these documentation updates, fetch/check divergence, push `astra/production-mvp` without force, and verify CI for the exact pushed SHA. Save final delivery SHA, push/CI result and next task in ignored `.staging/phase3-delivery.json`; consult that file first if delivery is interrupted. After successful delivery the next bounded task is supported account recovery in isolated staging. No production deployment is authorized.
+
+## Preserved recovery journal (historical steps, superseded above)
+
 Starting commit: 0ad8b602e286fabb9114b29e970f083698a7aedd, astra/production-mvp. Only unrelated raw/ is untracked. Existing staging HTTPS server (node24180/11896, launcher3348) and original signed-in Playwright MCP survive; preserve other tabs. Phase2 verification is complete; no onboarding/expiry rerun planned.
 
 Read AGENTS/CLAUDE, installed Next route-handler docs, Phase2 verification, runbook and recovery records. Three existing migration SHA256 values match the recorded journal. Read-only SQL Editor preflight in verified tradesafe-staging yqkiizimbtlygovkscoh confirms13 RLS public tables, expected ts_command,3 templates, unchanged report columns, no Phase3 tables, no Storage buckets/policies and absent CLI history. Original flhsdtshwwuddzyguyhf excluded. No Phase3 SQL applied yet.

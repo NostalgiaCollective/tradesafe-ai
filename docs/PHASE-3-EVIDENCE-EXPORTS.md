@@ -2,6 +2,8 @@
 
 Implemented on astra/production-mvp, based on completed Phase2 checkpoint0ad8b60. Functional UI only; visual redesign and AI photo analysis are outside this change. Checkout remains disabled.
 
+Final application commit `d9fdb858dac29e6f8b7f4bc5c4753af3f68d40db` passed real staging verification. See [actual test results and migration evidence](PHASE-3-VERIFICATION.md) and [recovery checkpoint](staging/PHASE-3-CHECKPOINT.md).
+
 ## Data and permission model
 
 `ts_evidence` belongs to one company/report and records an immutable UUID path, normalized-byte SHA256/size/dimensions, caption, original uploader ID/display label, server reservation/upload/removal times, and pending/ready/removed state. User filenames, client capture timestamps, geolocation and EXIF are not trusted. Captions are explicitly user supplied. Retained images are normalized visual evidence, not the byte-identical original camera file.
