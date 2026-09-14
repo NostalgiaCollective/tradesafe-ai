@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useDraft } from '@/lib/client/useDraft'
 import { command } from '@/lib/client/commands'
 import { ANSWERS,answerState,finalizationIssues,hasConcerns } from '@/lib/domain/inspection'
+import EvidencePanel from './EvidencePanel'
 
 export default function ReportEditor({report,actor,editable,initialStep=2}) {
  const draft=useDraft(report,actor),[step,changeStep]=useState(initialStep),[ack,setAck]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('')
@@ -40,5 +41,5 @@ export default function ReportEditor({report,actor,editable,initialStep=2}) {
  <ul className="review-list">{template.items.map(i=><li key={i.id}><strong>{i.question}</strong><span>{ANSWERS[answerState(doc.answers[i.id]?.state)]}</span>{doc.answers[i.id]?.note&&<p>{doc.answers[i.id].note}</p>}</li>)}</ul>
  <label className="work-check"><input type="checkbox" checked={ack} onChange={e=>setAck(e.target.checked)}/>I acknowledge that these observations and explanations accurately reflect what I recorded. This record does not certify compliance, authorize work, or mean that unresolved concerns are safe.</label>
  <button className="primary" disabled={!ack||issues.length>0||busy} onClick={finalize}>{busy?'Finalizing...':'Finalize observations'}</button>{error&&<p role="alert">{error}</p>}</section>}
- </fieldset><p className="work-footnote">Saved drafts can be reopened from Reports. Unsaved changes are only held on this open page; offline persistence is not provided.</p></>
+ </fieldset><EvidencePanel reportId={report.id} editable={editable} disabled={busy}/><p className="work-footnote">Saved drafts can be reopened from Reports. Unsaved changes are only held on this open page; offline persistence is not provided.</p></>
 }

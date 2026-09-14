@@ -13,6 +13,8 @@
     "check:env": "node scripts/check-env.mjs",
     "test:smoke": "node scripts/smoke.mjs",
     "test:staging": "node scripts/staging-integration.mjs",
+    "test:staging:phase3": "node --use-system-ca scripts/staging/phase3.mjs",
+    "staging:reconcile-evidence": "node --use-system-ca scripts/staging/reconcile-evidence.mjs",
     "check:staging:recovery": "node scripts/staging/recover-state.mjs",
     "test:staging:expiry": "node --use-system-ca scripts/staging/natural-expiry.mjs",
     "test:staging:ui": "node --use-system-ca scripts/staging/inspect-ui.mjs",
@@ -28,9 +30,11 @@
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "next": "16.3.4",
+    "pdfkit": "^0.20.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "0.0.1",
+    "sharp": "^0.35.4",
     "stripe": "^22.0.0"
   },
   "devDependencies": {

@@ -10,6 +10,7 @@ const env = {
   ...process.env, APP_ENV: 'local', NEXT_TELEMETRY_DISABLED: '1',
   NEXT_PUBLIC_APP_URL: '', NEXT_PUBLIC_SUPABASE_URL: '',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: '', STRIPE_SECRET_KEY: '', ANTHROPIC_API_KEY: '',
+  SUPABASE_SERVICE_ROLE_KEY: '',
 }
 const child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', String(port)], {
   env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
@@ -47,11 +48,16 @@ try {
     assert.match(await response.text(), /Account services|not configured/i)
     checks++
   }
-  for (const path of ['/api/checkout', '/api/checkout/verify', '/api/analyze-photo', '/api/workspace']) {
+  for (const path of ['/api/checkout', '/api/checkout/verify', '/api/analyze-photo', '/api/workspace', '/api/reports/11111111-1111-4111-8111-111111111111/evidence', '/api/reports/11111111-1111-4111-8111-111111111111/exports']) {
     const response = await request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
     assert.equal(response.status, 503, path)
     assert.equal((await response.json()).code, 'configuration', path)
     checks++
+  }
+  const reportPath='/api/reports/11111111-1111-4111-8111-111111111111'
+  for(const suffix of ['/evidence','/evidence/22222222-2222-4222-8222-222222222222','/exports','/exports/22222222-2222-4222-8222-222222222222']){
+    const response=await request(reportPath+suffix)
+    assert.equal(response.status,503);assert.equal((await response.json()).code,'configuration');checks++
   }
   const callback = await request('/auth/callback?redirect=https%3A%2F%2Fexample.com')
   assert.equal(callback.status, 503)

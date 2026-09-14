@@ -5,6 +5,8 @@ import { ANSWERS,answerState,canEditReport,hasConcerns } from '@/lib/domain/insp
 import WorkspaceShell from '@/app/components/WorkspaceShell'
 import ReportEditor from './ReportEditor'
 import ReportTools from './ReportTools'
+import EvidencePanel from './EvidencePanel'
+import ExportPanel from './ExportPanel'
 import { legacyAnswers } from '@/lib/domain/legacy'
 export default async function ReportPage({params,searchParams}) {
  const {id}=await params;let loaded
@@ -34,5 +36,5 @@ export default async function ReportPage({params,searchParams}) {
  <p>I acknowledge that these observations and explanations accurately reflect what I recorded. This record does not certify compliance, authorize work, or mean that unresolved concerns are safe.</p>
  <section className="work-panel"><h2>Subsequent corrective actions</h2><p>Current action state, separate from the immutable observations above.</p>{!actions.data.length?<p>No follow-up concerns were recorded.</p>:<ul>{actions.data.map(a=><li key={a.id}>{a.observation}: <strong>{a.state.replaceAll('_',' ')}</strong> | Responsible: {name(a.responsible_id)}{a.verified_at?' | Verified by '+name(a.verified_by)+' at '+new Date(a.verified_at).toLocaleString('en-CA'):''}</li>)}</ul>}<Link className="no-print" href={'/actions?company='+report.company_id}>Review actions and history</Link></section>
  {!!amendments.data.length&&<section><h2>Linked amendments</h2><ul>{amendments.data.map(a=><li key={a.id}><Link href={'/report/'+a.id}>{a.amendment_reason} ({a.lifecycle})</Link></li>)}</ul></section>}
- </article><ReportTools report={report} canAmend={editable}/></WorkspaceShell>
+ </article><EvidencePanel reportId={report.id}/><ExportPanel reportId={report.id}/><ReportTools report={report} canAmend={editable}/></WorkspaceShell>
 }

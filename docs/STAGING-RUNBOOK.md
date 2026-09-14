@@ -1,5 +1,9 @@
 # TradeSafe isolated staging runbook — Phase 2
 
+## Phase 3 continuation
+
+Read [Phase3 implementation/API/operations](PHASE-3-EVIDENCE-EXPORTS.md) and [Phase3 recovery checkpoint](staging/PHASE-3-CHECKPOINT.md) before new work. The additive private-evidence/export migration is applied to staging; do not replay it or the three existing SQL-editor migrations. CLI history remains absent. New server-only staging configuration lives in ignored `.staging/server.env`, separate from ordinary-user test credentials. Browser suites sharing identities must run serially. Phase2 recovery and onboarding/elapsed-expiry verification remain completed historical evidence.
+
 ## Crash-recovery execution — 2026-09-13
 
 Start with [the live verification record](PHASE-2-STAGING-VERIFICATION.md) and [the durable recovery checkpoint](staging/RECOVERY-CHECKPOINT.md). They supersede the historical setup/BLOCKED statements below. The three migrations were applied through SQL Editor and reconciled after reboot; do not rerun them or the already-applied expiry fixture. Existing synthetic users and records must be retained.

@@ -1,5 +1,9 @@
 # Isolated database setup and Phase 2 backfill
 
+Current execution record: all three20260911 migrations were applied through staging SQL Editor and reconciled during Phase2 recovery. Phase3 `20260913000100_private_evidence_exports.sql` was subsequently applied once to the same verified staging project, SHA2566153aaf9f97e1ee1e4424bc6821e37e2bb61265274c72122676f5ea149621dcb. It adds private Storage/evidence/export objects and finalization guards, preserving earlier records. See ../../docs/PHASE-3-EVIDENCE-EXPORTS.md and ../../docs/staging/PHASE-3-CHECKPOINT.md for actual verification and the server-only credential contract. CLI migration history is absent. The preparation statements below are historical; never replay files based on those older BLOCKED/unexecuted descriptions.
+
+Forward repair20260914000100_evidence_cleanup_guard.sql also applied once to staging, SHA2567e51eef2d40a27dabdb5d244cf2a0b7cc87396a23fd43b2d2911a1e571c0a22f. It adds a narrow service-only cleanup-candidate check without granting report-table access. No previous migration was edited or replayed.
+
 Verification follow-up (2026-09-12): numbered migration files remain unchanged and none has been executed in real Supabase by this task. Add ../staging-verification-preflight.sql to the read-only inventory to inspect CLI history without assuming absent history means a fresh database. The optional expiry fixture is generated locally, reviewed and executed once by an isolated-project operator; it is not a migration or an application expiry bypass. See ../../docs/staging/DANIEL-SETUP.md.
 
 ../schema.sql is historical destructive reset SQL. It remains unchanged and must not be executed. Fresh installation and production upgrades are separate workflows; these instructions cover isolated staging only.
