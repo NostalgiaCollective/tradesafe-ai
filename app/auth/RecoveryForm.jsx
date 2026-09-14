@@ -18,15 +18,23 @@ export default function RecoveryForm({requestOnly=false}){
  const token=useRef(''),inFlight=useRef(false),initialized=useRef(false)
  async function refresh(){const current=await api('');setState(current.state);setEmail(current.email||'')}
  useEffect(()=>{
-  if(requestOnly||initialized.current)return
-  initialized.current=true
-  // Fragment never reaches the server. Remove it before any asynchronous work.
-  const hash=new URLSearchParams(window.location.hash.slice(1))
-  const values=hash.getAll('token_hash')
-  token.current=values.length===1&&[...hash.keys()].every(k=>k==='token_hash')?values[0]:''
-  setHasToken(Boolean(token.current))
-  window.history.replaceState(null,'','/auth/recovery')
-  refresh().catch(e=>{setError(e.message);setState('unavailable')})
+  if(requestOnly)return
+  function captureLink(){
+   // Reopening an email in this tab can change only the fragment, without a mount.
+   // This captures a candidate; only provider verification grants authorization.
+   const hash=new URLSearchParams(window.location.hash.slice(1))
+   const values=hash.getAll('token_hash')
+   token.current=values.length===1&&[...hash.keys()].every(k=>k==='token_hash')?values[0]:''
+   setHasToken(Boolean(token.current));setError('')
+   window.history.replaceState(null,'','/auth/recovery')
+  }
+  if(!initialized.current){
+   initialized.current=true
+   captureLink()
+   refresh().catch(e=>{setError(e.message);setState('unavailable')})
+  }
+  window.addEventListener('hashchange',captureLink)
+  return ()=>window.removeEventListener('hashchange',captureLink)
  },[requestOnly])
  async function run(action){
   if(inFlight.current)return

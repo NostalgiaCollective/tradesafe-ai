@@ -1,5 +1,7 @@
 # Controlled recovery email setup — 2026-09-14
 
+**Setup is complete.** The user supplied the sending-only Resend key privately. Staging SMTP and the prepared recovery template were configured, saved and rechecked; three actual messages and their recovery outcomes passed. See [delivered-email verification](RECOVERY-EMAIL-VERIFICATION.md). The instructions and missing-setup findings below are the preserved preparation record, not outstanding requests.
+
 The authorized recipient is recorded privately in `.staging/recovery-email.env`; do not broaden it. The connected Gmail profile matches and can be used for receipt verification. Gmail connector access does not supply an SMTP credential. Existing task-local environment files/process configuration contain no usable SMTP provider secret; the staging Dashboard still has default email only. No matching provider account-setup messages were found in a targeted inbox search. Resend browser access requires login. No unrelated project was inspected or modified.
 
 ## Recommended bounded option: Resend Free

@@ -1,5 +1,11 @@
 # Password recovery implementation and verification
 
+**Current status: actual email delivery and recovery PASS.** Resend SMTP and the prepared template are configured only in tradesafe-staging. Three authorized messages were received; expired-link rejection and successful independent-context desktop/mobile recovery passed. A confirmed same-tab link-reopening defect was fixed. See the [delivered-email verification report](staging/RECOVERY-EMAIL-VERIFICATION.md) for exact results, preserved failures, effective configuration, provenance and remaining device/production limitations.
+
+## Historical implementation report — before SMTP setup
+
+The blocked setup statements and provider limits below describe the earlier implementation checkpoint. The delivered-email report above supersedes them; earlier diagnostic results remain preserved.
+
 2026-09-14 email-preparation update: the user has now authorized one Gmail recipient. The connected Gmail inbox matches that recipient and is usable for receipt checks, but supplies no SMTP credential. No usable SMTP credential/provider connection was found in authorized local configuration or current browser/service access. A dedicated staging account is prepared, with worker access to existing synthetic report/photo/PDF fixtures; no email has been sent. The exact recipient and credentials are kept in ignored configuration. See [the bounded Resend setup](staging/RECOVERY-EMAIL-SETUP.md); this update supersedes earlier missing-recipient statements below. SMTP/template configuration and actual delivered-email verification remain blocked.
 
 Implemented from `fda1b40bff0af3c59c04aa009bd3cb09603e8b88` on `astra/production-mvp`. **Implementation and automated/provider-assisted diagnostics pass; actual email delivery is BLOCKED.** No recovery email has been sent. Only verified tradesafe-staging `yqkiizimbtlygovkscoh` was changed. Original project `flhsdtshwwuddzyguyhf`, checkout, billing and design remain unchanged.
