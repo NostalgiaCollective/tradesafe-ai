@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -8,8 +8,15 @@ import { safeRedirect } from '@/lib/domain/validation'
 import { publicServicesReady } from '@/lib/domain/config'
 import { ERROR_MESSAGES } from '@/lib/domain/errors'
 import ServiceMessage from '@/app/components/ServiceMessage'
+import { confirmBrowserSession } from '@/lib/client/login-session'
+
+const subscribeToHydration = () => () => {}
+const clientReady = () => true
+const serverReady = () => false
 
 function ConfiguredLoginForm() {
+  // Server-rendered fields must not accept input before React installs their handlers.
+  const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState('login') // login | signup | magic
@@ -34,7 +41,7 @@ function ConfiguredLoginForm() {
     try {
       const { error } = await action()
       if (error) { setError('Sign-in could not be completed. Check your details and connection, then try again.'); return }
-      onSuccess?.()
+      await onSuccess?.()
     } catch { setError(ERROR_MESSAGES.unavailable) }
     finally { setLoading(false) }
   }
@@ -48,7 +55,11 @@ function ConfiguredLoginForm() {
     } else if (mode === 'signup') {
       await runAuth(() => supabase.auth.signUp({ email, password, options: { emailRedirectTo: callbackUrl() } }), () => setMessage('Check your email to confirm your account.'))
     } else {
-      await runAuth(() => supabase.auth.signInWithPassword({ email, password }), () => { window.location.href = redirect })
+      await runAuth(() => supabase.auth.signInWithPassword({ email, password }), async () => {
+        const sessionError = await confirmBrowserSession()
+        if (sessionError) { setError(sessionError); return }
+        window.location.href = redirect
+      })
     }
   }
 
@@ -79,7 +90,7 @@ function ConfiguredLoginForm() {
           {/* Google */}
           <button
             onClick={handleGoogleLogin}
-            disabled={loading}
+            disabled={loading || !ready}
             className="w-full h-12 bg-white text-black rounded-xl font-semibold flex items-center justify-center gap-3 hover:bg-gray-100 transition mb-4"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -103,6 +114,7 @@ function ConfiguredLoginForm() {
               <label htmlFor="email" className="block text-sm text-gray-400 mb-1">Email</label>
               <input
                 id="email"
+                disabled={loading || !ready}
                 autoComplete="email"
                 type="email"
                 required
@@ -118,6 +130,7 @@ function ConfiguredLoginForm() {
                 <label htmlFor="password" className="block text-sm text-gray-400 mb-1">Password</label>
                 <input
                   id="password"
+                  disabled={loading || !ready}
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   type="password"
                   required
@@ -132,10 +145,10 @@ function ConfiguredLoginForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !ready}
               className="w-full h-12 bg-amber hover:bg-amber-dark text-black rounded-xl font-bold transition disabled:opacity-50"
             >
-              {loading ? 'Please wait...' : mode === 'signup' ? 'Create Account' : mode === 'magic' ? 'Send Magic Link' : 'Sign In'}
+              {!ready ? 'Preparing sign-in...' : loading ? 'Please wait...' : mode === 'signup' ? 'Create Account' : mode === 'magic' ? 'Send Magic Link' : 'Sign In'}
             </button>
           </form>
 
