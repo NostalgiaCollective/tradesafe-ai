@@ -304,7 +304,7 @@ export default function Page() {
             <span className="text-[#f59e0b]">Ontario Contractor</span>
           </h2>
           <p className="font-heading text-lg text-gray-500 mb-14 max-w-lg leading-relaxed">
-            Each trade has its own checklist built from the exact codes your inspector checks.
+            Each trade has a versioned observation checklist. Content and project applicability require qualified review.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
