@@ -4,39 +4,7 @@ import { requireService } from '@/lib/server/config'
 import { AppError, errorResponse } from '@/lib/domain/errors'
 import { isTrade } from '@/lib/domain/templates'
 
-const TRADE_PROMPTS = {
-  electrical: `You are an experienced electrical inspector reviewing a job site photo for Ontario ESA compliance.
-Analyze the image and provide observations about:
-- Electrical panel condition (labelling, capacity, organization)
-- Wiring quality (gauge, routing, junction box accessibility)
-- Breaker labels and circuit identification
-- GFCI/AFCI protection indicators
-- Grounding and bonding connections
-- Any visible code violations or safety concerns
-Be specific and practical. Reference Ontario Electrical Safety Code where relevant.`,
-
-  plumbing: `You are an experienced plumbing inspector reviewing a job site photo for Ontario Building Code compliance.
-Analyze the image and provide observations about:
-- Pipe condition and material (PEX, copper, ABS, PVC)
-- Joint quality and connections
-- Signs of water damage, leaks, or corrosion
-- Drainage slope and cleanout access
-- Backflow prevention devices
-- Fixture condition and water efficiency
-- Venting adequacy
-Be specific and practical. Reference Ontario Building Code where relevant.`,
-
-  roofing: `You are an experienced roofing inspector reviewing a job site photo for Ontario Building Code and MOL compliance.
-Analyze the image and provide observations about:
-- Shingle/membrane condition and installation quality
-- Flashing around penetrations, edges, and valleys
-- Drainage and gutter condition
-- Underlayment visibility and condition
-- Eave protection and ice dam prevention
-- Safety equipment or fall protection visible
-- Structural integrity indicators
-Be specific and practical. Reference Ontario Building Code where relevant.`,
-}
+import { photoReviewPrompt } from '@/lib/domain/photo-instructions'
 
 export async function POST(request) {
   try {
@@ -84,7 +52,7 @@ export async function POST(request) {
             },
             {
               type: 'text',
-              text: `${TRADE_PROMPTS[trade]}\n\nProvide your observations as a JSON array of strings, each being one concise observation (1-2 sentences max). Return ONLY the JSON array, no other text. Limit to 6 most important observations.`,
+              text: photoReviewPrompt(trade),
             },
           ],
         },

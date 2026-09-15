@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { PGlite } from '@electric-sql/pglite'
 import { getTemplate } from '../lib/domain/templates.ts'
+import { getCandidateTemplate } from '../lib/domain/content-review.ts'
 
 const ids = Array.from({length:5},()=>randomUUID())
 const [owner,worker,supervisor,outsider,unverified] = ids
@@ -39,6 +40,11 @@ const complete = () => ({job:{address:'Synthetic site',client:'Fixture',date:'20
 
 test('SQL templates match the published module; creation retries and optimistic saves preserve drafts',async()=>{
  const {db,cmd}=await fixture();try{
+ for(const trade of ['electrical','plumbing','roofing']) {
+  const candidate=getCandidateTemplate(trade)
+  assert.equal((await db.query('SELECT id FROM public.ts_templates WHERE id=$1',[candidate.id])).rows.length,0)
+  await assert.rejects(cmd('create_report',{id:randomUUID(),templateId:candidate.id}),/TS_invalid/)
+ }
  assert.deepEqual((await db.query('SELECT snapshot FROM public.ts_templates WHERE id=$1',[template.id])).rows[0].snapshot,template)
  const first=await cmd('create_report',{id:report,templateId:template.id})
  assert.ok(Object.values(first.document.answers).every(a=>a.state==='unanswered'))

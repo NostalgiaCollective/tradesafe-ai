@@ -72,7 +72,7 @@ function ConfiguredLoginForm() {
           </h1>
           <p className="text-gray-400 text-center mb-6 text-sm">
             {mode === 'signup'
-              ? 'Start generating compliance reports'
+              ? 'Start recording job observations'
               : 'Sign in to your TradeSafe account'}
           </p>
 

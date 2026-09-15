@@ -28,7 +28,7 @@ First physical-phone action: open the verified staging HTTPS URL above in the ph
 
 ## Historical initial result — 2026-09-15 00:34 UTC
 
-**Blocked by Render's Add Card requirement. No service or deployment created.**
+**Historical attempt: blocked by Render's Add Card requirement. Subsequently resolved by the user; see [current staging continuation](CONTENT-PHONE-VERIFICATION.md). The original attempt below is preserved.**
 
 Resumed application commit `89c34846c7320eabe33443608038c775de2719fa` on `astra/production-mvp`. Local and origin matched after fetch. Exact-commit Quality gates run `34894919217` passed. No application defect was observed and no application code changed during this attempt.
 

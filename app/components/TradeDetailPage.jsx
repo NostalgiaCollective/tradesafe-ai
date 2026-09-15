@@ -39,7 +39,7 @@ export default function TradeDetailPage({ trade }) {
             <div>
               <h1 className="font-heading font-black text-[clamp(40px,8vw,72px)] leading-[0.9] text-white">
                 {trade.name.toUpperCase()}<br />
-                <span className="text-amber">COMPLIANCE</span>
+                <span className="text-amber">OBSERVATIONS</span>
               </h1>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function TradeDetailPage({ trade }) {
             {trade.description}
           </p>
           <p className="font-mono text-sm text-amber/60 mb-8">
-            Enforced by: {trade.enforcedBy}
+            Relevant authorities: {trade.enforcedBy}. No endorsement of TradeSafe is implied.
           </p>
           <Link
             href="/auth/login"
@@ -93,9 +93,9 @@ export default function TradeDetailPage({ trade }) {
       {/* Regulations */}
       <section className="py-20 px-5">
         <div className="max-w-5xl mx-auto">
-          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">{'// '}REGULATIONS COVERED</div>
+          <div className="font-mono text-xs tracking-[3px] text-amber/70 mb-4">{'// '}SOURCE CONTEXT — CHECKED SEPTEMBER 15, 2026</div>
           <h2 className="font-heading font-black text-[clamp(28px,5vw,44px)] leading-[0.95] text-white mb-12">
-            BUILT FROM<br /><span className="text-amber">ONTARIO LAW.</span>
+            REVIEW THE<br /><span className="text-amber">SOURCE CONTEXT.</span>
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -104,6 +104,7 @@ export default function TradeDetailPage({ trade }) {
                 <div className="font-mono text-[11px] tracking-[2px] text-amber mb-2">{reg.code}</div>
                 <div className="font-heading font-bold text-base text-white mb-1">{reg.title}</div>
                 <p className="font-body text-sm text-gray-500 leading-relaxed">{reg.desc}</p>
+                {reg.url && <a className="text-amber text-sm underline" href={reg.url}>Official source</a>}
               </div>
             ))}
           </div>
@@ -118,7 +119,7 @@ export default function TradeDetailPage({ trade }) {
             YOUR REPORT<br /><span className="text-amber">LOOKS LIKE THIS.</span>
           </h2>
           <p className="font-body text-lg text-gray-500 mb-10">
-            Professional, print-ready Ontario compliance documentation.
+            Retained observations and supporting photos. No compliance certification.
           </p>
 
           {/* Mock report */}

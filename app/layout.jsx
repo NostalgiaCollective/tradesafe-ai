@@ -1,9 +1,9 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "TradeSafe AI | Ontario Compliance Reports for Contractors",
+  title: "TradeSafe AI | Ontario Observation Records for Contractors",
   description:
-    "Generate Ontario code-compliant safety and inspection reports for electrical, plumbing, and roofing contractors. ESA, OBC, and MOL compliance in minutes.",
+    "Record job observations and supporting evidence for Ontario electrical, plumbing and roofing work. Content pending qualified review; no compliance certification.",
 };
 
 export default function RootLayout({ children }) {

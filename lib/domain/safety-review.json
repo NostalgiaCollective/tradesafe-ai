@@ -1,0 +1,1413 @@
+{
+  "version": "2026-09-15-provenance-v1",
+  "basedOnVersion": "2026-09-unreviewed-v1",
+  "sourceCheckDate": "2026-09-15",
+  "qualifiedApproval": false,
+  "sources": {
+    "licensing": {
+      "url": "https://www.ontario.ca/laws/regulation/050570",
+      "edition": "O. Reg. 570/05 electrical contractor and master electrician licensing",
+      "effectiveDate": null,
+      "verification": "Relevant regulation identified through ESA official resource library; current operative text and exceptions unverified.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "oesc": {
+      "url": "https://esasafe.com/role/oesc/",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "verification": "Official overview read; complete licensed CEC/OESC text and full bulletin set not accessed.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "amendments": {
+      "url": "https://esasafe.com/assets/files/esasafe/pdf/amendments/2024/2024-Ontario-Amendments-Final.pdf",
+      "edition": "Ontario amendments to C22.1:24, November 13 2024",
+      "effectiveDate": "2025-05-01",
+      "verification": "Selected notification provisions read in official PDF; not the complete incorporated code.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "order": {
+      "url": "https://esasafe.com/assets/files/esasafe/pdf/About_ESA/Directors-Order-OESC-29thEdition-Final.pdf",
+      "edition": "OESC-01-2024 rev 0; issued 2026-06-22",
+      "effectiveDate": "2026-07-06",
+      "verification": "One-page order read: replaces Rule 2-010(1)(e); Section 64 / bidirectional EVSE output over 12 kW.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "transition": {
+      "url": "https://esasafe.com/assets/files/esasafe/pdf/About_ESA/2024-OESC-FAQs.pdf",
+      "edition": "2024 OESC FAQ; cover inconsistently says 28th; ESA overview says 29th",
+      "effectiveDate": "2025-05-01",
+      "verification": "Questions 3-5 read: notification/plan submission and expiration conditions; guidance, not approval.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "acceptance": {
+      "url": "https://esasafe.com/compliance/certificate-of-acceptance/",
+      "edition": "Current ESA guidance",
+      "effectiveDate": null,
+      "verification": "Official indexed excerpt read; Certificate issued following review and acceptance.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "obc": {
+      "url": "https://www.ontario.ca/laws/regulation/240163",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "verification": "Current official indexed sections 1 and 2 read; direct fetch failed. Current incorporated technical text not reviewed. Original edition effective 2025-01-01.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "obcAmendment": {
+      "url": "https://www.ontario.ca/laws/regulation/r26242",
+      "edition": "O. Reg. 242/26",
+      "effectiveDate": "2026-07-22",
+      "verification": "Official indexed amendment and commencement read; replaces incorporated amendment-document date.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "permits": {
+      "url": "https://www.ontario.ca/laws/statute/92b23",
+      "edition": "Building Code Act 1992, current indexed text",
+      "effectiveDate": null,
+      "verification": "Section 8(1) official indexed text read; complete current Act, definitions and exceptions not reviewed.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "trades": {
+      "url": "https://www.ontario.ca/page/compulsory-trades-and-enforcement",
+      "edition": "BOSTA 2021 / Skilled Trades Ontario guidance",
+      "effectiveDate": "2022-01-01",
+      "verification": "Official indexed guidance checked; individual trade scope, exemptions and credentials still require review.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "roofer": {
+      "url": "https://www.skilledtradesontario.ca/trade-information/roofer/",
+      "edition": "Roofer 449A; current official trade profile",
+      "effectiveDate": null,
+      "verification": "Official indexed profile identifies non-compulsory trade; not on compulsory-trade public register.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "wah": {
+      "url": "https://www.ontario.ca/laws/regulation/130297",
+      "edition": "O. Reg. 297/13; consolidation from 2021-01-01, last amendment 751/20",
+      "effectiveDate": null,
+      "verification": "Official indexed ss.6-8 and training validity read; section-specific commencement and full exception history not reconciled.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "construction": {
+      "url": "https://www.ontario.ca/laws/regulation/910213?search=occupational+health+and+safety",
+      "edition": "O. Reg. 213/91; indexed consolidation from 2026-04-20; includes 112/26 and 116/26",
+      "effectiveDate": null,
+      "verification": "Current indexed history and topic headings checked; complete current technical provisions not reviewed. Older v1 ladder excerpt excluded as current-law verification.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "wsib": {
+      "url": "https://www.wsib.ca/en/operational-policy-manual/clearance-certificate-construction",
+      "edition": "WSIB operational policy 14-02-19",
+      "effectiveDate": null,
+      "verification": "Official policy and home-renovation exception read in indexed result; statutory mapping/effective date pending.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "environment": {
+      "url": "https://www.ontario.ca/laws/statute/90e19",
+      "edition": "Environmental Protection Act and applicable waste regulations",
+      "effectiveDate": null,
+      "verification": "Relevant source identified only; provisions and current consolidation unverified.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    },
+    "company": {
+      "url": null,
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "verification": "Company practice proposed; not professionally approved.",
+      "sourceCheckDate": "2026-09-15",
+      "jurisdiction": "Ontario, Canada"
+    }
+  },
+  "items": [
+    {
+      "id": "electrical-001",
+      "trade": "electrical",
+      "currentWording": "ESA permit number recorded",
+      "candidateWording": "Notification of work reference and any documented exception",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "amendments"
+      ],
+      "provision": "2-004 and 2-005 (selected notification provisions verified)",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Ontario amendments to C22.1:24, November 13 2024",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Work scope, contractor/owner role and notification exceptions; recording a number alone is not compliance.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-002",
+      "trade": "electrical",
+      "currentWording": "LEC number verified",
+      "candidateWording": "Electrical contractor licence reference and verification record",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "licensing"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "O. Reg. 570/05 electrical contractor and master electrician licensing",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Contractor licensing is distinct from individual trade qualification; O. Reg. 570/05 provision and exceptions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-003",
+      "trade": "electrical",
+      "currentWording": "College of Trades cert recorded",
+      "candidateWording": "Individual trade qualification or apprenticeship reference and verification record",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "trades"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "BOSTA 2021 / Skilled Trades Ontario guidance",
+      "effectiveDate": "2022-01-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Identify exact electrical trade and permitted scope; obsolete College of Trades label; compulsory status is not universal across electrical trades.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-004",
+      "trade": "electrical",
+      "currentWording": "Kitchen GFCI",
+      "candidateWording": "Kitchen receptacle protection observations and test evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Receptacle location, circuits, sink distances, equipment and exceptions require licensed-code review; photo alone cannot test GFCI.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-005",
+      "trade": "electrical",
+      "currentWording": "Bathroom GFCI",
+      "candidateWording": "Bathroom receptacle protection observations and test evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Location and applicable installation scope; technical provision unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-006",
+      "trade": "electrical",
+      "currentWording": "Laundry GFCI",
+      "candidateWording": "Laundry receptacle protection observations and test evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Room label alone does not establish GFCI applicability; technical provision unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-007",
+      "trade": "electrical",
+      "currentWording": "Exterior GFCI",
+      "candidateWording": "Exterior receptacle protection observations and test evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Dwelling type and outdoor equipment/location matter; edition changes and technical provision require review.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-008",
+      "trade": "electrical",
+      "currentWording": "AFCI on required circuits",
+      "candidateWording": "Circuit-specific AFCI applicability and observation record",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Identify circuit type, loads and exceptions; do not infer from room alone.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-009",
+      "trade": "electrical",
+      "currentWording": "Bedroom circuits AFCI",
+      "candidateWording": "Bedroom circuit protection observations and applicability record",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Circuit scope, alteration history and exceptions; AFCI rule unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-010",
+      "trade": "electrical",
+      "currentWording": "EV charger readiness (new builds)",
+      "candidateWording": "EV equipment or readiness scope and applicable design references",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "No verified universal new-build EV-readiness mandate; distinguish installed EVSE from optional readiness.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-011",
+      "trade": "electrical",
+      "currentWording": "Energy storage compliance (if applicable)",
+      "candidateWording": "Energy storage scope, applicable design review and evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "order"
+      ],
+      "provision": "Rule 2-010(1)(e), order only (verified); ESS installation rules unverified",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "OESC-01-2024 rev 0; issued 2026-06-22",
+      "effectiveDate": "2026-07-06",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Section 64 or bidirectional EVSE output over 12 kW is a plan-review trigger from 2026-07-06, not blanket ESS compliance; other triggers remain.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-012",
+      "trade": "electrical",
+      "currentWording": "Panel upgrade docs",
+      "candidateWording": "Panel alteration scope and supporting document references",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Documents depend on work scope; licence, notification and technical design require separate checks.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-013",
+      "trade": "electrical",
+      "currentWording": "Panel labelling",
+      "candidateWording": "Panel label observations and missing information",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Circuit identification and maximum-load labels may differ; full rule and exceptions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-014",
+      "trade": "electrical",
+      "currentWording": "Wire gauge correct",
+      "candidateWording": "Conductor and circuit design references and verification evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Ampacity depends on insulation, temperature, installation, bundling and protection; cannot infer from image or gauge alone.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-015",
+      "trade": "electrical",
+      "currentWording": "Junction boxes accessible",
+      "candidateWording": "Junction enclosure access and cover observations",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Enclosure type, location and accessibility exceptions need verified code text.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-016",
+      "trade": "electrical",
+      "currentWording": "Grounding/bonding verified",
+      "candidateWording": "Grounding and bonding observations and test references",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "oesc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OESC (29th edition)",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "System type and qualified testing; visual appearance does not establish continuity or adequacy.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-017",
+      "trade": "electrical",
+      "currentWording": "ESA inspection requested",
+      "candidateWording": "ESA notification and inspection coordination record",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "amendments"
+      ],
+      "provision": "2-004 (selected provisions verified)",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Ontario amendments to C22.1:24, November 13 2024",
+      "effectiveDate": "2025-05-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Record inspection stage and ESA direction; notification does not mean inspection occurred.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "electrical-018",
+      "trade": "electrical",
+      "currentWording": "ESA inspection sign-off received",
+      "candidateWording": "ESA Certificate of Acceptance reference or outstanding status",
+      "classification": "guidance",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "acceptance"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Current ESA guidance",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Retain actual ESA record and scope; TradeSafe cannot issue acceptance or authorize energization.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-001",
+      "trade": "plumbing",
+      "currentWording": "OBC permit recorded",
+      "candidateWording": "Permit applicability and issued permit reference",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "permits"
+      ],
+      "provision": "Building Code Act s.8(1) (indexed current text)",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Building Code Act 1992, current indexed text",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Municipal authority, project scope and statutory definitions/exceptions need review.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-002",
+      "trade": "plumbing",
+      "currentWording": "C of Q recorded",
+      "candidateWording": "Plumber qualification or apprenticeship verification record",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "trades"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "BOSTA 2021 / Skilled Trades Ontario guidance",
+      "effectiveDate": "2022-01-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Individual authority and scope; C of Q is not the only possible authorized status.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-003",
+      "trade": "plumbing",
+      "currentWording": "College of Trades cert recorded",
+      "candidateWording": "Additional trade credential reference, if relevant",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "trades"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "BOSTA 2021 / Skilled Trades Ontario guidance",
+      "effectiveDate": "2022-01-01",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Obsolete College of Trades reference duplicates qualification item; candidate for consolidation after review.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-004",
+      "trade": "plumbing",
+      "currentWording": "Slope min 1:50 for 3\" or less",
+      "candidateWording": "Drain size, measured slope and applicable design reference",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Historical 1:50 / 3-inch threshold unverified; pipe function, size and exceptions must be checked in applicable Part 7.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-005",
+      "trade": "plumbing",
+      "currentWording": "Slope for pipes over 3\"",
+      "candidateWording": "Larger drain size, measured slope and applicable design reference",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Size, loading and pipe function; no universal minimum asserted.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-006",
+      "trade": "plumbing",
+      "currentWording": "Cleanout access",
+      "candidateWording": "Cleanout locations and access observations",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Drainage configuration and access requirements; provision unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-007",
+      "trade": "plumbing",
+      "currentWording": "Backflow prevention installed",
+      "candidateWording": "Cross-connection risk and backflow protection evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Hazard classification, device selection and local water authority requirements; not every fixture requires same device.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-008",
+      "trade": "plumbing",
+      "currentWording": "Toilets 4.8L/flush or less",
+      "candidateWording": "Toilet rated flush volume and applicable fixture requirement",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Historical universal 4.8 L claim unverified; fixture type, application and exceptions need review.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-009",
+      "trade": "plumbing",
+      "currentWording": "Low-flow faucets/showerheads",
+      "candidateWording": "Faucet and shower rated flow data and applicability",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Fixture type, pressure and occupancy matter; limits unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-010",
+      "trade": "plumbing",
+      "currentWording": "PE-RT/PEX certification",
+      "candidateWording": "Pipe product identification and applicable approval evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Exact product standard, intended temperature/pressure/use and marking must be reviewed; no blanket PE-RT acceptance.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-011",
+      "trade": "plumbing",
+      "currentWording": "Pipe support compliant",
+      "candidateWording": "Pipe support observations and design or manufacturer references",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Material, orientation, spacing and expansion; provisions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-012",
+      "trade": "plumbing",
+      "currentWording": "Air admittance valve locations documented",
+      "candidateWording": "Air admittance valve locations and applicability evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Documenting location does not establish permitted use; access and ventilation conditions require review.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-013",
+      "trade": "plumbing",
+      "currentWording": "Vent stack sizing verified",
+      "candidateWording": "Vent sizing, routing and supporting design references",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Fixture units, configuration, roof termination and exceptions; provisions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-014",
+      "trade": "plumbing",
+      "currentWording": "Municipal inspection requested",
+      "candidateWording": "Required inspection stages and request references",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Authority and permit conditions determine stages; precise current notification provisions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "plumbing-015",
+      "trade": "plumbing",
+      "currentWording": "Inspection sign-off received",
+      "candidateWording": "Authority inspection records and outstanding conditions",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Sign-off scope must match work; app finalization is not municipal acceptance.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-001",
+      "trade": "roofing",
+      "currentWording": "OBC building permit recorded",
+      "candidateWording": "Roof-work permit applicability and permit reference",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "permits"
+      ],
+      "provision": "Building Code Act s.8(1) (indexed current text)",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Building Code Act 1992, current indexed text",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Repair versus construction/structural alteration and authority requirements; not every reroof automatically requires permit.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-002",
+      "trade": "roofing",
+      "currentWording": "WAH cert number+expiry recorded",
+      "candidateWording": "Applicable working-at-heights training evidence and validity",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "wah"
+      ],
+      "provision": "O. Reg. 297/13 ss.6-8 (official indexed excerpts)",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "O. Reg. 297/13; consolidation from 2021-01-01, last amendment 751/20",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "workplace_safety",
+      "applicability": "Construction workers using specified fall-protection methods; approved training, generally three-year validity, exceptions and equipment-specific training need review.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-003",
+      "trade": "roofing",
+      "currentWording": "WSIB clearance recorded",
+      "candidateWording": "WSIB clearance reference and applicability record",
+      "classification": "guidance",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "wsib"
+      ],
+      "provision": "Policy 14-02-19 (policy verified; underlying statute unverified)",
+      "sourceVerification": "selected_provision_verified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "WSIB operational policy 14-02-19",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Principal/contractor relationship and exempt home-renovation conditions; not universal to every roofing contractor.",
+      "uncertainty": "Verified excerpt supports only the stated scope; complete item wording and project applicability not approved.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-004",
+      "trade": "roofing",
+      "currentWording": "Liability insurance confirmed",
+      "candidateWording": "Contract-required liability insurance evidence",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Coverage and limits depend on contract and business requirements; no general statutory roofing mandate verified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-005",
+      "trade": "roofing",
+      "currentWording": "College of Trades cert recorded",
+      "candidateWording": "Voluntary roofer credential reference, if provided",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "roofer"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Roofer 449A; current official trade profile",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Roofer is non-compulsory; do not require College of Trades certification or infer missing compulsory-register entry means unqualified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-006",
+      "trade": "roofing",
+      "currentWording": "Snow/ice load compliance",
+      "candidateWording": "Roof structural design references and observed concerns",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Location loads, building type and structural design; app/photo cannot establish capacity.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-007",
+      "trade": "roofing",
+      "currentWording": "Eave protection installed",
+      "candidateWording": "Eave protection observations and applicable roof specification",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Roof type, slope, climate and exceptions; provision unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-008",
+      "trade": "roofing",
+      "currentWording": "Roof drainage confirmed",
+      "candidateWording": "Roof drainage observations and design references",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Roof geometry, drainage design, outlets and climate; provisions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-009",
+      "trade": "roofing",
+      "currentWording": "Underlayment water resistance",
+      "candidateWording": "Underlayment product and water-resistance documentation",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Roof assembly and applicable product standard; value and test method unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-010",
+      "trade": "roofing",
+      "currentWording": "Underlayment tear strength",
+      "candidateWording": "Underlayment product and strength documentation",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "obc"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "2024 OBC; NBC 2020 with Ontario amendments dated July 17 2026",
+      "effectiveDate": "2026-07-22",
+      "sourceCheckDate": "2026-09-15",
+      "domain": "installation",
+      "applicability": "Assembly/manufacturer specification; no universal tear-strength threshold verified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-011",
+      "trade": "roofing",
+      "currentWording": "Underlayment UV resistance",
+      "candidateWording": "Underlayment exposure duration and manufacturer instructions",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "No general OBC UV-resistance rule verified; exposure limits depend on product.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-012",
+      "trade": "roofing",
+      "currentWording": "Fall protection in place",
+      "candidateWording": "Fall-hazard assessment and protection-system evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "construction"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "O. Reg. 213/91; indexed consolidation from 2026-04-20; includes 112/26 and 116/26",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "workplace_safety",
+      "applicability": "Workplace safety: height, opening, surface and system selection; current technical provisions not fully reviewed.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-013",
+      "trade": "roofing",
+      "currentWording": "Ladder safety met",
+      "candidateWording": "Ladder condition, setup and access observations",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "construction"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "O. Reg. 213/91; indexed consolidation from 2026-04-20; includes 112/26 and 116/26",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "workplace_safety",
+      "applicability": "Workplace safety: current ladder provisions unverified; older indexed s.78 excluded as current-law evidence.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-014",
+      "trade": "roofing",
+      "currentWording": "Scaffolding requirements met",
+      "candidateWording": "Scaffold applicability and inspection evidence",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "construction"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "O. Reg. 213/91; indexed consolidation from 2026-04-20; includes 112/26 and 116/26",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "workplace_safety",
+      "applicability": "Workplace safety: scaffold type, loading, design and competent inspection; exact provisions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-015",
+      "trade": "roofing",
+      "currentWording": "Waste disposal compliant",
+      "candidateWording": "Waste classification, disposal route and retained records",
+      "classification": "legal_requirement",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "environment"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "Environmental Protection Act and applicable waste regulations",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "environment",
+      "applicability": "Waste type, asbestos/hazardous material, carrier/facility and municipal rules; EPA provisions unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-016",
+      "trade": "roofing",
+      "currentWording": "Debris containment measures",
+      "candidateWording": "Debris containment and access-control observations",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "construction"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "O. Reg. 213/91; indexed consolidation from 2026-04-20; includes 112/26 and 116/26",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "workplace_safety",
+      "applicability": "Company documentation practice with potential workplace/environment duties; no specific current provision verified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-017",
+      "trade": "roofing",
+      "currentWording": "Municipal inspection requested",
+      "candidateWording": "Required inspection stages and request references",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Authority and permit scope determine requirements; provision unverified.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "roofing-018",
+      "trade": "roofing",
+      "currentWording": "Inspection sign-off received",
+      "candidateWording": "Authority inspection records and outstanding conditions",
+      "classification": "company_practice",
+      "classificationStatus": "provisional_pending_qualified_review",
+      "sourceIds": [
+        "company"
+      ],
+      "provision": null,
+      "sourceVerification": "item_provision_unverified",
+      "jurisdiction": "Ontario, Canada",
+      "edition": "TradeSafe documentation practice; no legislative source asserted",
+      "effectiveDate": null,
+      "sourceCheckDate": "2026-09-15",
+      "domain": "credentials_or_company_records",
+      "applicability": "Record source, scope and conditions; app finalization is not municipal approval.",
+      "uncertainty": "No verified item-level legal provision. Source/topic identification is not confirmation of this requirement.",
+      "qualifiedReview": {
+        "status": "pending_qualified_review",
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    }
+  ]
+}

@@ -78,7 +78,7 @@ const TRADES = [
     name: "Electrical",
     href: "/electrical",
     icon: BoltIcon,
-    body: "ESA / Ontario Electrical Safety Authority",
+    body: "Electrical Safety Authority / installation topics",
     items: [
       "Panel and service equipment inspection",
       "Grounding and bonding verification",
@@ -93,7 +93,7 @@ const TRADES = [
     body: "OBC Part 7 / Ontario Building Code",
     items: [
       "Backflow prevention documentation",
-      "Drain and venting compliance",
+      "Drain and venting observations",
       "Pressure test records",
       "DWV system inspection",
     ],
@@ -102,7 +102,7 @@ const TRADES = [
     name: "Roofing",
     href: "/roofing",
     icon: RoofIcon,
-    body: "OBC / MOL — Ministry of Labour",
+    body: "Roof installation / workplace safety",
     items: [
       "Fall protection plan on file",
       "Guardrail and anchor point checks",
@@ -116,17 +116,17 @@ const STEPS = [
   {
     num: "01",
     title: "Select Your Trade",
-    desc: "Choose electrical, plumbing, or roofing. The right checklist loads automatically.",
+    desc: "Choose electrical, plumbing, or roofing. A versioned observation template loads.",
   },
   {
     num: "02",
     title: "Fill the Checklist",
-    desc: "Walk through every code requirement. Built for gloves — big tap targets, plain language.",
+    desc: "Record observations and explain uncertainty. Checklist content is pending qualified review.",
   },
   {
     num: "03",
     title: "Generate Report",
-    desc: "One tap produces a print-ready PDF with Ontario code references attached.",
+    desc: "Finalize recorded observations and generate a retained PDF with supporting photos.",
   },
   {
     num: "04",
@@ -240,19 +240,19 @@ export default function Page() {
           <div className="max-w-3xl">
             {/* Eyebrow */}
             <p className="font-heading text-xs tracking-[0.25em] text-[#f59e0b]/70 mb-6 uppercase">
-              Ontario Compliance Platform
+              Ontario Job Observation Records
             </p>
 
             {/* Headline */}
             <h1 className="font-heading font-black leading-[0.9] tracking-tight text-white mb-8"
                 style={{ fontSize: "clamp(52px, 10vw, 104px)" }}>
-              Ontario Compliance<br />
+              Ontario Observations<br />
               <span className="text-[#f59e0b]">Reports in Minutes</span>
             </h1>
 
             {/* Subheading */}
             <p className="font-heading text-xl md:text-2xl text-gray-400 mb-4 max-w-xl leading-relaxed">
-              Generate code-compliant inspection documents for electrical, plumbing, and roofing contractors. Built for Ontario — ESA, OBC, and MOL ready.
+              Record job observations, photos and follow-up concerns for electrical, plumbing and roofing work in Ontario. Reports do not certify compliance or authorize work.
             </p>
 
             {/* Tagline */}
@@ -272,9 +272,9 @@ export default function Page() {
             {/* Stats row */}
             <div className="flex flex-wrap gap-8">
               {[
-                "2024 OESC Compliant",
-                "OBC Part 7 Ready",
-                "MOL Certified Process",
+                "Versioned observation records",
+                "Content pending review",
+                "No compliance certification",
               ].map((stat) => (
                 <div key={stat} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
