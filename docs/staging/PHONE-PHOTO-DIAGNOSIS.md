@@ -27,3 +27,13 @@ Read-only inspection of an editable account draft returned HTTP 200 and zero rea
 Local: 16 browser checks passed; 42 unit/database/image/authorization/session tests passed; lint passed with the existing layout font warning; typecheck, production build and 30 HTTP smoke checks passed. Exact commit CI/deployment and hosted results are recorded in `.staging/physical-phone-checkpoint.json` and `test-results/photo-feedback/` after execution.
 
 No migration, credential reset, recovery email, production change, visual redesign or historical report/PDF modification is included.
+
+## Failed physical retest and staging trace
+
+The user subsequently reported another physical Safari failure after deployment of 305e27e: a selected photo and caption followed by a tap produced no visible change. The phone's loaded build was not observed. The earlier feedback fix is insufficient evidence of physical success.
+
+The follow-up adds a staging-only diagnostic box beside Upload photo. It shows the page's server-rendered commit, a fresh server identity check, client readiness, disabled/busy state, whether file/caption state exists, generic client-error count, and a bounded sequence of pointer/handler/validation/request/response/save stages. It never displays credentials, tokens, filenames, captions, image contents, account data or raw exception messages. Before client hydration it still shows the page build and `Client: waiting`. Production has no diagnostic box or identity request.
+
+The former input-dependent disabled button gave no explanation when input state was missing. Upload now provides explicit missing-file/caption validation on tap and reads the selected native file at submission. File controls stay disabled with a loading explanation until hydration, preventing an early selection that React has not observed. Report-finalization and in-flight operation locks remain enforced. These changes address observable UI weaknesses; they do not establish the cause on the physical phone.
+
+Expanded regressions use touch taps through the actual report UI on the separate synthetic draft with all observations unanswered. Tests check the center-point hit target, absence of parent form, visible missing-input feedback, all previous failure/retention/idempotency cases, and controls locked before hydration (JavaScript disabled). Hosted tests additionally compare page/server build labels with the exact deployed commit and check the pointer-to-save trace. Manual evidence remains failed/pending until the phone identifies its build and execution stage.

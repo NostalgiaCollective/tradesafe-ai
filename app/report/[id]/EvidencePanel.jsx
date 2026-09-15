@@ -1,30 +1,49 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Private images require the caller's cookies and no shared image-optimizer cache. */
-import { useCallback,useEffect,useRef,useState } from 'react'
+import { useCallback,useEffect,useRef,useState,useSyncExternalStore } from 'react'
+const subscribe=()=>()=>{}, clientReady=()=>true, serverReady=()=>false
 
-async function api(url,options){
+async function api(url,options,trace=()=>{}){
  let response
  try{response=await fetch(url,{cache:'no-store',redirect:'error',...options})}
  catch{throw Error('Could not confirm the request. Check your connection, then retry. Your selected photo and caption stay here; retrying the same upload will not add a duplicate.')}
+ trace('response HTTP '+response.status)
  if(response.status===401)throw Error(response.headers.has('www-authenticate')?'Staging access needs authentication. Open the staging site in another tab to sign in, then retry here.':'Your account session has expired. Sign in in another tab, then retry here. Keep this draft open to retain your selected photo and caption.')
  let data
  try{data=await response.json()}catch{throw Error('The server returned an unexpected response. Keep this page open and retry, or refresh the evidence list to check whether the photo was saved.')}
+ trace('response decoded')
  if(!response.ok)throw Error(data.error||'Evidence is unavailable. Keep this page open and retry.')
  return data
 }
-export default function EvidencePanel({reportId,editable=false,disabled=false}){
+export default function EvidencePanel({reportId,editable=false,disabled=false,stagingBuild=null}){
+ const ready=useSyncExternalStore(subscribe,clientReady,serverReady)
+ const [stages,setStages]=useState([]),[clientErrors,setClientErrors]=useState(0),[servedBuild,setServedBuild]=useState('not checked')
+ const trace=stage=>{if(stagingBuild)setStages(previous=>[...previous.slice(-7),stage])}
  const [rows,setRows]=useState([]),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[file,setFile]=useState(null),[caption,setCaption]=useState(''),[retryId,setRetryId]=useState(null)
- const requestId=useRef(null),input=useRef(null),feedback=useRef(null),base='/api/reports/'+reportId+'/evidence'
+ const requestId=useRef(null),input=useRef(null),captionInput=useRef(null),feedback=useRef(null),base='/api/reports/'+reportId+'/evidence'
+ useEffect(()=>{
+  if(!stagingBuild)return
+  let active=true
+  const failed=()=>setClientErrors(count=>count+1)
+  window.addEventListener('error',failed);window.addEventListener('unhandledrejection',failed)
+  fetch('/api/staging/identity',{cache:'no-store',redirect:'error'}).then(r=>r.ok?r.json():null).then(data=>{if(active)setServedBuild(/^[a-f0-9]{40}$/.test(data?.commit||'')?data.commit.slice(0,7):'unavailable')}).catch(()=>{if(active)setServedBuild('unavailable')})
+  return()=>{active=false;window.removeEventListener('error',failed);window.removeEventListener('unhandledrejection',failed)}
+ },[stagingBuild])
  const refresh=useCallback(async()=>setRows(await api(base)),[base])
  useEffect(()=>{let active=true;api(base).then(data=>{if(active)setRows(data)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[base])
  function revealFeedback(){requestAnimationFrame(()=>feedback.current?.scrollIntoView({block:'nearest'}))}
  async function action(run){setBusy(true);setError('');setMessage('Working on photo evidence. Keep this page open.');try{const message=await run();setMessage(message);try{await refresh()}catch{setError('The evidence list could not refresh. Use Refresh evidence to check the saved list.')}}catch(e){setMessage('');setError(e.message)}finally{setBusy(false);revealFeedback()}}
- function upload(){action(async()=>{
-  if(!file)throw Error('Choose the original image file to upload. Unsaved files are not retained after closing this page.')
-  if(file.size>3*1024*1024)throw Error('This file is '+(file.size/1024/1024).toFixed(2)+' MiB. Choose a JPEG, PNG or WebP copy no larger than 3 MiB. Your caption is still here.')
+ function upload(){trace('click handler');action(async()=>{
+  const selected=input.current?.files?.[0]||file,description=captionInput.current?.value??caption
+  trace('validating')
+  if(!selected)throw Error('Choose the original image file to upload. Unsaved files are not retained after closing this page.')
+  if(!description.trim())throw Error('Enter a photo caption, then tap Upload photo. Your selected file is still here.')
+  if(selected.size>3*1024*1024)throw Error('This file is '+(selected.size/1024/1024).toFixed(2)+' MiB. Choose a JPEG, PNG or WebP copy no larger than 3 MiB. Your caption is still here.')
   setMessage('Uploading photo and checking its contents. Keep this page open until saving is confirmed.')
   requestId.current ||= retryId||crypto.randomUUID()
-  await api(base,{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Evidence-Id':requestId.current,'X-Evidence-Caption':encodeURIComponent(caption)},body:file})
+  trace('request started')
+  await api(base,{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Evidence-Id':requestId.current,'X-Evidence-Caption':encodeURIComponent(description)},body:selected},trace)
+  trace('save acknowledged')
   setFile(null);setCaption('');setRetryId(null);requestId.current=null;if(input.current)input.current.value=''
   return 'Photo saved and retained.'
  })}
@@ -38,9 +57,18 @@ export default function EvidencePanel({reportId,editable=false,disabled=false}){
  <p>Uploaded by {row.uploader_label}{row.uploaded_at?' at '+new Date(row.uploaded_at).toLocaleString():'; upload time not yet recorded'}.</p>
  {editable&&<div className="work-buttons">{row.state==='pending'&&<button disabled={busy||disabled} onClick={()=>{setRetryId(row.id);requestId.current=row.id;setCaption(row.caption);setFile(null);if(input.current){input.current.value='';input.current.focus()}setMessage('Select the same original image, then retry uploading.')}}>Retry photo upload</button>}
  <button disabled={busy||disabled} onClick={()=>action(async()=>{const r=await api(base+'/'+row.id,{method:'DELETE'});return r.cleanupPending?'Photo removed from the draft. Private object cleanup is pending reconciliation.':'Photo removed from the draft.'})}>Remove photo</button></div>}</li>)}</ul>
- {editable&&<fieldset disabled={busy||disabled}><legend>{retryId?'Retry incomplete photo':'Add a photo'}</legend><label htmlFor="evidence-file">Photo file</label><input id="evidence-file" ref={input} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{setFile(e.target.files?.[0]||null);if(!retryId)requestId.current=null}}/>
- <label htmlFor="evidence-caption">Photo caption</label><textarea id="evidence-caption" maxLength={1000} value={caption} disabled={Boolean(retryId)} onChange={e=>{setCaption(e.target.value);requestId.current=null}}/>
- <button type="button" className="primary" disabled={!file||!caption.trim()} onClick={upload}>{busy?'Uploading...':retryId?'Retry selected photo':'Upload photo'}</button>
+ {editable&&<fieldset disabled={busy||disabled||!ready}><legend>{retryId?'Retry incomplete photo':'Add a photo'}</legend><label htmlFor="evidence-file">Photo file</label><input id="evidence-file" ref={input} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{setFile(e.target.files?.[0]||null);trace('file selected');if(!retryId)requestId.current=null}}/>
+ <label htmlFor="evidence-caption">Photo caption</label><textarea id="evidence-caption" ref={captionInput} maxLength={1000} value={caption} disabled={Boolean(retryId)} onChange={e=>{setCaption(e.target.value);requestId.current=null;trace('caption edited')}}/>
+ <button type="button" className="primary" onPointerDown={()=>trace('pointer received')} onClick={upload}>{!ready?'Preparing photo controls...':busy?'Uploading...':retryId?'Retry selected photo':'Upload photo'}</button>
+ {!ready&&<p>Photo controls are loading. If this persists, reload this saved draft when your connection is available.</p>}
+ {disabled&&<p>Photo controls are paused while the report is finalizing.</p>}
+ {stagingBuild&&<div data-testid="upload-diagnostics" style={{overflowWrap:'anywhere',fontSize:'0.85rem',border:'1px solid currentColor',padding:'0.5rem',marginBlock:'0.5rem'}}>
+ <strong>Staging upload diagnostics</strong>
+ <p>Page build: {stagingBuild.slice(0,7)} · Server now: {servedBuild} · Client: {ready?'ready / photo-trace-1':'waiting'}</p>
+ <p>Controls: {!ready?'loading':busy?'busy':disabled?'report locked':'enabled'} · File: {file?'selected':'none'} · Caption: {caption.trim()?'present':'empty'} · Client errors: {clientErrors}</p>
+ <p>Last stages: {stages.length?stages.join(' → '):'no interaction yet'}</p>
+ <p>Feedback: {error?'error rendered':message?'status rendered':'none'}</p>
+ </div>}
  <div ref={feedback} aria-busy={busy} style={{scrollMarginBlock:'1rem'}}>
  {error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
  </div>
