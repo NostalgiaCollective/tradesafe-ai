@@ -1,6 +1,32 @@
 # Overnight staging deployment checkpoint
 
-## Current result — 2026-09-15 00:34 UTC
+## Current result — 2026-09-15 hosted continuation
+
+**Live staging:** https://tradesafe-staging-yqkiizimbtlygovkscoh.onrender.com
+
+After the user updated Render payment and requested resumption, inventory again confirmed no existing services. Created exactly one Free Node service `srv-dak9925g1s2s73bg1a4g`, Ohio, manual deployment, approved public repository and `astra/production-mvp`. Initial deployment `dep-dak992lg1s2s73bg1bmg` succeeded on `40f7db8f816c1326741908409b0d0db8f50299de`. Render assigned the exact URL above; real HTTPS, health, password challenge, and gated build identity passed before any Auth change.
+
+The user-added payment method supersedes the historical no-card blocker below. No agent card entry, charge authorization, paid compute selection, or upgrade occurred. Build pipeline has an existing $0 monthly spend limit. Billing after creation showed accrued and projected totals of $0.00; compute is Free. A saved payment method permits bandwidth overage billing, so Free compute alone is not a universal billing cap. No bandwidth cap was verified. Included bandwidth was 5 GB and the dashboard displayed 0 MB used at the check.
+
+Staging Supabase Site URL is now the assigned origin. Exact hosted `/auth/callback` and `/auth/recovery` entries were added, both localhost entries preserved, and the settings reloaded and verified. No migration, database reset, SMTP/template recreation, production, or unrelated resource change.
+
+Actual hosted email recovery passed with one authorized message, Gmail ID `1a0a28ac43b03727`, received 2026-09-15 00:49:57 UTC. The origin matched; a separate mobile-emulated browser completed recovery, verified the Secure/HttpOnly/SameSite=Strict grant, changed the dedicated test password, proved the new password succeeds and old password fails, signed in, retrieved retained photo/PDF, signed out, and verified protected-route redirect. Private current credentials were reconciled in the ignored account file. Do not resend or consume that used link. Physical-phone recovery remains untested.
+
+Hosted acceptance evidence is `.staging/hosted-acceptance.json`; recovery evidence is `.staging/hosted-recovery.json`. Both runners retain synthetic records and journal mutations. Rendered PDFs and screenshots are under `test-results/hosted-acceptance/2026-09-15T00-45-50.195Z/`. Final verification and delivery receipts are maintained in `.staging/physical-phone-checkpoint.json`.
+
+### Completed hosted checks
+
+Seven acceptance groups passed: real HTTPS and password perimeter; recovery fragment preservation and anonymous protected-route redirect; existing ordinary-account retained photo/PDF integrity; desktop report workflow; mobile-emulated report workflow; outsider photo/PDF denial; existing worker/supervisor sign-in with verified email. Owner and dedicated recovery-account sign-in also passed. No application console errors or HTTP failures were recorded during the accepted workflows.
+
+Desktop draft `1fadff69-6ea7-4078-a4d6-1e4118716f1a` and mobile draft `e28c9822-230f-4255-9618-df178d137b1e` were created through the hosted UI in an existing synthetic company. Address/date autosave, all checklist answers, reload persistence, uploaded photo display, finalization, PDF generation and browser download passed. The desktop PDF has five pages; mobile has four. Every rendered page was visually inspected, including the photographs, attribution, all observations and page boundaries.
+
+No confirmed application defect required a code change. New runner corrections covered redirect query matching, image-load polling, querying saved evidence before retry, supplying the required work date, and waiting for export controls to hydrate after finalization. Failed attempts remain archived. One early runner retry uploaded a second synthetic desktop photo before the list finished loading; both were preserved and correctly included in the immutable export. The final runner reuses journaled records and never silently deletes them.
+
+Limits: fresh account creation/confirmation was not repeated with already-used synthetic identities. Existing confirmed accounts and real delivered recovery were tested. Actual phone hardware, camera capture, mail-client handoff and phone PDF viewer remain untested; mobile emulation and file upload do not establish those results. The recovery email used in automation is consumed. Request a fresh email only when the phone is ready. No production readiness claim is made.
+
+First physical-phone action: open the verified staging HTTPS URL above in the phone's normal browser. View the separate gate username/password privately in `.staging/hosted-access.json` if prompted; never paste credentials into chat or put them in the URL.
+
+## Historical initial result — 2026-09-15 00:34 UTC
 
 **Blocked by Render's Add Card requirement. No service or deployment created.**
 
