@@ -57,6 +57,8 @@ A code rollback does not roll back Supabase records, stored bytes or Auth settin
 
 ## Current production blockers against implemented capabilities
 
+2026-09-16 update: [Reliability workflow](RELIABILITY-WORKFLOW.md) records the subsequent hosted-workflow delivery and local verification; consult its durable checkpoint for the exact deployed SHA. The seventh additive migration introduces upload/PDF resource admission without altering historical records. Code rollback leaves that additive table/function in place; never replay or remove migrations. [Release decisions](RELEASE-DECISIONS.md) contains reviewable privacy/retention/content/operational proposals. The table below preserves the earlier baseline; completed hosted checks are not reopened merely because that baseline calls them pending.
+
 | Area | Implemented/evidence | Still required |
 | --- | --- | --- |
 | Core workflow | Phase 2 verified company memberships, drafts, immutable finalization/amendments and corrective actions | Hosted regression and physical workflow observation |
