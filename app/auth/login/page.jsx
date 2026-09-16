@@ -46,7 +46,7 @@ function ConfiguredLoginForm() {
     let timer
     try {
       const { data, error } = await Promise.race([action(), new Promise((_, reject) => { timer = setTimeout(() => reject(Error('timeout')), 30000) })])
-      if (error) { setError(error.code === 'email_not_confirmed' ? 'Confirm your email using the original verification message, then sign in. Check spam if it is missing.' : 'Sign-in could not be completed. Check your details and connection, then try again.'); return }
+      if (error) { setError(error.code === 'email_not_confirmed' ? 'Confirm your email using the original verification message, then sign in. Check spam if it is missing.' : mode === 'signup' ? 'Account creation was not confirmed. Check your details and connection, and check your inbox and spam before retrying. If you already have an account, sign in.' : 'Sign-in could not be completed. Check your details and connection, then try again.'); return }
       await onSuccess?.(data)
     } catch { setError(mode === 'login' ? 'Sign-in was not confirmed. Check your connection and try again.' : 'No email request was confirmed. Check your inbox and spam before requesting another message.') }
     finally { clearTimeout(timer); authLock.current = false; setLoading(false) }
