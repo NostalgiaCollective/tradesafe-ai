@@ -5,8 +5,10 @@ import { MAX_IMAGE_BYTES } from '@/lib/evidence/limits.mjs'
 const subscribe=()=>()=>{}, clientReady=()=>true, serverReady=()=>false
 
 async function api(url,options,trace=()=>{}){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),90000)
+ try{
  let response
- try{response=await fetch(url,{cache:'no-store',redirect:'error',...options})}
+ try{response=await fetch(url,{cache:'no-store',redirect:'error',...options,signal:controller.signal})}
  catch{throw Error('Could not confirm the request. Check your connection, then retry. Your selected photo and caption stay here; retrying the same upload will not add a duplicate.')}
  trace('response HTTP '+response.status)
  if(response.status===401)throw Error(response.headers.has('www-authenticate')?'Staging access needs authentication. Open the staging site in another tab to sign in, then retry here.':'Your account session has expired. Sign in in another tab, then retry here. Keep this draft open to retain your selected photo and caption.')
@@ -15,12 +17,14 @@ async function api(url,options,trace=()=>{}){
  trace('response decoded')
  if(!response.ok)throw Error(data.error||'Evidence is unavailable. Keep this page open and retry.')
  return data
+ }finally{clearTimeout(timer)}
 }
 export default function EvidencePanel({reportId,editable=false,disabled=false,stagingBuild=null}){
  const ready=useSyncExternalStore(subscribe,clientReady,serverReady)
  const [stages,setStages]=useState([]),[clientErrors,setClientErrors]=useState(0),[servedBuild,setServedBuild]=useState('not checked')
  const trace=stage=>{if(stagingBuild)setStages(previous=>[...previous.slice(-7),stage])}
  const [rows,setRows]=useState([]),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[file,setFile]=useState(null),[caption,setCaption]=useState(''),[retryId,setRetryId]=useState(null)
+ const actionLock=useRef(false)
  const requestId=useRef(null),input=useRef(null),captionInput=useRef(null),feedback=useRef(null),base='/api/reports/'+reportId+'/evidence'
  useEffect(()=>{
   if(!stagingBuild)return
@@ -33,7 +37,7 @@ export default function EvidencePanel({reportId,editable=false,disabled=false,st
  const refresh=useCallback(async()=>setRows(await api(base)),[base])
  useEffect(()=>{let active=true;api(base).then(data=>{if(active)setRows(data)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[base])
  function revealFeedback(){requestAnimationFrame(()=>feedback.current?.scrollIntoView({block:'nearest'}))}
- async function action(run){setBusy(true);setError('');setMessage('Working on photo evidence. Keep this page open.');try{const message=await run();setMessage(message);try{await refresh()}catch{setError('The evidence list could not refresh. Use Refresh evidence to check the saved list.')}}catch(e){setMessage('');setError(e.message)}finally{setBusy(false);revealFeedback()}}
+ async function action(run){if(actionLock.current||!ready)return;actionLock.current=true;setBusy(true);setError('');setMessage('Working on photo evidence. Keep this page open.');try{const message=await run();setMessage(message);try{await refresh()}catch{setError('The evidence list could not refresh. Use Refresh evidence to check the saved list.')}}catch(e){setMessage('');setError(e.message)}finally{actionLock.current=false;setBusy(false);revealFeedback()}}
  function upload(){trace('click handler');action(async()=>{
   const selected=input.current?.files?.[0]||file,description=captionInput.current?.value??caption
   trace('validating')
@@ -48,7 +52,7 @@ export default function EvidencePanel({reportId,editable=false,disabled=false,st
   setFile(null);setCaption('');setRetryId(null);requestId.current=null;if(input.current)input.current.value=''
   return 'Photo saved and retained.'
  })}
- return <section className="work-panel no-print" aria-labelledby="photo-evidence-heading"><h2 id="photo-evidence-heading">Photographic evidence</h2>
+ return <section id="photo-evidence" className="work-panel no-print" aria-labelledby="photo-evidence-heading"><h2 id="photo-evidence-heading">Photographic evidence</h2>
  <p>JPEG, PNG or WebP; up to 5 MiB (5,242,880 bytes) and 20 megapixels each. Maximum 10 photos per report. Photos are normalized to JPEG within a 3 MiB storage limit and EXIF is removed. Upload time is server recorded; capture time and location are unverified.</p>
  {!editable&&<div ref={feedback}>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}</div>}
  <button disabled={busy||disabled} onClick={()=>action(async()=> 'Evidence list refreshed.')}>Refresh evidence</button>
@@ -63,13 +67,13 @@ export default function EvidencePanel({reportId,editable=false,disabled=false,st
  <button type="button" className="primary" onPointerDown={()=>trace('pointer received')} onClick={upload}>{!ready?'Preparing photo controls...':busy?'Uploading...':retryId?'Retry selected photo':'Upload photo'}</button>
  {!ready&&<p>Photo controls are loading. If this persists, reload this saved draft when your connection is available.</p>}
  {disabled&&<p>Photo controls are paused while the report is finalizing.</p>}
- {stagingBuild&&<div data-testid="upload-diagnostics" style={{overflowWrap:'anywhere',fontSize:'0.85rem',border:'1px solid currentColor',padding:'0.5rem',marginBlock:'0.5rem'}}>
+ {stagingBuild&&<details style={{marginBlock:'0.5rem'}}><summary>Photo upload troubleshooting</summary><div data-testid="upload-diagnostics" style={{overflowWrap:'anywhere',fontSize:'0.85rem',border:'1px solid currentColor',padding:'0.5rem',marginBlock:'0.5rem'}}>
  <strong>Staging upload diagnostics</strong>
  <p>Page build: {stagingBuild.slice(0,7)} · Server now: {servedBuild} · Client: {ready?'ready / photo-trace-1':'waiting'}</p>
  <p>Controls: {!ready?'loading':busy?'busy':disabled?'report locked':'enabled'} · File: {file?'selected':'none'} · Caption: {caption.trim()?'present':'empty'} · Client errors: {clientErrors}</p>
  <p>Last stages: {stages.length?stages.join(' → '):'no interaction yet'}</p>
  <p>Feedback: {error?'error rendered':message?'status rendered':'none'}</p>
- </div>}
+ </div></details>}
  <div ref={feedback} aria-busy={busy} style={{scrollMarginBlock:'1rem'}}>
  {error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
  </div>

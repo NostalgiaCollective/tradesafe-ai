@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useSyncExternalStore } from 'react'
+import { Suspense, useState, useRef, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -16,6 +16,9 @@ const serverReady = () => false
 
 function ConfiguredLoginForm() {
   // Server-rendered fields must not accept input before React installs their handlers.
+  const authLock = useRef(false)
+  const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'
+  const magicEnabled = process.env.NEXT_PUBLIC_MAGIC_LINK_ENABLED === 'true'
   const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -35,15 +38,18 @@ function ConfiguredLoginForm() {
     return window.location.origin + '/auth/callback?' + new URLSearchParams({ redirect })
   }
   async function runAuth(action, onSuccess) {
+    if (authLock.current || !ready) return
+    authLock.current = true
     setLoading(true)
     setError('')
     setMessage('')
+    let timer
     try {
-      const { error } = await action()
-      if (error) { setError('Sign-in could not be completed. Check your details and connection, then try again.'); return }
-      await onSuccess?.()
-    } catch { setError(ERROR_MESSAGES.unavailable) }
-    finally { setLoading(false) }
+      const { data, error } = await Promise.race([action(), new Promise((_, reject) => { timer = setTimeout(() => reject(Error('timeout')), 30000) })])
+      if (error) { setError(error.code === 'email_not_confirmed' ? 'Confirm your email using the original verification message, then sign in. Check spam if it is missing.' : 'Sign-in could not be completed. Check your details and connection, then try again.'); return }
+      await onSuccess?.(data)
+    } catch { setError(mode === 'login' ? 'Sign-in was not confirmed. Check your connection and try again.' : 'No email request was confirmed. Check your inbox and spam before requesting another message.') }
+    finally { clearTimeout(timer); authLock.current = false; setLoading(false) }
   }
   async function handleGoogleLogin() {
     await runAuth(() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: callbackUrl() } }))
@@ -51,9 +57,9 @@ function ConfiguredLoginForm() {
   async function handleEmailLogin(e) {
     e.preventDefault()
     if (mode === 'magic') {
-      await runAuth(() => supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: callbackUrl() } }), () => setMessage('Check your email for a login link.'))
+      await runAuth(() => supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: callbackUrl(), shouldCreateUser: false } }), () => setMessage('If your account is eligible, a sign-in link has been requested. Check your inbox and spam. Delivery is not confirmed here.'))
     } else if (mode === 'signup') {
-      await runAuth(() => supabase.auth.signUp({ email, password, options: { emailRedirectTo: callbackUrl() } }), () => setMessage('Check your email to confirm your account.'))
+      await runAuth(() => supabase.auth.signUp({ email, password, options: { emailRedirectTo: callbackUrl() } }), async (data) => { if (data?.session) { const sessionError = await confirmBrowserSession(); if (sessionError) { setError(sessionError); return }; window.location.href = redirect } else setMessage('If your address is eligible, check your inbox and spam for account confirmation. Open the original verification message, then sign in here. Creating an account does not yet create or join a company.') })
     } else {
       await runAuth(() => supabase.auth.signInWithPassword({ email, password }), async () => {
         const sessionError = await confirmBrowserSession()
@@ -87,7 +93,7 @@ function ConfiguredLoginForm() {
               : 'Sign in to your TradeSafe account'}
           </p>
 
-          {/* Google */}
+          {googleEnabled && <>
           <button
             onClick={handleGoogleLogin}
             disabled={loading || !ready}
@@ -108,6 +114,8 @@ function ConfiguredLoginForm() {
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
+          </>}
+          {!googleEnabled&&!magicEnabled&&<p className="text-gray-400 text-sm mb-4">Use your email and password. Other sign-in methods are not enabled here.</p>}
           {/* Email form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
@@ -150,6 +158,7 @@ function ConfiguredLoginForm() {
             >
               {!ready ? 'Preparing sign-in...' : loading ? 'Please wait...' : mode === 'signup' ? 'Create Account' : mode === 'magic' ? 'Send Magic Link' : 'Sign In'}
             </button>
+            {loading && <p role="status">Waiting for account confirmation. Keep this page open.</p>}
           </form>
 
           {displayedError && (
@@ -158,7 +167,7 @@ function ConfiguredLoginForm() {
             </div>
           )}
           {message && (
-            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+            <div role="status" className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
               {message}
             </div>
           )}
@@ -168,12 +177,12 @@ function ConfiguredLoginForm() {
             <Link href="/auth/forgot-password" className="text-amber text-sm hover:underline block">Forgot password?</Link>
             {mode === 'login' && (
               <>
-                <button onClick={() => setMode('magic')} className="text-amber text-sm hover:underline block mx-auto">
+                {magicEnabled && <button disabled={loading} onClick={() => { setMode('magic'); setError(''); setMessage('') }} className="text-amber text-sm hover:underline block mx-auto">
                   Use magic link instead
-                </button>
+                </button>}
                 <p className="text-gray-500 text-sm">
                   No account?{' '}
-                  <button onClick={() => setMode('signup')} className="text-amber hover:underline">
+                  <button disabled={loading} onClick={() => { setMode('signup'); setError(''); setMessage('') }} className="text-amber hover:underline">
                     Sign up
                   </button>
                 </p>
@@ -182,13 +191,13 @@ function ConfiguredLoginForm() {
             {mode === 'signup' && (
               <p className="text-gray-500 text-sm">
                 Already have an account?{' '}
-                <button onClick={() => setMode('login')} className="text-amber hover:underline">
+                <button disabled={loading} onClick={() => { setMode('login'); setError(''); setMessage('') }} className="text-amber hover:underline">
                   Sign in
                 </button>
               </p>
             )}
             {mode === 'magic' && (
-              <button onClick={() => setMode('login')} className="text-amber text-sm hover:underline">
+              <button disabled={loading} onClick={() => { setMode('login'); setError(''); setMessage('') }} className="text-amber text-sm hover:underline">
                 Use password instead
               </button>
             )}

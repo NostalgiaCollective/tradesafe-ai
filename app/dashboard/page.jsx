@@ -4,7 +4,7 @@ import WorkspaceShell from '@/app/components/WorkspaceShell'
 import CreateCompany from '@/app/components/CreateCompany'
 export default async function DashboardPage({searchParams}) {
  const params=await searchParams;const w=await workspace('/dashboard',params.company)
- if(!w.company)return <WorkspaceShell><CreateCompany /></WorkspaceShell>
+ if(!w.company)return <WorkspaceShell {...w}><CreateCompany /></WorkspaceShell>
  const page=Math.max(0,Math.min(10000,Number.parseInt(params.page||'0',10)||0))
  const status=['draft','finalized'].includes(params.status)?params.status:null
  let query=w.supabase.from('ts_reports').select('*',{count:'exact'}).eq('company_id',w.company.id).order('updated_at',{ascending:false}).order('id').range(page*25,page*25+24)
