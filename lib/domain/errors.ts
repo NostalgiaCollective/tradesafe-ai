@@ -1,4 +1,7 @@
 export const ERROR_MESSAGES = {
+  request_timeout: 'The upload took too long to arrive. Check your connection, then retry the same photo. Keep this page open to preserve your selection and caption.',
+  resource_limited: 'The photo or PDF request limit has been reached. Wait 10 minutes, then retry the same operation. Existing saved photos and PDFs remain available.',
+  resource_busy: 'Photo or PDF processing is busy. Wait a few seconds, then retry the same operation. Keep this page open to preserve your input.',
   image_invalid: 'Use a valid JPEG, PNG or WebP image up to 5 MiB (5,242,880 bytes) and 20 megapixels. Animated images are not supported. The normalized JPEG must fit the 3 MiB storage limit.',
   evidence_pending: 'A photo upload is incomplete. Retry or remove it before finalizing.',
   evidence_limit: 'This report already has 10 photos or pending uploads. Remove a draft photo before adding another.',
@@ -23,6 +26,8 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  request_timeout: 408,
+  resource_limited: 429, resource_busy: 503,
   image_invalid: 422, evidence_pending: 409, evidence_limit: 409, evidence_missing: 503, export_busy: 409,
   denied: 403, conflict: 409, immutable: 409, incomplete: 422, invitation: 400, last_owner: 409, deferred: 503,
   configuration: 503, unavailable: 503, unauthorized: 401, not_found: 404,
@@ -44,6 +49,6 @@ export function errorResponse(error: unknown, fallback: ErrorCode = 'unavailable
   // No provider errors, URLs, request bodies or credentials in logs.
   console.error(JSON.stringify({ event: 'request_failed', code: safe.code }))
   return Response.json({ error: safe.message, code: safe.code }, {
-    status: safe.status, headers: { 'Cache-Control': 'no-store' },
+    status: safe.status, headers: { 'Cache-Control': 'no-store', ...(safe.code==='resource_limited'?{'Retry-After':'600'}:safe.code==='resource_busy'?{'Retry-After':'5'}:{}) },
   })
 }
