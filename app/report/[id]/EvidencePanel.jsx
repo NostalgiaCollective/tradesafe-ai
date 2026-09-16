@@ -1,6 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Private images require the caller's cookies and no shared image-optimizer cache. */
 import { useCallback,useEffect,useRef,useState,useSyncExternalStore } from 'react'
+import { MAX_IMAGE_BYTES } from '@/lib/evidence/limits.mjs'
 const subscribe=()=>()=>{}, clientReady=()=>true, serverReady=()=>false
 
 async function api(url,options,trace=()=>{}){
@@ -38,7 +39,7 @@ export default function EvidencePanel({reportId,editable=false,disabled=false,st
   trace('validating')
   if(!selected)throw Error('Choose the original image file to upload. Unsaved files are not retained after closing this page.')
   if(!description.trim())throw Error('Enter a photo caption, then tap Upload photo. Your selected file is still here.')
-  if(selected.size>3*1024*1024)throw Error('This file is '+(selected.size/1024/1024).toFixed(2)+' MiB. Choose a JPEG, PNG or WebP copy no larger than 3 MiB. Your caption is still here.')
+  if(selected.size>MAX_IMAGE_BYTES)throw Error('This file is '+selected.size.toLocaleString('en-CA')+' bytes. Choose a JPEG, PNG or WebP copy no larger than 5 MiB (5,242,880 bytes). Your caption is still here.')
   setMessage('Uploading photo and checking its contents. Keep this page open until saving is confirmed.')
   requestId.current ||= retryId||crypto.randomUUID()
   trace('request started')
@@ -48,7 +49,7 @@ export default function EvidencePanel({reportId,editable=false,disabled=false,st
   return 'Photo saved and retained.'
  })}
  return <section className="work-panel no-print" aria-labelledby="photo-evidence-heading"><h2 id="photo-evidence-heading">Photographic evidence</h2>
- <p>JPEG, PNG or WebP; up to 3 MiB and 20 megapixels each. Maximum 10 photos per report. Photos are normalized to JPEG and EXIF is removed. Upload time is server recorded; capture time and location are unverified.</p>
+ <p>JPEG, PNG or WebP; up to 5 MiB (5,242,880 bytes) and 20 megapixels each. Maximum 10 photos per report. Photos are normalized to JPEG within a 3 MiB storage limit and EXIF is removed. Upload time is server recorded; capture time and location are unverified.</p>
  {!editable&&<div ref={feedback}>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}</div>}
  <button disabled={busy||disabled} onClick={()=>action(async()=> 'Evidence list refreshed.')}>Refresh evidence</button>
  {!rows.some(r=>r.state!=='removed')&&<p>No retained photos listed.</p>}

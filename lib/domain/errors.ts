@@ -1,5 +1,5 @@
 export const ERROR_MESSAGES = {
-  image_invalid: 'Use a valid JPEG, PNG or WebP image up to 3 MiB and 20 megapixels. Animated images are not supported.',
+  image_invalid: 'Use a valid JPEG, PNG or WebP image up to 5 MiB (5,242,880 bytes) and 20 megapixels. Animated images are not supported. The normalized JPEG must fit the 3 MiB storage limit.',
   evidence_pending: 'A photo upload is incomplete. Retry or remove it before finalizing.',
   evidence_limit: 'This report already has 10 photos or pending uploads. Remove a draft photo before adding another.',
   evidence_missing: 'Retained evidence is unavailable or failed its integrity check. No incomplete PDF will be issued. Retry or contact support.',

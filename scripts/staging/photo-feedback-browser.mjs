@@ -1,11 +1,14 @@
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {MAX_IMAGE_BYTES} from '../../lib/evidence/limits.mjs';
 process.env.PLAYWRIGHT_BROWSERS_PATH=resolve('.staging/browsers');
 const {webkit,chromium,devices,expect}=await import('@playwright/test');
 const a=JSON.parse(readFileSync('.staging/recovery-email-account.json')),g=JSON.parse(readFileSync('.staging/hosted-access.json'));
 const hosted=process.argv.includes('--hosted'),origin=hosted?'https://tradesafe-staging-yqkiizimbtlygovkscoh.onrender.com':'https://localhost:3000';
-const result={kind:'Chromium/WebKit mobile emulation; synthetic intercepted uploads; no draft writes',origin,checks:[]};
+if(hosted)assert.match(process.env.EXPECTED_COMMIT||'',/^[a-f0-9]{40}$/);
+const result={kind:'Chromium/WebKit mobile emulation; synthetic intercepted uploads; no draft writes',origin,startedAt:new Date().toISOString(),sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),expectedCommit:hosted?process.env.EXPECTED_COMMIT:undefined,checks:[]};
 for(const [engineName,engine] of [['webkit',webkit],['chromium',chromium]]){
 const b=await engine.launch(),c=await b.newContext({...devices['iPhone 14 Pro Max'],...(hosted?{httpCredentials:{username:g.username,password:g.password}}:{})}),p=await c.newPage();
 try{
@@ -19,8 +22,8 @@ const base=origin+'/api/reports/'+new URL(p.url()).pathname.split('/')[2]+'/evid
 let fault='validation',posts=0,saved=false,ids=[];
 await c.route(base,async r=>{if(r.request().method()==='POST'){posts++;ids.push(r.request().headers()['x-evidence-id']);if(fault==='network')return r.abort();if(fault==='success'){await new Promise(resolve=>setTimeout(resolve,600));saved=true;return r.fulfill({status:200,contentType:'application/json',body:'{"state":"ready"}'})}return r.fulfill({status:fault==='session'||fault==='gate'?401:fault==='denied'?403:422,headers:fault==='gate'?{'www-authenticate':'Basic realm="staging"'}:{},contentType:'application/json',body:JSON.stringify({error:fault==='denied'?'You do not have permission for this action.':'Synthetic image validation rejection'})})}return r.fulfill({status:saved?503:200,contentType:'application/json',body:saved?'{}':'[]'})});
 const emptyUpload=p.getByRole('button',{name:'Upload photo',exact:true});await emptyUpload.tap();await expect(p.getByRole('alert').filter({hasText:'Choose the original'})).toBeInViewport();assert.equal(posts,0);result.checks.push(engineName+': empty selection explains why instead of silently disabling');
-await p.locator('#evidence-file').setInputFiles({name:'synthetic.jpeg',mimeType:'image/jpeg',buffer:Buffer.alloc(3*1024*1024+1)});await p.locator('#evidence-caption').fill('Synthetic fault test');
-const upload=p.getByRole('button',{name:'Upload photo',exact:true});await upload.scrollIntoViewIfNeeded();assert.equal(await upload.evaluate(e=>{const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}),true);result.checks.push(engineName+': button hit-test unobstructed');assert.equal(await upload.evaluate(e=>!!e.form),false);await tap();await expect(p.getByRole('alert').filter({hasText:'3 MiB'})).toBeInViewport();assert.equal(posts,0);result.checks.push(engineName+': size rejection visible, no request');
+await p.locator('#evidence-file').setInputFiles({name:'synthetic.jpeg',mimeType:'image/jpeg',buffer:Buffer.alloc(MAX_IMAGE_BYTES+1)});await p.locator('#evidence-caption').fill('Synthetic fault test');
+const upload=p.getByRole('button',{name:'Upload photo',exact:true});await upload.scrollIntoViewIfNeeded();assert.equal(await upload.evaluate(e=>{const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}),true);result.checks.push(engineName+': button hit-test unobstructed');assert.equal(await upload.evaluate(e=>!!e.form),false);await tap();await expect(p.getByRole('alert').filter({hasText:'5 MiB'})).toBeInViewport();assert.equal(posts,0);result.checks.push(engineName+': size rejection visible, no request');
 await p.locator('#evidence-file').setInputFiles({name:'synthetic.jpeg',mimeType:'image/jpeg',buffer:Buffer.from('synthetic')});
 async function tap(){try{await upload.tap()}catch{console.log(JSON.stringify({engineName,fault,posts,checks:result.checks,state:await upload.evaluate(e=>{const r=e.getBoundingClientRect();return {disabled:e.matches(':disabled'),rect:{x:r.x,y:r.y,width:r.width,height:r.height},scrollY,viewport:innerHeight,hit:e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),scrollBehavior:getComputedStyle(document.documentElement).scrollBehavior}})}));throw Error('Touch interaction failed; sanitized diagnostic above')}}
 for(fault of ['validation','session','gate','denied','network']){
