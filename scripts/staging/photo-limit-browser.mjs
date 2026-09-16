@@ -7,7 +7,8 @@ import {largePhoto,jpegAtSize} from '../../tests/fixtures/large-photo.mjs'
 import {MAX_IMAGE_BYTES,MAX_NORMALIZED_IMAGE_BYTES} from '../../lib/evidence/limits.mjs'
 import {HOSTED_ORIGIN,STAGING_PROJECT} from '../../lib/staging/hosted.mjs'
 process.env.PLAYWRIGHT_BROWSERS_PATH=resolve('.staging/browsers')
-const {webkit,devices,expect}=await import('@playwright/test')
+const {webkit,chromium,devices,expect}=await import('@playwright/test')
+const engineName=process.argv.includes('--chromium')?'chromium':'webkit'
 const hosted=process.argv.includes('--hosted'),origin=hosted?HOSTED_ORIGIN:'https://localhost:3000'
 const account=JSON.parse(readFileSync('.staging/recovery-email-account.json')),gate=JSON.parse(readFileSync('.staging/hosted-access.json'))
 assert.equal(account.projectRef,STAGING_PROJECT)
@@ -16,11 +17,13 @@ const result=existsSync(receipt)?JSON.parse(readFileSync(receipt)):{origin,start
 assert.equal(result.origin,origin)
 if(hosted){assert.match(process.env.EXPECTED_COMMIT||'',/^[a-f0-9]{40}$/);if(result.commit)assert.equal(result.commit,process.env.EXPECTED_COMMIT,'Archive the previous receipt before testing a different commit')}
 result.sourceCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()
+result.sourceDirty=Boolean(execFileSync('git',['diff','HEAD','--name-only','--','scripts/staging/photo-limit-browser.mjs'],{encoding:'utf8'}).trim())
+result.engine=engineName
 result.lastRunStartedAt=new Date().toISOString()
 result.status='RUNNING'
 const save=()=>writeFileSync(receipt,JSON.stringify(result,null,2)+'\n')
 const pass=name=>{if(!result.checks.includes(name))result.checks.push(name);save();console.log('PASS: '+name)}
-const b=await webkit.launch(),c=await b.newContext({...devices['iPhone 14 Pro Max'],...(hosted?{httpCredentials:{username:gate.username,password:gate.password}}:{})}),p=await c.newPage()
+const b=await (engineName==='chromium'?chromium:webkit).launch(),c=await b.newContext({...devices['iPhone 14 Pro Max'],...(hosted?{httpCredentials:{username:gate.username,password:gate.password}}:{})}),p=await c.newPage()
 p.setDefaultTimeout(30000);p.setDefaultNavigationTimeout(90000)
 try{
  if(hosted){const identity=await (await c.request.get(origin+'/api/staging/identity',{timeout:90000})).json();assert.equal(identity.commit,process.env.EXPECTED_COMMIT);result.commit=identity.commit;pass('Exact hosted commit')}
