@@ -13,7 +13,7 @@ export function safeRedirect(value: unknown): string {
     const query = new URLSearchParams()
     // The report wizard's step is the only currently supported return-query field.
     const steps = url.searchParams.getAll('step')
-    if (url.pathname.startsWith('/report/') && steps.length === 1 && /^[1-4]$/.test(steps[0])) query.set('step', steps[0])
+    if (url.pathname.startsWith('/report/') && steps.length === 1 && /^[1-5]$/.test(steps[0])) query.set('step', steps[0])
     return url.pathname + (query.size ? `?${query}` : '')
   } catch { return fallback }
 }

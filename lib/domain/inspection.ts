@@ -6,17 +6,20 @@ export type InspectionDocument = { job: { address: string; client: string; date:
 export function answerState(value: unknown): AnswerState {
   return typeof value === 'string' && Object.hasOwn(ANSWERS, value) ? value as AnswerState : 'unanswered'
 }
-export function finalizationIssues(doc: InspectionDocument, template: ReturnType<typeof getTemplate>): string[] {
-  const errors: string[] = []
-  if (!doc.job?.address?.trim()) errors.push('Enter the job address.')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(doc.job?.date || '')) errors.push('Enter the work date.')
+export function finalizationChecklist(doc: InspectionDocument, template: ReturnType<typeof getTemplate>) {
+  const errors: {message:string;field:string;step:number}[] = []
+  if (!doc.job?.address?.trim()) errors.push({message:'Enter the job address.',field:'job-address',step:2})
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(doc.job?.date || '')) errors.push({message:'Enter the work date.',field:'job-date',step:2})
   for (const item of template.items) {
     const answer = doc.answers?.[item.id]
     const state = answerState(answer?.state)
-    if (state === 'unanswered') errors.push(item.question + ': record an observation.')
-    else if (state !== 'meets' && !answer?.note?.trim()) errors.push(item.question + ': add an explanation.')
+    if (state === 'unanswered') errors.push({message:item.question + ': record an observation.',field:'answer-'+item.id,step:3})
+    else if (state !== 'meets' && !answer?.note?.trim()) errors.push({message:item.question + ': add an explanation.',field:'note-'+item.id,step:3})
   }
   return errors
+}
+export function finalizationIssues(doc: InspectionDocument, template: ReturnType<typeof getTemplate>): string[] {
+  return finalizationChecklist(doc,template).map(issue=>issue.message)
 }
 export function validDraft(value: unknown, source: Trade | ReturnType<typeof getTemplate>): value is InspectionDocument {
   if (!value || typeof value !== 'object' || JSON.stringify(value).length > 100000) return false

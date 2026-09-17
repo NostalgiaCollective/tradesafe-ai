@@ -1,7 +1,22 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { answerState,finalizationIssues,validDraft,canEditReport,canVerify } from '../lib/domain/inspection.ts'
+import { answerState,finalizationChecklist,finalizationIssues,validDraft,canEditReport,canVerify } from '../lib/domain/inspection.ts'
 import { buildChecklistState,getTemplate } from '../lib/domain/templates.ts'
+import { safeRedirect } from '../lib/domain/validation.ts'
+
+test('review links resolve missing fields without changing finalization requirements',()=>{
+ const template=getTemplate('electrical'),doc={job:{address:'',client:'',date:''},answers:buildChecklistState('electrical')}
+ doc.answers[template.items[0].id]={state:'unable',note:'',controls:''}
+ const checklist=finalizationChecklist(doc,template)
+ assert.deepEqual(checklist.slice(0,2).map(({field,step})=>({field,step})),[{field:'job-address',step:2},{field:'job-date',step:2}])
+ assert.equal(checklist[2].field,'note-'+template.items[0].id)
+ assert.equal(checklist[3].field,'answer-'+template.items[1].id)
+ assert.ok(checklist.slice(2).every(issue=>issue.step===3))
+ assert.deepEqual(checklist.map(issue=>issue.message),finalizationIssues(doc,template))
+ const photo='/report/11111111-1111-4111-8111-111111111111?step=5'
+ assert.equal(safeRedirect(photo),photo)
+ assert.notEqual(safeRedirect('https://example.test'+photo),'https://example.test'+photo)
+})
 test('missing, legacy and unknown answer values never become meets',()=>{
  for(const value of [undefined,null,'pass','yes','unknown',true,{},'__proto__'])assert.equal(answerState(value),'unanswered')
  for(const trade of ['electrical','plumbing','roofing'] as const)assert.ok(Object.values(buildChecklistState(trade)).every(a=>a.state==='unanswered'))
