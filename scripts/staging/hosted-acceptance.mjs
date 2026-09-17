@@ -66,17 +66,17 @@ try{
    await p.getByRole('button',{name:'Continue to observations',exact:true}).click()
    console.log('STEP: '+device+' checklist');const selects=p.getByLabel('Observation',{exact:true});for(let i=0;i<await selects.count();i++){if(await selects.nth(i).inputValue()!=='meets'){await selects.nth(i).selectOption('meets');await expect(p.locator('.save-state')).toHaveText('Saved',{timeout:30000})}}
    await p.reload();for(let i=0;i<await selects.count();i++)assert.equal(await selects.nth(i).inputValue(),'meets')
-   const caption='SYNTHETIC hosted '+device+' photo'
+   await p.getByRole('button',{name:'3. Photos',exact:true}).click();const caption='SYNTHETIC hosted '+device+' photo'
    const priorPhotos=await c.request.get(origin+'/api/reports/'+rid+'/evidence');assert.equal(priorPhotos.status(),200)
    if(!(await priorPhotos.json()).some(row=>row.caption===caption&&row.state==='ready')){
     await p.getByLabel('Photo file',{exact:true}).setInputFiles(resolve('test-results/phase3/synthetic-photo.png'));await p.getByLabel('Photo caption',{exact:true}).fill(caption);await p.getByRole('button',{name:'Upload photo',exact:true}).click();await expect(p.getByText('Photo saved and retained.',{exact:true})).toBeVisible({timeout:60000})
    }
    await p.reload();await expect(p.getByRole('img',{name:caption,exact:true}).first()).toBeVisible();await expect.poll(()=>p.getByRole('img',{name:caption,exact:true}).evaluateAll(es=>es.length>0&&es.every(i=>i.complete&&i.naturalWidth>0)),{timeout:30000}).toBe(true)
    assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await p.screenshot({path:dir+'/'+device+'-draft.png',fullPage:true})
-   console.log('STEP: '+device+' finalizing');await p.getByRole('button',{name:'Review observations',exact:true}).click();await p.getByRole('checkbox').check();await p.getByRole('button',{name:'Finalize observations',exact:true}).click();await expect(p.getByRole('heading',{name:'Retained PDF export',exact:true})).toBeVisible({timeout:60000})
+   console.log('STEP: '+device+' finalizing');await p.getByRole('button',{name:'4. Review',exact:true}).click();await p.getByRole('checkbox').check();await p.getByRole('button',{name:'Finalize report',exact:true}).click();await expect(p.getByRole('heading',{name:'Your finalized report',exact:true})).toBeVisible({timeout:60000})
   }
-  console.log('STEP: '+device+' generating PDF');await expect(p.getByRole('button',{name:/^(Generate retained PDF|Download retained PDF|Retry PDF generation)$/})).toBeVisible({timeout:30000});await p.waitForFunction(()=>Array.from(document.querySelectorAll('button')).some(b=>/^(Generate retained PDF|Download retained PDF|Retry PDF generation)$/.test(b.textContent)&&Object.keys(b).some(k=>k.startsWith('__reactProps'))));const generate=p.getByRole('button',{name:'Generate retained PDF',exact:true});if(await generate.count())await generate.click()
-  const download=p.getByRole('button',{name:'Download retained PDF',exact:true});await expect(download).toBeVisible({timeout:90000});const wait=p.waitForEvent('download');await download.click();const d=await wait;await d.saveAs(dir+'/'+device+'.pdf');const bytes=readFileSync(dir+'/'+device+'.pdf');assert.equal(bytes.subarray(0,5).toString(),'%PDF-');state[device+'Pdf']={bytes:bytes.length,sha256:hash(bytes)};save()
+  console.log('STEP: '+device+' generating PDF');await expect(p.getByRole('button',{name:'Open PDF',exact:true})).toBeEnabled({timeout:30000});await p.getByRole('button',{name:'Open PDF',exact:true}).click()
+  const download=p.getByRole('button',{name:'Download PDF',exact:true});await expect(download).toBeVisible({timeout:90000});const wait=p.waitForEvent('download');await download.click();const d=await wait;await d.saveAs(dir+'/'+device+'.pdf');const bytes=readFileSync(dir+'/'+device+'.pdf');assert.equal(bytes.subarray(0,5).toString(),'%PDF-');state[device+'Pdf']={bytes:bytes.length,sha256:hash(bytes)};save()
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await p.screenshot({path:dir+'/'+device+'-final.png',fullPage:true});await c.close()
  })
  await check('Outsider cannot retrieve retained photos or PDFs',async()=>{

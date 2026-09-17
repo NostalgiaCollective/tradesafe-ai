@@ -97,7 +97,7 @@ try{
   assert.equal((await read('ts_evidence',p.id)).state,'ready')
  })
  await check('Lost upload response reconciles without duplicate evidence',async()=>{
-  const rid=id('report'),page=await contexts.WORKER.newPage();await page.goto(env.NEXT_PUBLIC_APP_URL+'/report/'+rid)
+  const rid=id('report'),page=await contexts.WORKER.newPage();await page.goto(env.NEXT_PUBLIC_APP_URL+'/report/'+rid+'?step=5')
   const e=id('lost'),caption='SYNTHETIC lost response'
   await page.route('**/api/reports/'+rid+'/evidence',async route=>{if(route.request().method()==='POST'){await route.fetch();await route.abort('failed')}else await route.continue()})
   const result=await page.evaluate(async({rid,e,caption,bytes})=>{try{await fetch('/api/reports/'+rid+'/evidence',{method:'POST',headers:{'X-Evidence-Id':e,'X-Evidence-Caption':caption},body:new Uint8Array(bytes)});return 'unexpected'}catch{return 'lost'}},{rid,e,caption,bytes:[...raw]});assert.equal(result,'lost')
@@ -155,16 +155,16 @@ try{
  await check('Phone photo capture/review, finalized export and accessible download',async()=>{
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'});const page=await login(context,'WORKER')
   try{
-   const rid=id('phoneReport');await cmd('WORKER','create_report',{id:rid,templateId:template.id});await page.goto(env.NEXT_PUBLIC_APP_URL+'/report/'+rid)
+   const rid=id('phoneReport');await cmd('WORKER','create_report',{id:rid,templateId:template.id});await page.goto(env.NEXT_PUBLIC_APP_URL+'/report/'+rid+'?step=5')
    const existing=ok(await clients.WORKER.client.from('ts_evidence').select('id').eq('report_id',rid))
    if(!existing.length){await page.getByLabel('Photo file',{exact:true}).setInputFiles({name:'synthetic-phone.png',mimeType:'image/png',buffer:raw});await page.getByLabel('Photo caption',{exact:true}).fill('SYNTHETIC phone evidence');await page.getByRole('button',{name:'Upload photo',exact:true}).click();await expect(page.getByText('Photo saved and retained.',{exact:true})).toBeVisible()}
    await page.reload();await expect(page.getByRole('img',{name:'SYNTHETIC phone evidence',exact:true})).toBeVisible()
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false)
    await page.screenshot({path:'test-results/phase3/phone-evidence.png',fullPage:true})
    let r=await read('ts_reports',rid);if(r.lifecycle==='draft'){r=await cmd('WORKER','save_report',{id:rid,revision:r.revision,document:doc()});await cmd('WORKER','finalize',{id:rid,revision:r.revision,acknowledged:true})}
-   await page.reload();const generate=page.getByRole('button',{name:'Generate retained PDF',exact:true});if(await generate.count())await generate.click()
-   await expect(page.getByRole('button',{name:'Download retained PDF',exact:true})).toBeVisible({timeout:30000})
-   const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download retained PDF',exact:true}).click();await(await download).saveAs('test-results/phase3/phone-export.pdf');artifact('phone-export.pdf',readFileSync('test-results/phase3/phone-export.pdf'))
+   await page.reload();const generate=page.getByRole('button',{name:'Open PDF',exact:true});if(await generate.count())await generate.click()
+   await expect(page.getByRole('button',{name:'Download PDF',exact:true})).toBeVisible({timeout:30000})
+   const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download PDF',exact:true}).click();await(await download).saveAs('test-results/phase3/phone-export.pdf');artifact('phone-export.pdf',readFileSync('test-results/phase3/phone-export.pdf'))
   }finally{await context.close()}
  })
  await check('Missing object prevents export; interrupted stored upload reconciliation repairs forward',async()=>{
