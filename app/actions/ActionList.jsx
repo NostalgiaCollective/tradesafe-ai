@@ -1,38 +1,48 @@
 'use client'
-import { useRef,useState } from 'react'
+import {useEffect,useRef,useState} from 'react'
 import Link from 'next/link'
-import { command } from '@/lib/client/commands'
-import { canVerify,ACTION_STATES } from '@/lib/domain/inspection'
-function Action({initial,members,events,role,actor,companyId,onSaved,onSaving}) {
- const [action,setAction]=useState(initial),[edit,setEdit]=useState(initial),[error,setError]=useState(''),[busy,setBusy]=useState(false),[history,setHistory]=useState(events),[updated,setUpdated]=useState(false)
- const pending=useRef(null),lock=useRef(false)
- const [uncertain,setUncertain]=useState(false)
- const editable=canVerify(role)||(actor===action.responsible_id&&action.state!=='closed')
- async function save(e){e.preventDefault();if(lock.current)return;lock.current=true;setBusy(true);setError('');setUpdated(false);onSaving();try{
-  pending.current ||= {companyId,id:action.id,revision:action.revision,requestId:crypto.randomUUID(),state:edit.state,controls:edit.controls,responsibleId:edit.responsible_id,targetDate:edit.target_date||'',resolution:edit.resolution}
-  const value=await command('update_action',pending.current);pending.current=null;setUncertain(false)
-  setAction(value);setEdit(value);setHistory([]);setUpdated(true);onSaved(value)
- }catch(e){setError(e.message);if(['invalid_request','denied','conflict','immutable'].includes(e.code)){pending.current=null;setUncertain(false)}else setUncertain(true)}finally{lock.current=false;setBusy(false)}}
- const name=id=>members.find(m=>m.user_id===id)?.display_name||id
- return <article className="work-panel" id={'action-'+action.id}><h2>{action.observation}</h2><p><strong>{action.state.replaceAll('_',' ')}</strong> · <Link href={'/report/'+action.report_id}>Original report</Link></p>
+import {command} from '@/lib/client/commands'
+import {canVerify,ACTION_STATES} from '@/lib/domain/inspection'
+import {canUpdateAction,needsResolution,definitiveActionFailure,ACTION_LABELS} from '@/lib/domain/action-edit'
+function Action({initial,members,events,role,actor,companyId,onSaved,onSaving,hidden,returnTo}){
+ const [action,setAction]=useState(initial),[edit,setEdit]=useState(initial),[error,setError]=useState(''),[errorCode,setErrorCode]=useState(''),[busy,setBusy]=useState(false),[history,setHistory]=useState(events),[updated,setUpdated]=useState(false),[uncertain,setUncertain]=useState(false)
+ const pending=useRef(null),lock=useRef(false),editable=canUpdateAction(role,actor,action)
+ const dirty=['controls','resolution','state','responsible_id','target_date'].some(k=>edit[k]!==action[k])
+ useEffect(()=>{const warn=e=>{if(dirty||uncertain){e.preventDefault();e.returnValue=''}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[dirty,uncertain])
+ function change(key,value){setEdit(e=>({...e,[key]:value}));setUpdated(false)}
+ async function save(e){e.preventDefault();if(lock.current||!editable)return;lock.current=true;setBusy(true);setError('');setErrorCode('');setUpdated(false);onSaving();try{
+  pending.current||={companyId,id:action.id,revision:action.revision,requestId:crypto.randomUUID(),state:edit.state,controls:edit.controls,responsibleId:edit.responsible_id,targetDate:edit.target_date||'',resolution:edit.resolution}
+  const value={...await command('update_action',pending.current),report:action.report};pending.current=null;setUncertain(false);setAction(value);setEdit(value);setHistory([]);setUpdated(true);onSaved(value)
+ }catch(e){setError(e.code==='incomplete'?'Add resolution notes before requesting verification or closing this action. Your entries are still here.':e.code==='invalid_request'?'Check the assignee, due date and update fields, then save again. Your entries are still here.':e.message);setErrorCode(e.code);if(definitiveActionFailure(e.code)){pending.current=null;setUncertain(false)}else setUncertain(true)}finally{lock.current=false;setBusy(false)}}
+ const name=id=>members.find(m=>m.user_id===id)?.display_name||'Former or unavailable member',blocked=['conflict','denied','immutable','not_found'].includes(errorCode)
+ return <article hidden={hidden} className="work-panel action-card" id={'action-'+action.id}>
+ <h2><Link href={'/report/'+action.report_id+'?'+new URLSearchParams({from:returnTo})} onClick={e=>{if(dirty&&!confirm('This action has unsaved updates. Leave without saving them?'))e.preventDefault()}}>{action.report?.document?.job?.address||'Original report'}{action.report?.amendment_of?' (amendment)':''}</Link></h2>
+ <p className="action-observation">{action.observation}</p><div className="action-summary"><p><strong>{ACTION_LABELS[action.state]}</strong></p><p>Assigned to: {name(action.responsible_id)}{action.responsible_id===actor?' (you)':''}</p><p>Due: {action.target_date||'No due date'}</p></div>
+ {updated&&<p role="status">Action update saved.</p>}{dirty&&<p role="status">Unsaved action updates — use Save action update below.</p>}
+ <details><summary>{editable?'Update action':'View action details'}</summary><p>{action.observation}</p>
  {action.verified_at&&<p>Verified by {name(action.verified_by)} on {new Date(action.verified_at).toLocaleString('en-CA')}</p>}
- <form onSubmit={save}><fieldset disabled={!editable||busy||uncertain} className="work-fieldset">
- <label htmlFor={'controls-'+action.id}>Immediate controls or action taken</label><textarea id={'controls-'+action.id} value={edit.controls} maxLength={4000} onChange={e=>setEdit({...edit,controls:e.target.value})}/>
- <label htmlFor={'responsible-'+action.id}>Responsible member</label><select id={'responsible-'+action.id} value={edit.responsible_id} disabled={!canVerify(role)} onChange={e=>setEdit({...edit,responsible_id:e.target.value})}>{members.filter(m=>m.active||m.user_id===edit.responsible_id).map(m=><option key={m.user_id} value={m.user_id} disabled={!m.active}>{m.display_name}{m.active?'':' (removed — reassign)'}</option>)}</select>
- <label htmlFor={'target-'+action.id}>Target date (optional)</label><input id={'target-'+action.id} type="date" value={edit.target_date||''} onChange={e=>setEdit({...edit,target_date:e.target.value})}/>
- <label htmlFor={'state-'+action.id}>Action state</label><select id={'state-'+action.id} value={edit.state} onChange={e=>setEdit({...edit,state:e.target.value})}>{ACTION_STATES.map(s=><option key={s} value={s} disabled={(s==='closed'&&!canVerify(role))||(action.state==='closed'&&!['closed','open'].includes(s))}>{s.replaceAll('_',' ')}</option>)}</select>
- <label htmlFor={'resolution-'+action.id}>Resolution notes (required for verification)</label><textarea id={'resolution-'+action.id} maxLength={4000} required={edit.state==='closed'} value={edit.resolution} onChange={e=>setEdit({...edit,resolution:e.target.value})}/>
+ {editable?<form onSubmit={save}><fieldset disabled={busy||uncertain||blocked} className="work-fieldset">
+ <label htmlFor={'controls-'+action.id}>Immediate controls or action taken</label><textarea id={'controls-'+action.id} value={edit.controls} maxLength={4000} onChange={e=>change('controls',e.target.value)}/>
+ {canVerify(role)&&<><label htmlFor={'responsible-'+action.id}>Responsible member</label><select id={'responsible-'+action.id} value={edit.responsible_id} onChange={e=>change('responsible_id',e.target.value)}>{members.filter(m=>m.active||m.user_id===edit.responsible_id).map(m=><option key={m.user_id} value={m.user_id} disabled={!m.active}>{m.display_name}{m.active?'':' (removed — reassign)'}</option>)}</select></>}
+ <label htmlFor={'target-'+action.id}>Due date (optional)</label><input id={'target-'+action.id} type="date" value={edit.target_date||''} onChange={e=>change('target_date',e.target.value)}/>
+ <label htmlFor={'state-'+action.id}>Action state</label><select id={'state-'+action.id} value={edit.state} onChange={e=>change('state',e.target.value)}>{ACTION_STATES.filter(s=>(canVerify(role)||s!=='closed')&&(action.state!=='closed'||['closed','open'].includes(s))).map(s=><option key={s} value={s}>{ACTION_LABELS[s]}</option>)}</select>
+ <label htmlFor={'resolution-'+action.id}>Resolution notes (required for verification)</label><textarea id={'resolution-'+action.id} maxLength={4000} required={needsResolution(edit.state)} value={edit.resolution} onChange={e=>change('resolution',e.target.value)} aria-describedby={needsResolution(edit.state)?'resolution-help-'+action.id:undefined}/>
+ {needsResolution(edit.state)&&<p id={'resolution-help-'+action.id}>Describe the resolution before requesting verification or closing the action.</p>}
+ {!canVerify(role)&&<p>You can update your assigned action and request verification. A supervisor or owner assigns members and verifies closure.</p>}
  {edit.state==='closed'&&action.state!=='closed'&&<p>Saving records you as the verification actor. Your app role does not establish statutory competence.</p>}
- {action.state==='closed'&&<p>Select Open to reopen this action. Previous resolution and verification remain in its history.</p>}
- </fieldset>{uncertain&&<p>Retry the previous update before editing it further. Its result has not been confirmed.</p>}<button disabled={busy||!editable||(action.state==='closed'&&edit.state!=='open')}>{busy?'Saving...':action.state==='closed'?'Reopen action':'Save action update'}</button>{busy&&<p role="status">Saving action update. Keep this page open.</p>}{updated&&<p role="status">Action update saved.</p>}{error&&<div role="alert"><p>{error}</p><a href="/auth/login" target="_blank" rel="noopener noreferrer">Sign in in another tab, then retry here</a></div>}</form>
- <details><summary>Action history</summary>{history.length?<ol>{[...history].reverse().map(e=><li key={e.id}><strong>{e.kind.replaceAll('_',' ')}</strong> · {name(e.actor_id)} · {new Date(e.occurred_at).toLocaleString('en-CA')}<p>{e.before_value?.state?e.before_value.state+' → ':''}{e.after_value?.state}</p>{e.after_value?.resolution&&<p>Resolution: {e.after_value.resolution}</p>}{e.after_value?.controls&&<p>Controls: {e.after_value.controls}</p>}{e.after_value?.verified_at&&<p>Verified by {name(e.after_value.verified_by)} at {e.after_value.verified_at}</p>}</li>)}</ol>:<p>{updated?'Update saved. ':'No history entries loaded. '}<button onClick={()=>window.location.reload()}>Reload recorded history</button></p>}</details>
- </article>
+ {action.state==='closed'&&<p>Select Open to reopen. Previous resolution and verification remain in the history.</p>}
+ </fieldset>{uncertain&&<p>Keep this page open and retry the same update. Your entries are retained; its result has not been confirmed.</p>}<button className="primary" disabled={busy||blocked||(action.state==='closed'&&edit.state!=='open')}>{busy?'Saving…':uncertain?'Retry action update':action.state==='closed'?'Reopen action':'Save action update'}</button>
+ {busy&&<p role="status">Saving action update. Keep this page open.</p>}{updated&&<p role="status">Saved. You can close these details.</p>}{error&&<div role="alert"><p>{error}</p>{blocked?<><p>Your entries are still here. Compare the latest saved action in another tab before discarding them. Do not keep retrying an outdated or unauthorized update.</p><a href={'/actions?company='+companyId+'&mine=0&closed=1#action-'+action.id} target="_blank" rel="noopener noreferrer">Open latest saved action</a></>:!definitiveActionFailure(errorCode)&&<a href="/auth/login" target="_blank" rel="noopener noreferrer">Sign in in another tab, then retry here</a>}</div>}</form>:<><p>{action.controls||'No immediate controls recorded.'}</p><p>{action.resolution||'No resolution recorded.'}</p><p>{action.state==='closed'?'This action is verified and closed. A supervisor or owner can reopen it.':'Only the assigned worker, a supervisor or an owner can update this action.'}</p></>}
+ <details><summary>Action history</summary>{history.length?<ol>{[...history].reverse().map(e=><li key={e.id}><strong>{e.kind.replaceAll('_',' ')}</strong> · {name(e.actor_id)} · {new Date(e.occurred_at).toLocaleString('en-CA')}<p>{e.before_value?.state?ACTION_LABELS[e.before_value.state]+' → ':''}{ACTION_LABELS[e.after_value?.state]}</p>{e.after_value?.resolution&&<p>Resolution: {e.after_value.resolution}</p>}{e.after_value?.controls&&<p>Controls: {e.after_value.controls}</p>}</li>)}</ol>:<p>{updated?'Update saved. ':''}<a href={'/actions?company='+companyId+'&mine=0&closed=1#action-'+action.id} target="_blank" rel="noopener noreferrer">Open recorded history in another tab</a></p>}<p className="work-footnote">History includes the latest 500 company action events.</p></details></details></article>
 }
-export default function ActionList({initial,members,events,actor,role,companyId}) {
- const [mine,setMine]=useState(true),[showClosed,setShowClosed]=useState(false),[actions,setActions]=useState(initial),[message,setMessage]=useState('')
- const filtered=actions.filter(a=>(!mine||a.responsible_id===actor)&&(showClosed||a.state!=='closed'))
- const saved=value=>{setActions(rows=>rows.map(a=>a.id===value.id?value:a));setMessage('Action update saved. Current filters may hide a closed or reassigned action.')}
- return <><div className="work-filters"><label className="work-check"><input type="checkbox" checked={mine} onChange={e=>setMine(e.target.checked)}/>Assigned to me</label><label className="work-check"><input type="checkbox" checked={showClosed} onChange={e=>setShowClosed(e.target.checked)}/>Include closed actions</label></div>
- {message&&<p role="status">{message}</p>}
- {!filtered.length?<section className="work-panel"><h2>No matching actions</h2><p>Actions are created when a report is finalized with a concern. Clear the filters to see other company actions.</p></section>:filtered.map(a=><Action key={a.id} initial={a} members={members} events={events.filter(e=>e.entity_id===a.id)} actor={actor} role={role} companyId={companyId} onSaved={saved} onSaving={()=>setMessage('')}/>)}</>
+export default function ActionList({initial,members,events,actor,role,companyId,initialMine=true,initialClosed=false}){
+ const [mine,setMine]=useState(initialMine),[showClosed,setShowClosed]=useState(initialClosed),[actions,setActions]=useState(initial),[message,setMessage]=useState('')
+ const visible=a=>(!mine||a.responsible_id===actor)&&(showClosed||a.state!=='closed'),filtered=actions.filter(visible)
+ const returnTo='/actions?'+new URLSearchParams({company:companyId,mine:mine?'1':'0',...(showClosed?{closed:'1'}:{})})
+ function filters(nextMine,nextClosed){setMine(nextMine);setShowClosed(nextClosed);window.history.replaceState(null,'','/actions?'+new URLSearchParams({company:companyId,mine:nextMine?'1':'0',...(nextClosed?{closed:'1'}:{})}))}
+ const saved=value=>{setActions(rows=>rows.map(a=>a.id===value.id?value:a));setMessage('Action update saved. Closed or reassigned actions may move out of this view.')}
+ return <><div className="work-filters"><label className="work-check"><input type="checkbox" checked={mine} onChange={e=>filters(e.target.checked,showClosed)}/>Assigned to me</label><label className="work-check"><input type="checkbox" checked={showClosed} onChange={e=>filters(mine,e.target.checked)}/>Include closed actions</label></div><p>{filtered.length} matching {filtered.length===1?'action':'actions'}. Open an action to see its permitted updates.</p>
+ {message&&<p role="status">{message}</p>}{!filtered.length&&<section className="work-panel"><h2>{mine?'No matching actions assigned to you':'No matching company actions'}</h2><p>Actions are created when a report is finalized with a concern. Check closed actions or view the company list.</p>{mine&&<button onClick={()=>filters(false,showClosed)}>Show company actions</button>}</section>}
+ {/* Keep forms mounted when filtering, so toggling a filter cannot erase unsaved entries. */}
+ {actions.map(a=><Action key={a.id} initial={a} hidden={!visible(a)} members={members} events={events.filter(e=>e.entity_id===a.id)} actor={actor} role={role} companyId={companyId} returnTo={returnTo} onSaved={saved} onSaving={()=>setMessage('')}/>)}</>
 }

@@ -236,3 +236,4 @@
     page-break-before: always;
   }
 }
+.action-observation{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.action-summary{display:flex;gap:.4rem 1.5rem;flex-wrap:wrap}.action-summary p{margin:.25rem 0}.action-card>h2{font-size:1.2rem!important}.action-card details[open]>summary{margin-bottom:.75rem}.action-card h2 a{display:block;min-height:48px;padding:.5rem 0}.company-picker{margin-bottom:1rem}.work-filters>div{flex:1 1 200px}.work-app [hidden]{display:none!important}

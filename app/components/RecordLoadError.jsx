@@ -1,0 +1,2 @@
+'use client'
+export default function RecordLoadError({retry,reset}){return <main className="work-app work-main"><h1>Records could not be loaded</h1><p role="alert">This is a loading error, not an empty list. Check your connection and try again. Your search filters remain in the address bar.</p><button className="primary" onClick={retry||reset||(()=>window.location.reload())}>Try loading again</button><p><a href="/auth/login" target="_blank" rel="noopener noreferrer">Sign in in another tab</a> if your session has expired, then retry here.</p></main>}

@@ -7,11 +7,11 @@ import { ANSWERS,answerState,finalizationChecklist,hasConcerns } from '@/lib/dom
 import EvidencePanel from './EvidencePanel'
 const stages=[[2,'Job details'],[3,'Observations'],[5,'Photos'],[4,'Review']]
 
-export default function ReportEditor({report,actor,editable,initialStep=2,stagingBuild=null}) {
+export default function ReportEditor({report,actor,editable,initialStep=2,stagingBuild=null,returnTo}) {
  const draft=useDraft(report,actor),[navigation,setNavigation]=useState({step:initialStep,target:null}),[ack,setAck]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [photos,setPhotos]=useState({loading:true,failed:false,busy:false,selected:false,ready:0,pending:0})
  const step=navigation.step,index=stages.findIndex(([n])=>n===step)
- function setStep(next,target='stage-heading'){setNavigation({step:next,target});window.history.replaceState(null,'','?step='+next)}
+ function setStep(next,target='stage-heading'){setNavigation({step:next,target});const query=new URLSearchParams(window.location.search);query.set('step',String(next));window.history.replaceState(null,'','?'+query)}
  useEffect(()=>{if(navigation.target){const field=document.getElementById(navigation.target);field?.focus({preventScroll:true});field?.scrollIntoView({block:'start'})}},[navigation])
  const finalizeRequest=useRef(null),finalizeLock=useRef(false)
  const doc=draft.document,template=report.template_snapshot,issues=finalizationChecklist(doc,template)
@@ -23,7 +23,7 @@ export default function ReportEditor({report,actor,editable,initialStep=2,stagin
   await command('finalize',{id:report.id,companyId:report.company_id,revision:draft.revision.current,requestId:finalizeRequest.current,acknowledged:ack})
   // Discard the mutable client draft and fetch the locked server snapshot after commit.
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-  window.location.assign('/report/'+report.id+'#report-pdf')
+  window.location.assign('/report/'+report.id+'?'+new URLSearchParams({from:returnTo})+'#report-pdf')
  }catch(e){setError(e.message)}finally{finalizeLock.current=false;setBusy(false)}}
  return <><div className="work-title"><div><p className="eyebrow">Draft · {template.trade}</p><h1>{doc.job.address||'New report'}</h1></div><div className="save-state" role="status" aria-live="polite">{draft.status}</div></div>
  <p className="work-footnote">Changes save automatically. Wait for Saved before leaving this page.</p>
