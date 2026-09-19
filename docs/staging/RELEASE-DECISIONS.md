@@ -20,3 +20,7 @@ Render: Hobby workspace, existing Free staging service, automatic deploys and PR
 Supabase: organization Free Plan, spend cap enabled; excess quota may cause unresponsiveness/read-only service. Dashboard displayed 29/500 MB database, 0.04/5 GB egress, 9/50,000 monthly active users and rounded 0.00/1 GB storage. These are organization totals, not isolated staging capacity measurements.
 
 Application: both checkout routes return `deferred`; hosted configuration rejects Stripe credentials and the launcher blanks optional payment/model keys. No Stripe key was present in inspected local/staging configuration. No authenticated Stripe account or webhook/entitlement reconciliation was established. Checkout and branch-only Vercel suppression remain unchanged. Production readiness is not claimed.
+
+## Interrupted-work phase
+
+Focused reliability evidence is recorded in [the interruption verification record](INTERRUPTION-VERIFICATION.md). It does not close delivered-email signup, isolated restore, content/privacy approval, operational ownership, capacity/WebKit/device, billing or pending onboarding phone acceptance gates. Daniel's earlier iPhone acceptance remains user-reported evidence for the tested prior workflow; this phase needs its own phone retest.
