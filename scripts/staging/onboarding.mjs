@@ -1,0 +1,94 @@
+// Provider-assisted synthetic identities, not delivered-email signup verification.
+// Never print credentials/tokens, send mail, reset accounts, or clean up retained fixtures.
+import {readFileSync,writeFileSync,existsSync,mkdirSync} from 'node:fs'
+import {resolve} from 'node:path'
+import {parseEnv} from 'node:util'
+import {execFileSync} from 'node:child_process'
+import {randomUUID,randomBytes} from 'node:crypto'
+import assert from 'node:assert/strict'
+import {createClient} from '@supabase/supabase-js'
+import {requireStaging} from './config.mjs'
+import {HOSTED_ORIGIN,STAGING_PROJECT} from '../../lib/staging/hosted.mjs'
+const config=requireStaging();if(!config)process.exit(2)
+const {env}=config,hosted=process.argv.includes('--hosted'),label=hosted?'hosted':'local',origin=hosted?HOSTED_ORIGIN:'https://localhost:3000'
+assert.equal(env.NEXT_PUBLIC_SUPABASE_URL,'https://'+STAGING_PROJECT+'.supabase.co')
+const file='.staging/onboarding-'+label+'.json',privateFile='.staging/onboarding-'+label+'-private.json'
+const state=existsSync(file)?JSON.parse(readFileSync(file)):{origin,startedAt:new Date().toISOString(),ids:{},checks:[]}
+assert.equal(state.origin,origin);state.sourceCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();state.sourceDirty=Boolean(execFileSync('git',['diff','HEAD','--name-only'],{encoding:'utf8'}).trim())
+const secret=existsSync(privateFile)?JSON.parse(readFileSync(privateFile)):{accounts:{},links:{}}
+const save=()=>{writeFileSync(file,JSON.stringify(state,null,2)+'\n');writeFileSync(privateFile,JSON.stringify(secret,null,2)+'\n')}
+const id=k=>{state.ids[k]??=randomUUID();save();return state.ids[k]},ok=r=>{if(r.error)throw Error('Provider/database operation failed: '+(r.error.code||'unknown'));return r.data}
+const key=parseEnv(readFileSync('.staging/server.env','utf8')).SUPABASE_SERVICE_ROLE_KEY,claims=JSON.parse(Buffer.from(key.split('.')[1],'base64url'))
+assert.equal(claims.ref,STAGING_PROJECT);assert.equal(claims.role,'service_role')
+const make=(k=env.NEXT_PUBLIC_SUPABASE_ANON_KEY)=>createClient(env.NEXT_PUBLIC_SUPABASE_URL,k,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}),admin=make(key)
+const clients={},contexts={},pages={},tag='SYNTHETIC Onboarding '+label+' '+id('tag').slice(0,6)
+process.env.PLAYWRIGHT_BROWSERS_PATH=resolve('.staging/browsers')
+const {chromium,devices,expect}=await import('@playwright/test'),gate=JSON.parse(readFileSync('.staging/hosted-access.json'))
+const browser=await chromium.launch(),options={...devices['iPhone 14 Pro Max'],...(hosted?{httpCredentials:{username:gate.username,password:gate.password}}:{})}
+const output='test-results/onboarding-'+label;mkdirSync(output,{recursive:true})
+async function check(name,fn){if(state.checks.some(c=>c.name===name))return;state.stage=name;save();await fn();state.checks.push({name,at:new Date().toISOString()});save();console.log('PASS '+name)}
+async function login(role,path='/auth/login',page=pages[role]){await page.goto(origin+path,{waitUntil:'networkidle'});await page.getByLabel('Email',{exact:true}).fill(secret.accounts[role].email);await page.getByLabel('Password',{exact:true}).fill(secret.accounts[role].password);await page.getByRole('button',{name:'Sign In',exact:true}).click();await page.waitForURL(u=>!u.pathname.startsWith('/auth/'));return page}
+async function api(role,command,p={}){return contexts[role].request.post(origin+'/api/workspace',{headers:{origin},data:{command,payload:{companyId:state.ids.company,requestId:randomUUID(),...p}}})}
+async function rpc(role,command,p={}){return ok(await clients[role].rpc('ts_command',{command,p:{companyId:state.ids.company,requestId:randomUUID(),...p}}))}
+async function invitation(name,role='WORKER'){
+ if(!secret.links[name]){const r=await api('OWNER','invite',{email:secret.accounts[role].email,role:'worker'});assert.equal(r.status(),200);const d=await r.json();secret.links[name]=d.link;state.ids[name]=d.id;save()}
+ return secret.links[name].replace(HOSTED_ORIGIN,origin).replace('https://localhost:3000',origin)
+}
+try{
+ state.status='RUNNING';save()
+ for(const role of ['OWNER','WORKER','OUTSIDER','SUPERVISOR']){
+  secret.accounts[role]??={email:'tradesafe-onboarding-'+randomBytes(7).toString('hex')+'@example.test',password:randomBytes(24).toString('base64url')};save()
+  const a=secret.accounts[role]
+  if(!a.id){const existing=ok(await admin.auth.admin.listUsers({perPage:1000})).users.find(u=>u.email===a.email);a.id=(existing||ok(await admin.auth.admin.createUser({email:a.email,password:a.password,email_confirm:true})).user).id;save()}
+  state.ids[role]=a.id;clients[role]=make();ok(await clients[role].auth.signInWithPassword({email:a.email,password:a.password}))
+  contexts[role]=await browser.newContext(options);pages[role]=await contexts[role].newPage();pages[role].setDefaultTimeout(30000);pages[role].setDefaultNavigationTimeout(90000)
+ }
+ if(hosted){assert.match(process.env.EXPECTED_COMMIT||'',/^[a-f0-9]{40}$/);state.identity=await(await contexts.OWNER.request.get(origin+'/api/staging/identity',{timeout:90000})).json();assert.equal(state.identity.commit,process.env.EXPECTED_COMMIT);assert.equal(state.identity.projectRef,STAGING_PROJECT);save()}
+ const owner=await login('OWNER'),outsider=await login('OUTSIDER');await login('SUPERVISOR');if(state.checks.some(c=>c.name==='pending invitation and intended destination survive sign-in and reload; acceptance is idempotent'))await login('WORKER')
+ await check('no-company guidance; repeated and interrupted company creation remains one atomic workspace',async()=>{
+  const prior=ok(await clients.OWNER.from('ts_companies').select('*'));if(state.ids.company&&prior.some(c=>c.id===state.ids.company)){assert.equal((await api('OWNER','create_company',{id:state.ids.company,name:tag})).status(),200);assert.equal(prior.length,1);assert.equal(ok(await clients.OWNER.from('ts_members').select('*'))[0].role,'owner');await owner.goto(origin+'/report/new?company='+state.ids.company);await expect(owner.getByRole('heading',{name:'Start a report'})).toBeVisible();state.companyRecovery='Existing committed operation reconciled after local runner route cancellation; no fixture reset';save();return}
+  assert.equal(ok(await clients.OWNER.from('ts_members').select('*')).length,0)
+  await expect(owner.getByRole('heading',{name:'Start your company workspace'})).toBeVisible();await owner.getByLabel('Business name',{exact:true}).fill(tag);await owner.reload({waitUntil:'networkidle'});await expect(owner.getByLabel('Business name',{exact:true})).toHaveValue(tag)
+  let submitted=[],release;const hold=new Promise(r=>{release=r});await contexts.OWNER.route(origin+'/api/workspace',async route=>{const d=route.request().postDataJSON();if(d.command==='create_company'){submitted.push(d.payload);state.ids.company=d.payload.id;save();await hold;assert.equal((await route.fetch()).status(),200);return route.abort().catch(()=>{})}return route.continue()})
+  await owner.getByRole('button',{name:'Create company',exact:true}).evaluate(b=>{b.click();b.click()});await expect.poll(()=>submitted.length).toBe(1);release();await expect(owner.getByRole('alert').filter({hasText:'No completion was confirmed'})).toBeVisible();await contexts.OWNER.unroute(origin+'/api/workspace');state.ids.company=submitted[0].id;save()
+  await owner.getByRole('button',{name:'Retry creating company',exact:true}).click();await owner.waitForURL(u=>u.pathname==='/report/new'&&u.searchParams.get('company')===state.ids.company)
+  const companies=ok(await clients.OWNER.from('ts_companies').select('*'));assert.equal(companies.length,1);assert.equal(ok(await clients.OWNER.from('ts_members').select('*'))[0].role,'owner')
+  await owner.reload({waitUntil:'networkidle'});await expect(owner.getByRole('heading',{name:'Start a report'})).toBeVisible()
+ })
+ await check('first draft retries retain ID through reload; later business edits preserve its snapshot',async()=>{
+  await owner.goto(origin+'/report/new?company='+state.ids.company,{waitUntil:'networkidle'})
+  const baseline=ok(await clients.OWNER.from('ts_reports').select('id').eq('company_id',state.ids.company)).length
+  let lost=false;await contexts.OWNER.route(origin+'/api/workspace',async route=>{if(route.request().postDataJSON().command==='create_report'&&!lost){lost=true;assert.equal((await route.fetch()).status(),200);return route.abort().catch(()=>{})}return route.continue()})
+  await owner.getByRole('button',{name:'Create saved draft',exact:true}).click();await expect(owner.getByRole('alert').filter({hasText:'No completion was confirmed'})).toBeVisible();await contexts.OWNER.unroute(origin+'/api/workspace');await owner.reload({waitUntil:'networkidle'});await owner.getByRole('button',{name:'Retry creating draft',exact:true}).click();await owner.waitForURL(u=>/^\/report\/[a-f0-9-]{36}$/.test(u.pathname));state.ids.report=new URL(owner.url()).pathname.split('/').pop();save()
+  await owner.getByLabel('Job address',{exact:true}).fill(tag+' first job');await expect(owner.locator('.save-state')).toHaveText('Saved');const rows=ok(await clients.OWNER.from('ts_reports').select('*').eq('company_id',state.ids.company));assert.equal(rows.length,baseline+1);state.snapshot=rows.find(r=>r.id===state.ids.report).business_snapshot;save()
+  await owner.goto(origin+'/settings?company='+state.ids.company,{waitUntil:'networkidle'});await owner.getByLabel('Business name',{exact:true}).fill(tag+' updated');await owner.getByRole('button',{name:'Save business details',exact:true}).click();await expect(owner.getByRole('status').filter({hasText:'Company details saved.'})).toBeVisible();assert.deepEqual(ok(await clients.OWNER.from('ts_reports').select('business_snapshot').eq('id',state.ids.report).single()).business_snapshot,state.snapshot)
+ })
+ await check('private invitation create and copy; wrong account gets explicit denial without company disclosure',async()=>{
+  await owner.goto(origin+'/settings?company='+state.ids.company,{waitUntil:'networkidle'});await owner.getByLabel('Their sign-in email').fill(secret.accounts.WORKER.email);await owner.getByRole('button',{name:'Create invitation link',exact:true}).click();const input=owner.getByLabel('Private invitation link');await expect(input).not.toHaveValue('');secret.links.worker=await input.inputValue();save();assert.equal(new URL(secret.links.worker).search,'');await owner.getByRole('button',{name:'Copy invitation link',exact:true}).click();await expect(owner.getByRole('status').filter({hasText:/copied|manually/})).toBeVisible();await expect(owner.getByText('Recent invitations',{exact:true})).toBeVisible()
+  await outsider.goto(secret.links.worker,{waitUntil:'networkidle'});await expect(outsider.getByRole('status').filter({hasText:'another verified email'})).toBeVisible();assert.equal(new URL(outsider.url()).hash,'');await expect(outsider.getByRole('heading',{name:tag+' updated',exact:true})).toHaveCount(0);assert.deepEqual(ok(await clients.OUTSIDER.from('ts_companies').select('id').eq('id',state.ids.company)),[])
+ })
+ await check('pending invitation and intended destination survive sign-in and reload; acceptance is idempotent',async()=>{
+  const worker=pages.WORKER;await login('WORKER');await expect(worker.getByRole('heading',{name:'You have a company invitation'})).toBeVisible();await worker.getByRole('button',{name:'Sign out',exact:true}).click();await worker.waitForURL(origin+'/')
+  await worker.goto(secret.links.worker,{waitUntil:'domcontentloaded'});await expect(worker.getByRole('alert').filter({hasText:'Sign in with the verified email'})).toBeVisible();await worker.getByRole('link',{name:'Sign in or create account'}).click();await worker.getByLabel('Email',{exact:true}).fill(secret.accounts.WORKER.email);await worker.getByLabel('Password',{exact:true}).fill(secret.accounts.WORKER.password);await worker.getByRole('button',{name:'Sign In',exact:true}).click();await worker.waitForURL(origin+'/join');await expect(worker.getByRole('button',{name:'Accept invitation',exact:true})).toBeEnabled();await worker.reload({waitUntil:'networkidle'});await expect(worker.getByRole('button',{name:'Accept invitation',exact:true})).toBeEnabled()
+  let count=0;worker.on('request',r=>{if(r.url()===origin+'/api/workspace'&&r.postDataJSON()?.command==='accept_invitation')count++});await worker.getByRole('button',{name:'Accept invitation',exact:true}).evaluate(b=>{b.click();b.click()});await expect(worker.getByRole('heading',{name:'You have joined this company'})).toBeVisible();assert.equal(count,1);await worker.reload({waitUntil:'networkidle'});await expect(worker.getByText('This invitation is already accepted. Your existing membership is unchanged.')).toBeVisible();assert.equal(ok(await clients.WORKER.from('ts_members').select('*').eq('company_id',state.ids.company)).length,2)
+  await worker.getByRole('link',{name:'Create your first report',exact:true}).click();await worker.getByRole('button',{name:'Create saved draft',exact:true}).click();await worker.waitForURL(u=>/^\/report\/[a-f0-9-]{36}$/.test(u.pathname));state.ids.workerReport=new URL(worker.url()).pathname.split('/').pop();save();await worker.getByLabel('Job address',{exact:true}).fill(tag+' worker first job');await expect(worker.locator('.save-state')).toHaveText('Saved');await worker.reload({waitUntil:'networkidle'});await expect(worker.getByLabel('Job address',{exact:true})).toHaveValue(tag+' worker first job')
+ })
+ await check('expired and revoked invitations explain recovery and cannot grant access',async()=>{
+  const expired=await invitation('expired','OUTSIDER'),revoked=await invitation('revoked','OUTSIDER');const row=ok(await clients.OWNER.from('ts_invitations').select('expires_at').eq('id',state.ids.expired).single());if(Date.parse(row.expires_at)>Date.now()){writeFileSync('.staging/onboarding-expiry-'+label+'.sql',"UPDATE public.ts_invitations SET expires_at=now()-interval '1 day' WHERE id='"+state.ids.expired+"' AND company_id='"+state.ids.company+"' AND created_by='"+state.ids.OWNER+"' AND accepted_by IS NULL RETURNING id,expires_at;\n");throw Error('Prepared isolated synthetic expiry SQL needs authorized SQL Editor execution; service role correctly lacks table mutation privileges')} await rpc('OWNER','revoke_invitation',{id:state.ids.revoked})
+  for(const [link,text] of [[expired,'This invitation has expired.'],[revoked,'The company owner revoked this invitation.']]){await outsider.goto(link,{waitUntil:'networkidle'});await expect(outsider.getByRole('status').filter({hasText:text})).toBeVisible();const r=await api('OUTSIDER','accept_invitation',{token:new URL(link).hash.slice(7)});assert.equal(r.status(),400)}
+ })
+ await check('roles, last owner, revoked membership and cross-company records are enforced by API and database',async()=>{
+  const worker=pages.WORKER;await worker.goto(origin+'/settings?company='+state.ids.company,{waitUntil:'networkidle'});await expect(worker.getByRole('button',{name:'Create invitation link',exact:true})).toHaveCount(0);await expect(worker.getByRole('button',{name:'Save business details',exact:true})).toHaveCount(0)
+  for(const role of ['WORKER','OUTSIDER']){assert.equal((await api(role,'invite',{email:secret.accounts.OUTSIDER.email,role:'owner'})).status(),403);assert.equal((await api(role,'member',{userId:state.ids[role],role:'owner'})).status(),403)}
+  assert.equal((await api('OWNER','member',{userId:state.ids.OWNER,role:'remove'})).status(),409)
+  const supervisory=await api('OWNER','invite',{email:secret.accounts.SUPERVISOR.email,role:'supervisor'});assert.equal(supervisory.status(),200);const sl=(await supervisory.json()).link;assert.equal((await api('SUPERVISOR','accept_invitation',{token:new URL(sl).hash.slice(7)})).status(),200);assert.equal((await api('SUPERVISOR','invite',{email:secret.accounts.OUTSIDER.email,role:'worker'})).status(),403)
+  const temp=await invitation('temporary','OUTSIDER');assert.equal((await api('OUTSIDER','accept_invitation',{token:new URL(temp).hash.slice(7)})).status(),200);await rpc('OWNER','member',{userId:state.ids.OUTSIDER,role:'remove'});await outsider.goto(temp,{waitUntil:'networkidle'});await expect(outsider.getByRole('status').filter({hasText:'company access has been removed'})).toBeVisible();assert.equal((await api('OUTSIDER','create_report',{id:randomUUID(),templateId:'electrical:1.0.0'})).status(),403);await outsider.goto(origin+'/dashboard?company='+state.ids.company);await outsider.waitForURL('**/access-denied')
+  const denied=await clients.OUTSIDER.rpc('ts_command',{command:'member',p:{companyId:state.ids.company,userId:state.ids.OUTSIDER,role:'owner'}});assert.equal(denied.error?.message,'TS_denied');assert.deepEqual(ok(await clients.OUTSIDER.from('ts_reports').select('id').eq('company_id',state.ids.company)),[])
+ })
+ await check('multiple-company choice and company/filter redirects survive authentication without loops',async()=>{
+  await rpc('OWNER','create_company',{id:id('secondCompany'),name:tag+' second company'});await owner.goto(origin+'/dashboard',{waitUntil:'networkidle'});await expect(owner.getByRole('heading',{name:'Choose your company'})).toBeVisible();await owner.getByRole('link',{name:tag+' updated',exact:true}).click();await expect(owner.getByRole('heading',{name:'Reports',exact:true})).toBeVisible()
+  await owner.getByRole('button',{name:'Sign out',exact:true}).click();await owner.waitForURL(origin+'/');const dest='/dashboard?company='+state.ids.company+'&q=first+job&status=draft';await owner.goto(origin+dest);await owner.waitForURL(u=>u.pathname==='/auth/login');assert.equal(new URL(owner.url()).searchParams.get('redirect'),dest);await owner.getByLabel('Email',{exact:true}).fill(secret.accounts.OWNER.email);await owner.getByLabel('Password',{exact:true}).fill(secret.accounts.OWNER.password);await owner.getByRole('button',{name:'Sign In',exact:true}).click();await owner.waitForURL(origin+dest);await expect(owner.getByLabel('Job address / report title')).toHaveValue('first job');await expect(owner.getByLabel('Report status')).toHaveValue('draft');assert.equal(await owner.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await owner.screenshot({path:output+'/company-reports.png',fullPage:true})
+ })
+ state.status='PASS';delete state.failure
+}catch(e){state.status='FAIL';state.failure={name:e.name,message:e.message.replace(/[a-f0-9]{64}/gi,'[redacted-token]').replace(/https?:[^\s]+/g,'[url]').slice(0,1800),stage:state.stage,lines:[...(e.stack||'').matchAll(/onboarding\.mjs:(\d+)/g)].map(m=>Number(m[1]))};console.error('FAIL '+state.stage+' '+e.name);process.exitCode=1}
+finally{state.finishedAt=new Date().toISOString();save();await browser.close();console.log(JSON.stringify({status:state.status,checks:state.checks,failure:state.failure,sourceCommit:state.sourceCommit,sourceDirty:state.sourceDirty}))}
