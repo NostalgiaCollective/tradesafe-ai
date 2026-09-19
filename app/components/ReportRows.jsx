@@ -1,0 +1,5 @@
+﻿import Link from 'next/link'
+export default function ReportRows({reports,returnTo,empty='No reports yet.'}){
+ if(!reports.length)return <p className="empty-work">{empty}</p>
+ return <ul className="work-list report-rows">{reports.map(r=>{const href='/report/'+r.id+'?'+new URLSearchParams({from:returnTo});const open=r.actions?.filter(a=>a.state!=='closed').length;return <li key={r.id}><Link href={href}><span className="report-state">{r.amendment_of?'Amendment · ':''}{r.lifecycle==='draft'?'Draft':'Finalized'}</span><strong>{r.document.job.address||'Untitled job'}</strong><span className="report-subtitle">{r.document.job.client||'No customer reference'} · {r.template_snapshot?.trade}</span><small>{r.document.job.date||'Work date not set'} · {r.lifecycle==='draft'?'Resume draft':'View report'}</small>{open>0&&<span className="attention-label">{open} open follow-up{open===1?'':'s'}</span>}</Link>{r.lifecycle==='finalized'&&<Link className="button report-pdf-link" href={href+'#report-pdf'}>PDF / export</Link>}</li>})}</ul>
+}

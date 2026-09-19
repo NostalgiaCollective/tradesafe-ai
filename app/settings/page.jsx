@@ -9,5 +9,5 @@ export default async function SettingsPage({searchParams}) {
  if(!w.company)return <WorkspaceShell {...w}><CreateCompany actor={w.user.id}/></WorkspaceShell>
  const [members,invitations]=await Promise.all([w.supabase.from('ts_members').select('*').eq('company_id',w.company.id).order('joined_at'),w.supabase.from('ts_invitations').select('id,email,role,expires_at,accepted_by,revoked').eq('company_id',w.company.id).order('created_at',{ascending:false}).limit(50)])
  for(const r of [members,invitations])if(r.error)throw databaseError(r.error)
- return <WorkspaceShell {...w}><CompanySettings company={w.company} members={members.data} invitations={invitations.data} role={w.membership.role} actor={w.user.id}/></WorkspaceShell>
+ return <WorkspaceShell {...w}><CompanySettings accountEmail={w.user.email} company={w.company} members={members.data} invitations={invitations.data} role={w.membership.role} actor={w.user.id}/></WorkspaceShell>
 }

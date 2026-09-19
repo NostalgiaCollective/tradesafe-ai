@@ -17,6 +17,6 @@ export default function CreateCompany({actor}){
   const result=await command('create_company',attempt.current);clearProgress(key);setSaved(result.id);router.push('/report/new?company='+result.id);return 'Company created. Choose a trade for your first report.'
  })}
  return <section className="work-panel"><h1>Start your company workspace</h1><p>Your account is signed in. Create a company to start your first report, or join the company that invited you.</p><p>Already invited? Open the original invitation link from your company owner. You do not need a second company.</p>
- <p>Only a business name is required. You will be its owner. Contact and trade details can be added later in Company &amp; people; existing report snapshots will not change.</p>
+ <p>Only a business name is required. You will be its owner. Contact and trade details can be added later in Settings; existing report snapshots will not change.</p>
  <form onSubmit={submit}><label htmlFor="new-company">Business name</label><input id="new-company" required maxLength={200} disabled={!operation.ready||operation.busy||started} value={name} onChange={e=>{setName(e.target.value);writeProgress(key,{name:e.target.value})}}/><button className="primary" disabled={!operation.ready||operation.busy||Boolean(saved)}>{operation.busy?'Creating...':started?'Retry creating company':'Create company'}</button><OperationFeedback operation={operation}/>{saved&&<a href={'/report/new?company='+saved}>Create your first report</a>}</form></section>
 }

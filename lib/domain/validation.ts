@@ -11,25 +11,28 @@ export function safeRedirect(value: unknown): string {
     const originalPath = value.split('?')[0]
     if (originalPath !== url.pathname) return fallback
     // Authentication and API endpoints are never post-login destinations.
-    if (!['/dashboard','/actions','/settings','/join'].includes(url.pathname) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname)) return fallback
+    if (!['/dashboard','/reports','/actions','/settings','/join'].includes(url.pathname) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname)) return fallback
     const query = new URLSearchParams()
     const one = (key:string) => url.searchParams.getAll(key).length===1 ? url.searchParams.get(key) : null
     const company=one('company')
-    if(company&&UUID.test(company)&&['/dashboard','/actions','/settings','/report/new'].includes(url.pathname))query.set('company',company)
-    if(url.pathname==='/dashboard'){
-      const q=one('q'),status=one('status'),page=one('page')
+    if(company&&UUID.test(company)&&['/dashboard','/reports','/actions','/settings','/report/new'].includes(url.pathname))query.set('company',company)
+    if(url.pathname==='/dashboard'||url.pathname==='/reports'){
+      const q=one('q'),status=one('status'),page=one('page'),trade=one('trade'),sort=one('sort')
+      if(trade&&['electrical','plumbing','roofing'].includes(trade))query.set('trade',trade)
+      if(sort&&['oldest','work_date'].includes(sort))query.set('sort',sort)
       if(q?.trim()&&q.length<=120&&!/[\u0000-\u001f\u007f]/.test(q))query.set('q',q.trim())
-      if(status==='draft'||status==='finalized')query.set('status',status)
+      if(status==='draft'||status==='finalized'||status==='amended')query.set('status',status)
       if(page&&/^\d{1,5}$/.test(page)&&Number(page)<=10000)query.set('page',String(Number(page)))
     }
     if(url.pathname==='/actions'){
       if(one('mine')==='0')query.set('mine','0')
       if(one('closed')==='1')query.set('closed','1')
     }
+    const action=one('action');if(url.pathname.startsWith('/report/')&&action&&UUID.test(action))query.set('action',action)
     const steps = url.searchParams.getAll('step')
     if (url.pathname.startsWith('/report/') && steps.length === 1 && /^[1-5]$/.test(steps[0])) query.set('step', steps[0])
     const from=one('from')
-    if(url.pathname.startsWith('/report/')&&from&&/^\/(dashboard|actions)\?/.test(from)){
+    if(url.pathname.startsWith('/report/')&&from&&/^\/(dashboard|reports|actions)\?/.test(from)){
       const list=safeRedirect(from)
       if(new URL(list,'https://internal.invalid').searchParams.has('company'))query.set('from',list)
     }

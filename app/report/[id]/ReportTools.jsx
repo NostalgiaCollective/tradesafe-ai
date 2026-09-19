@@ -6,9 +6,9 @@ import {useOperation} from '@/lib/client/useOperation'
 import {reportState} from '@/lib/client/report-state'
 import {useUnsavedWarning} from '@/lib/client/useUnsavedWarning'
 import OperationFeedback from '@/app/components/OperationFeedback'
-export default function ReportTools({report,actor,canAmend,returnTo}){
+export default function ReportTools({report,actor,canAmend,returnTo,initialReason=''}){
  const router=useRouter(),operation=useOperation(),attempt=useRef(null)
- const [reason,setReason]=useState(''),[started,setStarted]=useState(false),[saved,setSaved]=useState(null)
+ const [reason,setReason]=useState(initialReason),[started,setStarted]=useState(false),[saved,setSaved]=useState(null)
  useUnsavedWarning(Boolean(reason.trim()&&!saved))
  function amend(e){e.preventDefault();void operation.run('Creating an amendment. The original report will remain unchanged.',async()=>{
   if(!reason.trim())throw Error('Enter the reason for this amendment.')

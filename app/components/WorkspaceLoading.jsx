@@ -1,0 +1,1 @@
+﻿export default function WorkspaceLoading(){return <main className="work-app work-main" aria-busy="true"><h1>Loading your workspace</h1><p role="status">Getting your company records...</p><div aria-hidden="true" className="loading-records">{[0,1,2].map(i=><div key={i} style={{height:90,marginBlock:16,background:'#242820',borderRadius:8}}/>)}</div></main>}
