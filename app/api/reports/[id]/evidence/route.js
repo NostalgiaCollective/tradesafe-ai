@@ -11,7 +11,7 @@ export async function GET(_request,{params}){try{
  return Response.json(r.data,{headers:privateHeaders})
 }catch(e){return errorResponse(e)}}
 export async function POST(request,{params}){let finish,outcome='failed';try{
- mutation(request);const {id}=await params,access=await reportAccess(id,true)
+ mutation(request);const {id}=await params,access=await reportAccess(id,true,request)
  const evidenceId=request.headers.get('x-evidence-id');let caption
  try{caption=decodeURIComponent(request.headers.get('x-evidence-caption')||'').trim()}catch{throw new AppError('invalid_request')}
  if(!UUID.test(evidenceId||'')||!caption||caption.length>1000)throw new AppError('invalid_request')

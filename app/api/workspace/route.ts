@@ -5,11 +5,13 @@ import { databaseError } from '@/lib/server/workspace'
 import { readObject, UUID } from '@/lib/domain/validation'
 import { AppError,errorResponse } from '@/lib/domain/errors'
 import { validDraft, canEditReport } from '@/lib/domain/inspection'
+import {assertExpectedActor} from '@/lib/domain/actor'
 
 const commands=['create_company','save_company','invite','revoke_invitation','accept_invitation','member','create_report','save_report','finalize','amend','update_action']
 export async function POST(request: Request) {
  try {
   const {supabase,user}=await authenticatedClient()
+  assertExpectedActor(user.id,request.headers.get('x-expected-actor'))
   // Browser mutations use JSON and require the configured same origin. Direct RPC is also guarded in SQL.
   if(request.headers.get('origin')!==new URL(appOrigin()).origin)throw new AppError('denied')
   if(!request.headers.get('content-type')?.startsWith('application/json'))throw new AppError('invalid_request')

@@ -10,7 +10,7 @@ export async function GET(_request,{params}){try{
  return new Response(bytes,{headers:{...privateHeaders,'Content-Type':'image/jpeg','Content-Disposition':'inline; filename="evidence-'+row.id+'.jpg"'}})
 }catch(e){return errorResponse(e)}}
 export async function DELETE(request,{params}){try{
- mutation(request);const {id,evidenceId}=await params,access=await reportAccess(id,true)
+ mutation(request);const {id,evidenceId}=await params,access=await reportAccess(id,true,request)
  const row=await rpc(access.supabase,'ts_evidence_command',{command:'remove',p:{reportId:id,id:evidenceId}})
  let cleanupPending=false;try{await cleanRemoved(storageServer(),row)}catch{cleanupPending=true}
  return Response.json({id:row.id,state:'removed',cleanupPending},{headers:privateHeaders})

@@ -2,7 +2,7 @@ import { reportAccess,mutation,rpc,storageServer,PHOTO_BUCKET,objectBytes,cleanR
 import { AppError,errorResponse } from '@/lib/domain/errors'
 export const runtime='nodejs'
 export async function POST(request,{params}){try{
- mutation(request);const {id}=await params,access=await reportAccess(id,true),server=storageServer()
+ mutation(request);const {id}=await params,access=await reportAccess(id,true,request),server=storageServer()
  const rows=await access.supabase.from('ts_evidence').select('*').eq('report_id',id)
  if(rows.error)throw new AppError('query_failed')
  const results=[]

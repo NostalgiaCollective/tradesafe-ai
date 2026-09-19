@@ -1,4 +1,5 @@
 export const ERROR_MESSAGES = {
+  account_changed: 'The signed-in account has changed. These entries have not been submitted by the new account. Sign back in as the original account, or open a fresh page before making changes.',
   request_timeout: 'The upload took too long to arrive. Check your connection, then retry the same photo. Keep this page open to preserve your selection and caption.',
   resource_limited: 'The photo or PDF request limit has been reached. Wait 10 minutes, then retry the same operation. Existing saved photos and PDFs remain available.',
   resource_busy: 'Photo or PDF processing is busy. Wait a few seconds, then retry the same operation. Keep this page open to preserve your input.',
@@ -26,6 +27,7 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  account_changed: 409,
   request_timeout: 408,
   resource_limited: 429, resource_busy: 503,
   image_invalid: 422, evidence_pending: 409, evidence_limit: 409, evidence_missing: 503, export_busy: 409,
