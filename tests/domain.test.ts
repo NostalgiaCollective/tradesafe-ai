@@ -8,11 +8,17 @@ import { withPayment, withWorkStatus, isLegacyPaid } from '../lib/domain/reports
 import { ownsRecord, requireOwner, isProtectedPath, isAnonymousError } from '../lib/domain/authorization.ts'
 import { AppError, errorResponse } from '../lib/domain/errors.ts'
 
-test('internal redirects preserve only the approved report step', () => {
+test('internal redirects preserve only approved destinations and context', () => {
   for (const path of ['/dashboard', '/report/new', '/report/123?step=2']) assert.equal(safeRedirect(path), path)
   assert.equal(safeRedirect('/report/123?step=2&redirect=https://example.com&token=secret'), '/report/123?step=2')
   assert.equal(safeRedirect('/report/new?step=2&step=3'), '/report/new')
   assert.equal(safeRedirect('/dashboard?step=2'), '/dashboard')
+  const company='11111111-1111-4111-8111-111111111111'
+  const report='/report/123?'+new URLSearchParams({step:'3',from:'/dashboard?company='+company+'&q=Test+job&status=draft'})
+  assert.equal(safeRedirect(report),report)
+  for(const path of ['/join','/report/new?company='+company,'/dashboard?company='+company+'&q=Test+job&status=draft','/actions?company='+company+'&mine=0&closed=1'])assert.equal(safeRedirect(path),path)
+  assert.equal(safeRedirect('/dashboard?company='+company+'&company='+company+'&token=private'),'/dashboard')
+  for(const path of ['/auth/login','/auth/callback','/api/workspace','/join?token=private'])assert.equal(safeRedirect(path),path.startsWith('/join')?'/join':'/dashboard')
 })
 test('unsafe, encoded, malformed and missing redirects fall back', () => {
   for (const value of [undefined, null, '', 42, {}, [], 'https://example.com', '//example.com', '/\\example.com', 'javascript:alert(1)', '/%2f%2fexample.com', '/%252fexample.com', '/a/../dashboard', '/a//b', ' /dashboard', '/dashboard\n', '/dashboard#x', '/%zz', '/@example.com', 'https://internal.invalid/dashboard']) {

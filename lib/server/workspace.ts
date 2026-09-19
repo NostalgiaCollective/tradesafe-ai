@@ -12,7 +12,7 @@ export function databaseError(error: { message?: string; code?: string }) {
   return new AppError('query_failed')
 }
 export async function workspace(returnTo: string, companyId?: string) {
-  const { supabase, user } = await pageClient(returnTo)
+  const { supabase, user } = await pageClient(returnTo+(companyId&&!returnTo.includes('?')?'?company='+companyId:''))
   const { data: memberships, error } = await supabase.from('ts_members').select('company_id,role').eq('user_id',user.id).eq('active',true).order('joined_at')
   if (error) throw databaseError(error)
   const membership = companyId ? memberships.find((m: {company_id:string})=>m.company_id===companyId) : memberships[0]
@@ -23,8 +23,8 @@ export async function workspace(returnTo: string, companyId?: string) {
   if (membership && !company) throw new AppError('query_failed')
   return { supabase,user,membership,company,companies:companies.data }
 }
-export async function loadReport(id: string) {
-  const {supabase,user}=await pageClient('/report/'+id)
+export async function loadReport(id: string,returnTo?:string) {
+  const {supabase,user}=await pageClient(returnTo||'/report/'+id)
   if (!UUID.test(id)) throw new AppError('not_found')
   const {data:report,error}=await supabase.from('ts_reports').select('*').eq('id',id).maybeSingle()
   if(error)throw databaseError(error)

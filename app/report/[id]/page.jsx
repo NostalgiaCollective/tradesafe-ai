@@ -11,7 +11,7 @@ import { legacyAnswers } from '@/lib/domain/legacy'
 import {listReturn} from '@/lib/domain/report-list'
 export default async function ReportPage({params,searchParams}) {
  const {id}=await params,query=await searchParams;let loaded
- try{loaded=await loadReport(id)}catch(e){if(e.code==='not_found')notFound();throw e}
+ try{loaded=await loadReport(id,'/report/'+id+'?'+new URLSearchParams(Object.entries(query).filter(([,v])=>typeof v==='string')))}catch(e){if(e.code==='not_found')notFound();throw e}
  const {supabase,user,report,membership}=loaded
  if(!report){
   const legacy=await supabase.from('reports').select('*').eq('id',id).maybeSingle()

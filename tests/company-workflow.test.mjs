@@ -27,6 +27,7 @@ async function fixture({legacy=false}={}) {
  }
  await db.exec(await readFile(new URL('../supabase/phase-2-preflight.sql',import.meta.url),'utf8'))
  await db.exec(await readFile(new URL('../supabase/staging-verification-preflight.sql',import.meta.url),'utf8'))
+ await db.exec(await readFile(new URL('../supabase/migrations/20260919000100_onboarding_context.sql',import.meta.url),'utf8'))
  const as = async user => { await db.exec('RESET ROLE; SET ROLE authenticated;'); await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[user]) }
  const cmd = async(command,p={}) => (await db.query('SELECT public.ts_command($1,$2::jsonb) AS value',[command,JSON.stringify({companyId:company,requestId:randomUUID(),...p})])).rows[0].value
  await as(owner); await cmd('create_company',{id:company,name:'Synthetic company A'})
@@ -37,6 +38,38 @@ async function fixture({legacy=false}={}) {
  return {db,as,cmd}
 }
 const complete = () => ({job:{address:'Synthetic site',client:'Fixture',date:'2026-09-11'},answers:Object.fromEntries(template.items.map(i=>[i.id,{state:'meets',note:'',controls:''}]))})
+
+test('company ownership is atomic and creation retries cannot duplicate or claim another company',async()=>{
+ const {db,as,cmd}=await fixture();try{
+  await as(owner);const id=randomUUID();await cmd('create_company',{id,name:'Atomic company'});await cmd('create_company',{id,name:'Atomic company'})
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM public.ts_companies WHERE id=$1',[id])).rows[0].n,1)
+  assert.equal((await db.query('SELECT role FROM public.ts_members WHERE company_id=$1',[id])).rows[0].role,'owner')
+  await db.exec("RESET ROLE; CREATE FUNCTION public.synthetic_fail_membership() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic_membership_failure'; END $$; CREATE TRIGGER synthetic_fail_membership BEFORE INSERT ON public.ts_members FOR EACH ROW EXECUTE FUNCTION public.synthetic_fail_membership();")
+  await as(owner);const failed=randomUUID();await assert.rejects(cmd('create_company',{id:failed,name:'Must roll back'}),/synthetic_membership_failure/)
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM public.ts_companies WHERE id=$1',[failed])).rows[0].n,0)
+  await as(outsider);await assert.rejects(cmd('create_company',{id,name:'Not mine'}),/TS_denied/)
+ }finally{await db.close()}
+})
+
+test('read-only invitation context explains lifecycle without leaking another recipient or granting access',async()=>{
+ const {db,as,cmd}=await fixture();try{
+  const context=async token=>(await db.query('SELECT public.ts_invitation_context($1) AS value',[token??null])).rows[0].value
+  await as(owner);const token='d'.repeat(64),inv=await cmd('invite',{email:'user3@example.test',role:'worker',token})
+  assert.deepEqual(await context(token),{status:'wrong_account'});assert.deepEqual(await context(),[])
+  await as(outsider);assert.equal((await context()).length,1);assert.equal((await context(token)).status,'pending')
+  assert.equal((await db.query('SELECT id FROM public.ts_companies WHERE id=$1',[company])).rows.length,0)
+  const serialized=JSON.stringify(await context());assert.ok(!serialized.includes('token'));assert.ok(!serialized.includes('email'))
+  await cmd('accept_invitation',{token});assert.deepEqual(await context(token),{status:'accepted',company_id:company});assert.deepEqual(await context(),[])
+  await cmd('accept_invitation',{token});assert.equal((await db.query("SELECT count(*)::int AS n FROM public.ts_events WHERE kind='invitation_accepted' AND actor_id=$1",[outsider])).rows[0].n,1)
+  await as(owner);await cmd('member',{userId:outsider,role:'remove'});await as(outsider);assert.deepEqual(await context(token),{status:'access_removed'});await assert.rejects(cmd('accept_invitation',{token}),/TS_invitation/)
+  await as(owner);const rev=await cmd('invite',{email:'user3@example.test',role:'worker',token:'e'.repeat(64)});await cmd('revoke_invitation',{id:rev.id})
+  await as(outsider);assert.deepEqual(await context('e'.repeat(64)),{status:'revoked'})
+  await db.exec('RESET ROLE');await db.query('UPDATE public.ts_invitations SET accepted_by=NULL,expires_at=now()-interval \'1 day\' WHERE id=$1',[inv.id]);await as(outsider)
+  assert.deepEqual(await context(token),{status:'expired'});await assert.rejects(cmd('accept_invitation',{token}),/TS_invitation/)
+  await as(unverified);assert.deepEqual(await context(),[]);assert.deepEqual(await context(token),{status:'wrong_account'})
+  await db.exec('RESET ROLE; SET ROLE anon');await assert.rejects(context(token),/permission denied/)
+ }finally{await db.close()}
+})
 
 test('SQL templates match the published module; creation retries and optimistic saves preserve drafts',async()=>{
  const {db,cmd}=await fixture();try{

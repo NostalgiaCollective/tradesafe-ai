@@ -1,10 +1,12 @@
 import { workspace,databaseError } from '@/lib/server/workspace'
 import WorkspaceShell from '@/app/components/WorkspaceShell'
 import CreateCompany from '@/app/components/CreateCompany'
+import CompanyChoice from '@/app/components/CompanyChoice'
 import ActionList from './ActionList'
 export default async function ActionsPage({searchParams}) {
- const params=await searchParams;const w=await workspace('/actions',params.company)
- if(!w.company)return <WorkspaceShell {...w}><CreateCompany /></WorkspaceShell>
+ const params=await searchParams;const w=await workspace('/actions?'+new URLSearchParams(Object.entries(params).filter(([,v])=>typeof v==='string')),params.company)
+ if(!params.company&&w.companies.length>1)return <WorkspaceShell {...w} company={null}><CompanyChoice companies={w.companies} destination="/actions"/></WorkspaceShell>
+ if(!w.company)return <WorkspaceShell {...w}><CreateCompany actor={w.user.id}/></WorkspaceShell>
  const [actions,members,events]=await Promise.all([
   w.supabase.from('ts_actions').select('*,report:ts_reports(id,document,amendment_of)',{count:'exact'}).eq('company_id',w.company.id).order('target_date',{nullsFirst:false}).order('id').limit(200),
   w.supabase.from('ts_members').select('*').eq('company_id',w.company.id),

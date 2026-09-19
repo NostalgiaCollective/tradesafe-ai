@@ -2,11 +2,17 @@ import Link from 'next/link'
 import { workspace,databaseError } from '@/lib/server/workspace'
 import WorkspaceShell from '@/app/components/WorkspaceShell'
 import CreateCompany from '@/app/components/CreateCompany'
+import CompanyChoice from '@/app/components/CompanyChoice'
+import PendingInvitations from '@/app/components/PendingInvitations'
 import ListSearch from '@/app/components/ListSearch'
 import {reportFilters,reportListUrl,searchPattern} from '@/lib/domain/report-list'
 export default async function DashboardPage({searchParams}) {
- const params=await searchParams;const w=await workspace('/dashboard',params.company)
- if(!w.company)return <WorkspaceShell {...w}><CreateCompany /></WorkspaceShell>
+ const params=await searchParams;const w=await workspace('/dashboard?'+new URLSearchParams(Object.entries(params).filter(([,v])=>typeof v==='string')),params.company)
+ const invites=await w.supabase.rpc('ts_invitation_context')
+ if(invites.error)throw databaseError(invites.error)
+ const pending=<PendingInvitations invitations={invites.data}/>
+ if(!params.company&&w.companies.length>1)return <WorkspaceShell {...w} company={null}>{pending}<CompanyChoice companies={w.companies}/></WorkspaceShell>
+ if(!w.company)return <WorkspaceShell {...w}>{pending}<CreateCompany actor={w.user.id}/></WorkspaceShell>
  const filters=reportFilters(params),{page,status,q}=filters
  let query=w.supabase.from('ts_reports').select('*',{count:'exact'}).eq('company_id',w.company.id).order('updated_at',{ascending:false}).order('id').range(page*25,page*25+24)
  if(status)query=query.eq('lifecycle',status)
@@ -15,7 +21,7 @@ export default async function DashboardPage({searchParams}) {
  for(const r of [reports,actions,legacy,resume])if(r.error)throw databaseError(r.error)
  const resumeReport=page===0&&status!=='finalized'?resume.data:null
  const url=n=>reportListUrl(w.company.id,{...filters,page:n}),returnTo=url(page),reportUrl=id=>'/report/'+id+'?'+new URLSearchParams({from:returnTo})
- return <WorkspaceShell {...w}><div className="work-title"><div><p className="eyebrow">Company records</p><h1>Reports</h1></div><Link className={resumeReport?'button':'primary button'} href={'/report/new?company='+w.company.id}>New report</Link></div>
+ return <WorkspaceShell {...w}>{pending}<div className="work-title"><div><p className="eyebrow">Company records</p><h1>Reports</h1></div><Link className={resumeReport?'button':'primary button'} href={'/report/new?company='+w.company.id}>New report</Link></div>
  {resumeReport&&<section className="work-panel"><h2>Continue your draft</h2><p>{resumeReport.document.job.address||'Untitled job'} · Last saved {new Date(resumeReport.updated_at).toLocaleString('en-CA')}</p><Link className="primary button" href={reportUrl(resumeReport.id)}>Resume latest draft</Link></section>}
  <p><Link href={'/actions?company='+w.company.id}>Assigned to me: {actions.count} open follow-ups</Link></p>
  <ListSearch key={returnTo} company={w.company.id} q={q} status={status}/><p role="status">{reports.count} matching {reports.count===1?'report':'reports'}{q?' for “'+q+'”':''}.</p>
