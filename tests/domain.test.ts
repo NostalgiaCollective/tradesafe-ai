@@ -99,3 +99,7 @@ test('error responses distinguish configuration, auth, missing records and provi
   const response = errorResponse(new Error('provider-secret-value'), 'payment_failed')
   assert.ok(!(await response.text()).includes('provider-secret-value'))
 })
+
+test('library and corrective-action return destinations preserve validated context',()=>{
+ const company='11111111-1111-4111-8111-111111111111';const list='/reports?company='+company+'&trade=electrical&sort=work_date&q=Customer&status=amended&page=2';assert.equal(safeRedirect(list),list);const report='/report/'+company+'?'+new URLSearchParams({action:company,from:list});assert.equal(safeRedirect(report),report);assert.equal(safeRedirect('/reports?company='+company+'&trade=unknown&sort=injected'),'/reports?company='+company);
+})

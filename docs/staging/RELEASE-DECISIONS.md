@@ -24,3 +24,7 @@ Application: both checkout routes return `deferred`; hosted configuration reject
 ## Interrupted-work phase
 
 Focused reliability evidence is recorded in [the interruption verification record](INTERRUPTION-VERIFICATION.md). It does not close delivered-email signup, isolated restore, content/privacy approval, operational ownership, capacity/WebKit/device, billing or pending onboarding phone acceptance gates. Daniel's earlier iPhone acceptance remains user-reported evidence for the tested prior workflow; this phase needs its own phone retest.
+
+## Daily Operations checkpoint
+
+The dashboard, company-scoped report library, mobile report journey, correction-evidence links and settings navigation are covered in [Daily Operations](DAILY-OPERATIONS.md). No release-policy decision, billing capability or retention behavior changes. This checkpoint requires passing exact-commit CI before staging deployment; the previous npm audit service failure was resolved on run 35456998866 attempt 5. New physical-phone acceptance remains pending and must not be inferred from Daniel's earlier workflow acceptance.
