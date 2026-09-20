@@ -119,8 +119,12 @@ export async function negativeArchiveChecks(manifest) {
   writeFileSync(path, corrupt)
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(path, bytes) }
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== object.path) }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== 'auth.dump') }))
+  const databasePath = ARCHIVE + '/public.dump', database = readFileSync(databasePath), damaged = Buffer.from(database)
+  damaged[0] ^= 255; writeFileSync(databasePath, damaged)
+  try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(databasePath, database) }
   await verifyRecoverySet(ARCHIVE, manifest)
-  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing manifest artifact rejected']
+  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing manifest object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected']
 }
 export async function restore(target, source, status, manifest) {
   const started = performance.now()
@@ -190,6 +194,12 @@ export async function restore(target, source, status, manifest) {
   console.log('Recovery: database records verified')
   const restoredProtections = protections(target.container)
   for (const section of ['policies', 'tables', 'functions', 'defaults']) if (JSON.stringify(restoredProtections[section]) !== JSON.stringify(manifest.protections[section])) console.error('Recovery protection mismatch: ' + section)
+  for (const table of manifest.protections.tables) {
+    const restored = restoredProtections.tables.find(t => t[0] === table[0])
+    // These three fields are schema name, RLS boolean and database-role ACLs only.
+    // Never include row values, function bodies or provider errors in diagnostics.
+    if (JSON.stringify(table) !== JSON.stringify(restored)) console.error('Recovery table permission metadata: ' + JSON.stringify({ source: table, target: restored }))
+  }
   assert.deepEqual(restoredProtections, manifest.protections)
   console.log('Recovery: authorization catalog verified')
   const buckets = good(await storage.storage.listBuckets())
