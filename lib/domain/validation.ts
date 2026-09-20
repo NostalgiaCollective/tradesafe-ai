@@ -27,6 +27,10 @@ export function safeRedirect(value: unknown): string {
     if(url.pathname==='/actions'){
       if(one('mine')==='0')query.set('mine','0')
       if(one('closed')==='1')query.set('closed','1')
+      const status=one('status'),page=one('page'),focus=one('focus')
+      if(status&&['outstanding','attention','awaiting_verification','closed','all'].includes(status))query.set('status',status)
+      if(page&&/^\d{1,5}$/.test(page)&&Number(page)<=10000)query.set('page',String(Number(page)))
+      if(focus&&UUID.test(focus))query.set('focus',focus)
     }
     const action=one('action');if(url.pathname.startsWith('/report/')&&action&&UUID.test(action))query.set('action',action)
     const steps = url.searchParams.getAll('step')

@@ -8,7 +8,7 @@ test('report search is bounded and return navigation preserves only same-company
  assert.equal(filters.q,'Site 20%_');assert.equal(searchPattern(filters.q),'%Site 20\\%\\_%')
  const url=reportListUrl(company,filters);assert.equal(listReturn(url,company),url)
  for(const bad of ['https://evil.test/dashboard?company='+company,'//evil.test','/actions?company=other','/dashboard?company='+company+'#x'])assert.equal(listReturn(bad,company),'/reports?company='+company)
- assert.equal(listReturn('/actions?company='+company+'&mine=0&closed=1&unsafe=x',company),'/actions?company='+company+'&mine=0&closed=1')
+ assert.equal(listReturn('/actions?company='+company+'&mine=0&closed=1&unsafe=x',company),'/actions?company='+company+'&mine=0&status=all')
  assert.equal(reportFilters({q:'x'.repeat(200),status:'anything',page:'-2'}).q.length,120)
  assert.equal(reportFilters({status:'anything',page:'-2'}).status,'');assert.equal(reportFilters({page:'-2'}).page,0)
 })

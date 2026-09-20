@@ -2,7 +2,7 @@ import { writeFileSync, mkdirSync } from 'node:fs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:workflows|restored)\.spec\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up)\.spec|follow-up)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     this.rows.push({ name: test.title, status: result.status, failureLines: lines })
     console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : ''))
   }
@@ -12,7 +12,7 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 3) && !skipped ? 'passed' : 'failed'
+    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 4) && !skipped ? 'passed' : 'failed'
     mkdirSync('test-results', { recursive: true })
     writeFileSync(recovery ? 'test-results/local-recovery-browser.json' : 'test-results/local-webkit.json', JSON.stringify({
       commit: process.env.GITHUB_SHA, at: new Date().toISOString(), status,

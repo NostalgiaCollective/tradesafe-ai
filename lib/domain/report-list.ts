@@ -1,4 +1,5 @@
-﻿import { UUID } from './validation.ts'
+﻿import {actionFilters,actionListUrl} from './action-list.ts'
+import { UUID } from './validation.ts'
 export function reportFilters(params: Record<string,unknown>) {
  return {q:typeof params.q==='string'?params.q.trim().slice(0,120):'',status:['draft','finalized','amended'].includes(String(params.status))?String(params.status):'',trade:['electrical','plumbing','roofing'].includes(String(params.trade))?String(params.trade):'',sort:['oldest','work_date'].includes(String(params.sort))?String(params.sort):'recent',page:Math.max(0,Math.min(10000,Number.parseInt(String(params.page||'0'),10)||0))}
 }
@@ -9,7 +10,7 @@ export function listReturn(value:unknown,company:string) {
  try{const url=new URL(value,'https://internal.invalid');if(url.origin!=='https://internal.invalid'||!['/dashboard','/reports','/actions'].includes(url.pathname)||url.searchParams.get('company')!==company||!UUID.test(company))return fallback
   if(url.pathname==='/reports')return reportListUrl(company,reportFilters(Object.fromEntries(url.searchParams)))
   if(url.pathname==='/dashboard')return '/dashboard?company='+company
-  return '/actions?'+new URLSearchParams({company,mine:url.searchParams.get('mine')==='0'?'0':'1',...(url.searchParams.get('closed')==='1'?{closed:'1'}:{})})
+  return actionListUrl(company,actionFilters(Object.fromEntries(url.searchParams)))
  }catch{return fallback}
 }
 export const searchPattern=(value:string)=>'%'+value.replace(/[\\%_]/g,'\\$&')+'%'

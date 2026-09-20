@@ -46,3 +46,7 @@ Daniel's intended future domain is `tradesafeapp.ca`, unpurchased with no purcha
 ## Bounded recovery-engineering milestone
 
 Task-owned local source/target creation is now explicitly authorized for a [synthetic recovery rehearsal](BACKUP-RESTORE-DRILL.md). The current checkpoint and exact-commit CI distinguish implementation from executed results. Even a passing local restore does not authorize a hosted export or close hosted recovery, independent backup storage, full Auth/configuration recovery, operational ownership, RPO/RTO, domain or delivered-email gates. Tooling-only changes do not require a staging deployment; the served application identity remains separately recorded.
+
+## Daily follow-up usability
+
+Daniel reports that the latest report-completion workflow works on his phone (the usability update delivered at `7c9d960`). This is overall user-reported acceptance, separate from automated checks; no individual test results, other devices, permissions or production readiness are inferred. The new [daily follow-up milestone](DAILY-FOLLOW-UP.md) does not reopen domain/email or recovery work. Existing gates and evidence remain intact; current exact CI and staging receipts remain in the durable checkpoint.
