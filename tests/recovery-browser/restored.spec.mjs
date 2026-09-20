@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, devices } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { randomUUID, createHash } from 'node:crypto'
@@ -9,13 +9,14 @@ import { expectSuccess, expectDatabaseError } from '../../scripts/staging/assert
 test('Restored WebKit: identities, drafts, evidence, PDF, amendments, history and access boundaries', async ({ browser }) => {
   localEnvironment({ API_URL: process.env.NEXT_PUBLIC_SUPABASE_URL, ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY })
   const f = JSON.parse(readFileSync('.ci-local/recovery-fixture.json', 'utf8'))
+  writeFileSync('test-results/local-recovery-runtime.json', JSON.stringify({ webkit: browser.version(), playwright: JSON.parse(readFileSync('node_modules/@playwright/test/package.json', 'utf8')).version }))
   const hash = bytes => createHash('sha256').update(bytes).digest('hex')
   const ordinary = async credentials => {
     const c = createClient(API_ORIGIN, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
     expectSuccess(await c.auth.signInWithPassword(credentials)); return c
   }
   const login = async credentials => {
-    const context = await browser.newContext()
+    const context = await browser.newContext({ ...devices['iPhone 13'] })
     await context.route('**/*', route => [APP_ORIGIN, API_ORIGIN].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort('blockedbyclient'))
     const page = await context.newPage(); await page.goto(APP_ORIGIN + '/auth/login')
     await page.getByLabel('Email', { exact: true }).fill(credentials.email)

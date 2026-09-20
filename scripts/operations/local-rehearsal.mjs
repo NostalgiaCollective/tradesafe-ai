@@ -27,7 +27,7 @@ export function identity(project) {
   assert.equal(c.Name, '/supabase_db_' + project); assert.equal(c.State.Running, true)
   const volumes = c.Mounts.filter(m => m.Type === 'volume').map(m => m.Name).sort()
   assert.ok(volumes.length && volumes.every(v => v.endsWith('_' + project)))
-  return { project, container: c.Id, volumes, system: sql(c.Id, 'select system_identifier from pg_control_system()') }
+  return { project, container: c.Id, volumes, image: c.Config.Image, imageId: c.Image, system: sql(c.Id, 'select system_identifier from pg_control_system()') }
 }
 export function assertIdentity(expected) { assert.deepEqual(identity(expected.project), expected) }
 export function assertEmptyTarget(expected, source) {
@@ -121,7 +121,11 @@ export async function restore(target, source, status, manifest) {
   const restoreArchive = (name, filter) => {
     console.log('Recovery: restore ' + name)
     assertIdentity(target) // Re-check immutable Docker/volume/database identity before every restore write.
-    const bytes = readFileSync(ARCHIVE + '/' + name), args = ['pg_restore', '-U', 'postgres', '-d', 'postgres', '--exit-on-error', '--single-transaction', '--no-owner']
+    // Supabase's postgres role is deliberately not a superuser. The existing local
+    // restore administrator can recreate the archived ACLs/owners without granting
+    // anything new to application roles or altering the source's permissions.
+    assert.equal(docker(target.container, ['psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-Atc', "select current_user||':'||rolsuper from pg_roles where rolname=current_user"]).toString().trim(), 'supabase_admin:true')
+    const bytes = readFileSync(ARCHIVE + '/' + name), args = ['pg_restore', '-U', 'supabase_admin', '-d', 'postgres', '--exit-on-error', '--single-transaction']
     if (filter) {
       const list = docker(target.container, ['pg_restore', '--list'], bytes).toString().split('\n').filter(filter).join('\n')
       assert.ok(list.trim())

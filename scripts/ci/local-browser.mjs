@@ -83,7 +83,7 @@ try {
     source, target, backupMs, targetStartupMs, ...recovery, validationMs, negativeChecks,
     archiveBytes: manifest.artifacts.reduce((n,a) => n + a.bytes, 0), artifactCount: manifest.artifacts.length,
     tableRows: manifest.beforeInventory.tables.map(({table,rows}) => ({table,rows})),
-    restoredWebkit: restoredResult,
+    restoredWebkit: restoredResult, browserVersions: JSON.parse(readFileSync('test-results/local-recovery-runtime.json', 'utf8')),
     limitations: ['Synthetic local data only; not hosted recovery or production RPO/RTO', 'Password identities recovered; sessions, MFA/SSO, provider configuration and secrets not recovered', 'Archive stays on ephemeral runner; no independent durable/offsite backup coverage'],
   }
   writeFileSync('test-results/local-recovery.json', JSON.stringify(receipt, null, 2))
