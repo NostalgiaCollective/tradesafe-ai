@@ -26,4 +26,4 @@ export async function POST(request,{params}){let finish,outcome='failed';try{
  await reportAccess(id)
  outcome='complete'
  return Response.json({id:row.id,state:'ready'},{headers:privateHeaders})
-}catch(e){return errorResponse(e)}finally{finish?.(outcome)}}
+}catch(e){outcome=e instanceof AppError?e.code:'unavailable';return errorResponse(e)}finally{finish?.(outcome)}}

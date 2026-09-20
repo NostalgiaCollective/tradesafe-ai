@@ -32,6 +32,7 @@ export async function POST(request,{params}){
   outcome='complete'
   return Response.json({id:job.id,state:job.state,download:'/api/reports/'+id+'/exports/'+job.id},{headers:privateHeaders})
  }catch(e){
+  outcome=e instanceof AppError?e.code:'unavailable'
   if(job?.state==='generating'&&job.attempt===attempt){try{await rpc(server,'ts_export_job',{command:'fail',p:{reportId:job.report_id,attempt,code:e instanceof AppError&&e.code==='evidence_missing'?'evidence_missing':'generation_failed'},actor_id:access.user.id})}catch{/* Lease permits explicit retry after an interrupted or revoked session. */}}
   return errorResponse(e)
  }finally{finish?.(outcome)}

@@ -28,3 +28,9 @@ Focused reliability evidence is recorded in [the interruption verification recor
 ## Daily Operations checkpoint
 
 The dashboard, company-scoped report library, mobile report journey, correction-evidence links and settings navigation are covered in [Daily Operations](DAILY-OPERATIONS.md). No release-policy decision, billing capability or retention behavior changes. This checkpoint requires passing exact-commit CI before staging deployment; the previous npm audit service failure was resolved on run 35456998866 attempt 5. New physical-phone acceptance remains pending and must not be inferred from Daniel's earlier workflow acceptance.
+
+## Phase 4–6 release-candidate update
+
+Daniel confirms the current workflow is working as planned. This is user-reported overall acceptance; it does not invent individual phone, browser, signup, restore or permission results. The current pilot recommendation is conditional staging/pilot continuation only. Operational diagnosis now records stable failure codes for failed upload/PDF admission alongside duration and kind, without recording sensitive payloads. The incident and rollback procedure is [PILOT-OPERATIONS.md](PILOT-OPERATIONS.md).
+
+The exact delivered SHA, CI, deployment identity, hosted daily workflow and hosted interruption workflow remain those recorded in `.staging/reliability-workflow-checkpoint.json`. No new migration or deployment is implied by this decision-register update.
