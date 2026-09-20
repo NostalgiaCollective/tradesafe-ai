@@ -52,8 +52,8 @@ function protections(id) {
   const result = json(id, `select jsonb_build_object(
     'defaults',(select jsonb_agg(jsonb_build_array(pg_get_userbyid(d.defaclrole),d.defaclobjtype,d.defaclacl) order by pg_get_userbyid(d.defaclrole),d.defaclobjtype) from pg_default_acl d join pg_namespace n on n.oid=d.defaclnamespace where n.nspname='public'),
     'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or policyname='ts_private_objects'),
-    'tables',(select jsonb_agg(jsonb_build_array(c.relname,c.relrowsecurity,c.relacl) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'),
-    'functions',(select jsonb_agg(jsonb_build_array(p.proname,pg_get_function_identity_arguments(p.oid),p.prosecdef,p.proconfig,p.proacl) order by p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'))`)
+    'tables',(select jsonb_agg(jsonb_build_array(c.relname,c.relrowsecurity,coalesce(c.relacl,acldefault('r',c.relowner)),pg_get_userbyid(c.relowner),c.relforcerowsecurity) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'),
+    'functions',(select jsonb_agg(jsonb_build_array(p.proname,pg_get_function_identity_arguments(p.oid),p.prosecdef,p.proconfig,coalesce(p.proacl,acldefault('f',p.proowner)),pg_get_userbyid(p.proowner)) order by p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'))`)
   // PostgreSQL ACL ordering has no authorization meaning and pg_restore may reorder it.
   for (const table of result.tables || []) table[2]?.sort()
   for (const fn of result.functions || []) fn[4]?.sort()
@@ -196,7 +196,7 @@ export async function restore(target, source, status, manifest) {
   for (const section of ['policies', 'tables', 'functions', 'defaults']) if (JSON.stringify(restoredProtections[section]) !== JSON.stringify(manifest.protections[section])) console.error('Recovery protection mismatch: ' + section)
   for (const table of manifest.protections.tables) {
     const restored = restoredProtections.tables.find(t => t[0] === table[0])
-    // These three fields are schema name, RLS boolean and database-role ACLs only.
+    // Schema names, RLS flags, owners and database-role ACLs only.
     // Never include row values, function bodies or provider errors in diagnostics.
     if (JSON.stringify(table) !== JSON.stringify(restored)) console.error('Recovery table permission metadata: ' + JSON.stringify({ source: table, target: restored }))
   }
