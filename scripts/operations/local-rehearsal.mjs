@@ -49,10 +49,15 @@ function inventory(id) {
   return { sha256: sha(JSON.stringify(rows)), tables: rows }
 }
 function protections(id) {
-  return json(id, `select jsonb_build_object(
+  const result = json(id, `select jsonb_build_object(
     'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or policyname='ts_private_objects'),
     'tables',(select jsonb_agg(jsonb_build_array(c.relname,c.relrowsecurity,c.relacl) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'),
     'functions',(select jsonb_agg(jsonb_build_array(p.proname,pg_get_function_identity_arguments(p.oid),p.prosecdef,p.proconfig,p.proacl) order by p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'))`)
+  // PostgreSQL ACL ordering has no authorization meaning and pg_restore may reorder it.
+  for (const table of result.tables || []) table[2]?.sort()
+  for (const fn of result.functions || []) fn[4]?.sort()
+  for (const policy of result.policies || []) policy.roles?.sort()
+  return result
 }
 function storageInventory(id) {
   return json(id, "select coalesce(json_agg(json_build_object('bucket',bucket_id,'name',name) order by bucket_id,name),'[]') from storage.objects")
@@ -152,14 +157,25 @@ export async function restore(target, source, status, manifest) {
     assertIdentity(target)
     good(await storage.storage.createBucket(b.id, { public: b.public, fileSizeLimit: b.fileSizeLimit, allowedMimeTypes: b.allowedMimeTypes }))
   }
+  console.log('Recovery: bucket restrictions restored')
   for (const a of manifest.artifacts.filter(a => a.kind === 'object')) {
     assertIdentity(target)
     good(await storage.storage.from(a.bucket).upload(a.name, readFileSync(ARCHIVE + '/' + a.path), { upsert: false, contentType: a.bucket === 'tradesafe-evidence' ? 'image/jpeg' : 'application/pdf' }))
     const blob = good(await storage.storage.from(a.bucket).download(a.name))
     const bytes = Buffer.from(await blob.arrayBuffer()); assert.equal(bytes.length, a.bytes); assert.equal(sha(bytes), a.sha256)
   }
-  assert.deepEqual(inventory(target.container), manifest.beforeInventory)
-  assert.deepEqual(protections(target.container), manifest.protections)
+  console.log('Recovery: object bytes and hashes verified')
+  const restoredInventory = inventory(target.container)
+  for (const t of manifest.beforeInventory.tables) {
+    const restored = restoredInventory.tables.find(r => r.table === t.table)
+    if (JSON.stringify(t) !== JSON.stringify(restored)) console.error('Recovery inventory mismatch: ' + t.table + '; rows=' + t.rows + '/' + restored?.rows)
+  }
+  assert.deepEqual(restoredInventory, manifest.beforeInventory)
+  console.log('Recovery: database records verified')
+  const restoredProtections = protections(target.container)
+  for (const section of ['policies', 'tables', 'functions']) if (JSON.stringify(restoredProtections[section]) !== JSON.stringify(manifest.protections[section])) console.error('Recovery protection mismatch: ' + section)
+  assert.deepEqual(restoredProtections, manifest.protections)
+  console.log('Recovery: authorization catalog verified')
   const buckets = good(await storage.storage.listBuckets())
   assert.ok(buckets.length === 2 && buckets.every(b => !b.public))
   sql(target.container, "NOTIFY pgrst, 'reload schema'")
