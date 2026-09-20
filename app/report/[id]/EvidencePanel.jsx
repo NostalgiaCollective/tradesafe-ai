@@ -59,7 +59,7 @@ export default function EvidencePanel({reportId,actor,editable=false,disabled=fa
   return 'Photo saved and retained.'
  })}
  function clearSelection(){if(attempted&&!confirm('The previous upload may already be saved. Check the photo list before selecting another file. Clear this selection?'))return;setAttempted(false);setRetryId(null);requestId.current=null;setFile(null);setCaption('');setError('');setMessage('Selection cleared. Saved photos have not been removed.');if(input.current)input.current.value=''}
- return <section id="photo-evidence" className="work-panel no-print" aria-labelledby="photo-evidence-heading"><h2 id="photo-evidence-heading">Photos</h2>
+ return <section id="photo-evidence" tabIndex={-1} className="work-panel no-print" aria-labelledby="photo-evidence-heading"><h2 id="photo-evidence-heading">Photos</h2>
  <p>Add photos that help explain your observations. JPEG, PNG or WebP; up to 5 MiB and 20 megapixels each. Maximum 10 photos.</p>
  {editable&&<><fieldset className="work-fieldset" disabled={busy||disabled||!ready}><legend>{retryId?'Retry an incomplete photo':'Add a photo (optional)'}</legend>
  <label htmlFor="evidence-file">Photo file</label><input id="evidence-file" ref={input} type="file" accept="image/jpeg,image/png,image/webp" disabled={attempted} onChange={e=>{setFile(e.target.files?.[0]||null);setError('');setMessage('');trace('file selected');if(!retryId)requestId.current=null}}/>

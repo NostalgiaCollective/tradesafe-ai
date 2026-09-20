@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { APP_ORIGIN, API_ORIGIN, MAIL_ORIGIN, localEnvironment } from '../../scripts/ci/local-environment.mjs'
 import { expectSuccess, expectDatabaseError } from '../../scripts/staging/assertions.mjs'
 import { jpegAtSize } from '../fixtures/large-photo.mjs'
+import {observationEntry,selectedPhotoNavigation,retrySaveFeedback} from '../fixtures/report-usability.mjs'
 import { prepareRecoveryFixtures } from '../../scripts/ci/recovery-fixtures.mjs'
 
 test.describe.configure({ mode: 'serial' })
@@ -88,18 +89,13 @@ test('WebKit sign-in, captured local confirmation, company setup and draft reloa
 test('WebKit actual photo upload, retained PDF, immutable finalization and amendment reload', async ({ page, context }) => {
   await login(page)
   await page.goto('/report/' + reportId)
-  await page.getByRole('button', { name: '2. Observations', exact: true }).click()
-  const answers = page.getByLabel('Observation', { exact: true })
-  await expect(answers.first()).toBeVisible()
-  expect(await answers.evaluateAll(es => es.every(e => e.value === 'unanswered'))).toBe(true)
-  for (const answer of await answers.all()) await answer.selectOption('meets')
-  await answers.first().selectOption('attention')
-  await page.getByLabel('Explanation (required)', { exact: true }).fill('SYNTHETIC cone marks a damaged cover requiring correction')
-  await saved(page)
+  await retrySaveFeedback(page,context,APP_ORIGIN)
+  await observationEntry(page,'SYNTHETIC cone marks a damaged cover requiring correction')
   await page.getByRole('link', { name: 'Add or review photos', exact: true }).click()
   const jpeg = await sharp(Buffer.from('<svg width="1000" height="800"><rect width="1000" height="800" fill="#17415a"/><path d="M500 120L260 650H740Z" fill="#ff8500"/><text x="70" y="740" fill="white" font-size="38">SYNTHETIC WEBKIT ORANGE CONE</text></svg>')).jpeg().toBuffer()
   await page.getByLabel('Photo file', { exact: true }).setInputFiles({ name: 'SYNTHETIC-orange-cone.jpg', mimeType: 'image/jpeg', buffer: jpegAtSize(jpeg, 3600000) })
   await page.getByLabel('Photo caption', { exact: true }).fill(caption)
+  await selectedPhotoNavigation(page,caption,3600000)
   await page.getByRole('button', { name: 'Upload photo', exact: true }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Photo saved and retained.' })).toBeVisible()
   await page.reload()
@@ -137,8 +133,11 @@ test('WebKit actual photo upload, retained PDF, immutable finalization and amend
   const text = execFileSync('pdftotext', [pdfPath, '-'], { encoding: 'utf8' })
   expect(text).toContain(address); expect(text).toContain(caption)
   await page.getByRole('link', { name: 'Make a correction', exact: true }).click()
-  await page.getByLabel('Reason for amendment', { exact: true }).fill('SYNTHETIC WebKit local correction')
-  await page.getByRole('button', { name: 'Create amendment', exact: true }).click()
+  await expect(page.getByLabel('Reason for correction',{exact:true})).toBeFocused()
+  await page.goto('/report/'+reportId+'#amend-report')
+  await expect(page.getByLabel('Reason for correction',{exact:true})).toBeFocused()
+  await page.getByLabel('Reason for correction', { exact: true }).fill('SYNTHETIC WebKit local correction')
+  await page.getByRole('button', { name: 'Create correction draft', exact: true }).click()
   await page.waitForURL(u => /\/report\/[a-f0-9-]{36}$/.test(u.pathname) && !u.pathname.endsWith(reportId))
   await page.getByLabel('Client or job reference (optional)', { exact: true }).fill('SYNTHETIC correction persists')
   await saved(page); await page.reload()
