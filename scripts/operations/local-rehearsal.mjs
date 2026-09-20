@@ -129,7 +129,13 @@ export async function restore(target, source, status, manifest) {
       run('docker', ['cp', listPath, target.container + ':/tmp/tradesafe-restore-list'])
       args.push('--use-list=/tmp/tradesafe-restore-list')
     }
-    docker(target.container, args, bytes)
+    try { docker(target.container, args, bytes) } catch (error) {
+      const stderr = error.stderr?.toString() || ''
+      // Only fixed categories; never print SQL, COPY rows, provider errors or raw stderr.
+      const categories = ['must be owner', 'permission denied', 'already exists', 'does not exist', 'violates foreign key', 'violates check constraint', 'duplicate key', 'could not read', 'could not find block', 'could not open', 'not a valid archive', 'unrecognized configuration parameter', 'cannot execute', 'not supported', 'input file does not appear', 'cannot be restored']
+      console.error('Recovery restore failure categories: ' + (categories.filter(c => stderr.includes(c)).join(', ') || 'unclassified') + '; exit=' + (Number.isInteger(error.status) ? error.status : 'unknown'))
+      throw error
+    }
   }
   restoreArchive('auth.dump')
   // Supabase provides an empty public schema; skip only its CREATE SCHEMA entry.
