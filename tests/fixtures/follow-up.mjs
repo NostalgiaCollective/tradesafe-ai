@@ -78,6 +78,10 @@ export async function followUpWorkflow({browser,origin,actors,options={},capture
   await worker.getByLabel('Photo caption',{exact:true}).fill('SYNTHETIC correction evidence');
   await worker.getByRole('button',{name:'Upload photo',exact:true}).click();
   await expect(worker.getByRole('status').filter({hasText:'Photo saved and retained.'})).toBeVisible();
+  // The upload is committed before the saved-photo list refresh completes. Respect
+  // the existing busy/leave guard instead of racing navigation against that refresh.
+  await expect(worker.locator('.photo-feedback')).toHaveAttribute('aria-busy','false');
+  await expect(worker.getByRole('img',{name:'SYNTHETIC correction evidence',exact:true})).toBeVisible();
   await worker.getByRole('link',{name:'Back to actions',exact:true}).click();
   await expect(card).toBeFocused();
   await card.getByText('Amendments to this report (1)',{exact:true}).click();
