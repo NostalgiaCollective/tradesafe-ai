@@ -3,8 +3,9 @@ export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
     const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up)\.spec|follow-up)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
-    this.rows.push({ name: test.title, status: result.status, failureLines: lines })
-    console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : ''))
+    const assertions=result.errors.flatMap(e=>[...(e.message||'').matchAll(/expect\(locator\)\.(\w+)\(\) failed/g)].map(m=>m[1]))
+    this.rows.push({ name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
+    console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):''))
   }
   onStdOut() {}
   onStdErr() {}
