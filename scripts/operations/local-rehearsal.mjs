@@ -50,6 +50,7 @@ function inventory(id) {
 }
 function protections(id) {
   const result = json(id, `select jsonb_build_object(
+    'defaults',(select jsonb_agg(jsonb_build_array(pg_get_userbyid(d.defaclrole),d.defaclobjtype,d.defaclacl) order by pg_get_userbyid(d.defaclrole),d.defaclobjtype) from pg_default_acl d join pg_namespace n on n.oid=d.defaclnamespace where n.nspname='public'),
     'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or policyname='ts_private_objects'),
     'tables',(select jsonb_agg(jsonb_build_array(c.relname,c.relrowsecurity,c.relacl) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'),
     'functions',(select jsonb_agg(jsonb_build_array(p.proname,pg_get_function_identity_arguments(p.oid),p.prosecdef,p.proconfig,p.proacl) order by p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'))`)
@@ -57,6 +58,7 @@ function protections(id) {
   for (const table of result.tables || []) table[2]?.sort()
   for (const fn of result.functions || []) fn[4]?.sort()
   for (const policy of result.policies || []) policy.roles?.sort()
+  for (const defaults of result.defaults || []) defaults[2]?.sort()
   return result
 }
 function storageInventory(id) {
@@ -123,6 +125,20 @@ export async function negativeArchiveChecks(manifest) {
 export async function restore(target, source, status, manifest) {
   const started = performance.now()
   await verifyRecoverySet(ARCHIVE, manifest); assertEmptyTarget(target, source)
+  // A fresh Supabase schema already grants defaults to anon/authenticated/service_role.
+  // pg_restore restores explicit archived ACLs but cannot subtract extra defaults that
+  // were injected during CREATE. Remove only those defaults on this empty target;
+  // archived DEFAULT ACL entries restore the source defaults after object creation.
+  console.log('Recovery: neutralize empty-target public default grants before restoring exact ACLs')
+  assertEmptyTarget(target, source)
+  docker(target.container, ['psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', `DO $$ DECLARE r record; BEGIN
+    FOR r IN SELECT DISTINCT pg_get_userbyid(d.defaclrole) AS owner,
+      CASE d.defaclobjtype WHEN 'r' THEN 'TABLES' WHEN 'S' THEN 'SEQUENCES' WHEN 'f' THEN 'FUNCTIONS' WHEN 'T' THEN 'TYPES' END AS kind,
+      CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(x.grantee)) END AS grantee
+      FROM pg_default_acl d JOIN pg_namespace n ON n.oid=d.defaclnamespace CROSS JOIN LATERAL aclexplode(d.defaclacl) x
+      WHERE n.nspname='public' AND d.defaclobjtype IN ('r','S','f','T') AND x.grantee<>d.defaclrole
+    LOOP EXECUTE format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public REVOKE ALL PRIVILEGES ON %s FROM %s',r.owner,r.kind,r.grantee); END LOOP;
+  END $$;`])
   const restoreArchive = (name, filter) => {
     console.log('Recovery: restore ' + name)
     assertIdentity(target) // Re-check immutable Docker/volume/database identity before every restore write.
@@ -173,7 +189,7 @@ export async function restore(target, source, status, manifest) {
   assert.deepEqual(restoredInventory, manifest.beforeInventory)
   console.log('Recovery: database records verified')
   const restoredProtections = protections(target.container)
-  for (const section of ['policies', 'tables', 'functions']) if (JSON.stringify(restoredProtections[section]) !== JSON.stringify(manifest.protections[section])) console.error('Recovery protection mismatch: ' + section)
+  for (const section of ['policies', 'tables', 'functions', 'defaults']) if (JSON.stringify(restoredProtections[section]) !== JSON.stringify(manifest.protections[section])) console.error('Recovery protection mismatch: ' + section)
   assert.deepEqual(restoredProtections, manifest.protections)
   console.log('Recovery: authorization catalog verified')
   const buckets = good(await storage.storage.listBuckets())
