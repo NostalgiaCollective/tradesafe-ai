@@ -6,5 +6,6 @@ export default defineConfig({
   reporter: './scripts/ci/local-reporter.mjs',
   outputDir: 'test-results/local-transient', preserveOutput: 'never',
   use: { ...devices['iPhone 13'], browserName: 'webkit', baseURL: APP_ORIGIN,
+    actionTimeout: 30000, navigationTimeout: 30000,
     trace: 'off', screenshot: 'off', video: 'off', serviceWorkers: 'block' },
 })
