@@ -16,6 +16,9 @@ test('archive checks fail for changed inventories, missing/corrupt objects or pa
   await writeFile(join(root,'db.dump'),bytes)
   const manifest={version:1,sourceProject:'yqkiizimbtlygovkscoh',quietCaptureVerified:true,beforeInventory:{sha256},afterInventory:{sha256},schemaCoverage:['auth','public'],grantsAndPoliciesIncluded:true,buckets:['tradesafe-evidence','tradesafe-exports'],artifacts:[{kind:'database',path:'db.dump',bytes:bytes.length,sha256}],readyReferences:[],migrations:Array.from({length:7},(_,i)=>({name:'2026091600010'+i+'_synthetic.sql',sha256}))}
   assert.equal((await verifyRecoverySet(root,manifest)).restoreProven,false)
+  const local={...manifest,sourceKind:'synthetic-local',sourceProject:'tradesafe-ci',sourceUrl:'http://127.0.0.1:54321'}
+  assert.equal((await verifyRecoverySet(root,local)).status,'ARCHIVE_VALIDATED_ONLY')
+  for(const change of [{sourceProject:'production'},{sourceUrl:'https://example.com'},{sourceKind:'unknown'}])await assert.rejects(verifyRecoverySet(root,{...local,...change}))
   await assert.rejects(verifyRecoverySet(root,{...manifest,afterInventory:{sha256:'0'.repeat(64)}}))
   await assert.rejects(verifyRecoverySet(root,{...manifest,readyReferences:[{artifact:'missing.jpg',sha256,bytes:1}]}))
   await assert.rejects(verifyRecoverySet(root,{...manifest,artifacts:[{...manifest.artifacts[0],path:'../outside'}]}))

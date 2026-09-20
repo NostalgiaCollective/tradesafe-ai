@@ -42,3 +42,7 @@ Implemented engineering work is delivered; release verification remains incomple
 ## Disposable browser verification and deferred domain decision
 
 Daniel's intended future domain is `tradesafeapp.ca`, unpurchased with no purchase budget. Domain setup and actual fresh-signup email delivery are deferred; preserve current Render origin, login and recovery. No active app URL, SMTP sender or redirect may use the intended domain before ownership and setup are verified. Existing Gmail identity stays intact and the final fresh recipient must be reconfirmed before future dispatch. The [disposable local WebKit harness](LOCAL-WEBKIT.md) advances browser coverage independently using local Supabase and captured mail. Its execution results cannot close hosted-WebKit, real-delivery, physical-device or restore gates.
+
+## Bounded recovery-engineering milestone
+
+Task-owned local source/target creation is now explicitly authorized for a [synthetic recovery rehearsal](BACKUP-RESTORE-DRILL.md). The current checkpoint and exact-commit CI distinguish implementation from executed results. Even a passing local restore does not authorize a hosted export or close hosted recovery, independent backup storage, full Auth/configuration recovery, operational ownership, RPO/RTO, domain or delivered-email gates. Tooling-only changes do not require a staging deployment; the served application identity remains separately recorded.

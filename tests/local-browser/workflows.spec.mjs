@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { APP_ORIGIN, API_ORIGIN, MAIL_ORIGIN, localEnvironment } from '../../scripts/ci/local-environment.mjs'
 import { expectSuccess, expectDatabaseError } from '../../scripts/staging/assertions.mjs'
 import { jpegAtSize } from '../fixtures/large-photo.mjs'
+import { prepareRecoveryFixtures } from '../../scripts/ci/recovery-fixtures.mjs'
 
 test.describe.configure({ mode: 'serial' })
 const credentials = { email: 'owner-' + randomUUID() + '@example.test', password: randomBytes(24).toString('base64url') }
@@ -92,6 +93,8 @@ test('WebKit actual photo upload, retained PDF, immutable finalization and amend
   await expect(answers.first()).toBeVisible()
   expect(await answers.evaluateAll(es => es.every(e => e.value === 'unanswered'))).toBe(true)
   for (const answer of await answers.all()) await answer.selectOption('meets')
+  await answers.first().selectOption('attention')
+  await page.getByLabel('Explanation (required)', { exact: true }).fill('SYNTHETIC cone marks a damaged cover requiring correction')
   await saved(page)
   await page.getByRole('link', { name: 'Add or review photos', exact: true }).click()
   const jpeg = await sharp(Buffer.from('<svg width="1000" height="800"><rect width="1000" height="800" fill="#17415a"/><path d="M500 120L260 650H740Z" fill="#ff8500"/><text x="70" y="740" fill="white" font-size="38">SYNTHETIC WEBKIT ORANGE CONE</text></svg>')).jpeg().toBuffer()
@@ -174,4 +177,5 @@ test('WebKit cross-company, anonymous and revoked-member report/evidence/PDF den
   expect([403, 404]).toContain(deniedSave.status()); expect(['denied', 'not_found']).toContain((await deniedSave.json()).code)
   const anonymous = await browser.newContext()
   try { expect((await anonymous.request.get(APP_ORIGIN + base + '/exports/' + exportId)).status()).toBe(401) } finally { await anonymous.close() }
+  if (process.env.RECOVERY_REHEARSAL === '1') await prepareRecoveryFixtures({ owner, admin, credentials, revoked: worker, companyId, reportId, photoId, exportId, original, photoHash, pdfHash })
 })
