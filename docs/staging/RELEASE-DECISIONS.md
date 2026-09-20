@@ -38,3 +38,7 @@ The exact delivered SHA, CI, deployment identity, hosted daily workflow and host
 ## Release-verification wording and dependency follow-up
 
 Implemented engineering work is delivered; release verification remains incomplete. `@anthropic-ai/sdk` is now pinned to compatible patched version `0.91.1` for GHSA-p7fg-763f-g4gf/CVE-2026-41686, and the local audit reports zero vulnerabilities. This does not close WebKit execution, fresh delivered-email signup, or isolated restore. Those gates require the access and infrastructure decisions listed in the current checkpoint.
+
+## Disposable browser verification and deferred domain decision
+
+Daniel's intended future domain is `tradesafeapp.ca`, unpurchased with no purchase budget. Domain setup and actual fresh-signup email delivery are deferred; preserve current Render origin, login and recovery. No active app URL, SMTP sender or redirect may use the intended domain before ownership and setup are verified. Existing Gmail identity stays intact and the final fresh recipient must be reconfirmed before future dispatch. The [disposable local WebKit harness](LOCAL-WEBKIT.md) advances browser coverage independently using local Supabase and captured mail. Its execution results cannot close hosted-WebKit, real-delivery, physical-device or restore gates.

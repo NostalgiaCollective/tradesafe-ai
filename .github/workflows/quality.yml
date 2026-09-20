@@ -25,3 +25,21 @@ jobs:
       - run: npm run build
       - run: npm run test:smoke
       - run: npm audit --audit-level=high
+  local-webkit:
+    # Standard runner in this public repository; no hosted secrets or paid resources.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - run: npx playwright install --with-deps webkit
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: node scripts/ci/local-browser.mjs

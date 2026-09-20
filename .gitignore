@@ -41,6 +41,7 @@ yarn-error.log*
 /certificates/
 /.next-staging/
 /.next-hosted/
+/.ci-local/
 
 # vercel
 .vercel
