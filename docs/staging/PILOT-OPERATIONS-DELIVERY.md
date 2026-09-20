@@ -20,3 +20,7 @@ Upload and PDF resource logs now include a sanitized stable failure code when wo
 This supports a conditional limited pilot on isolated staging, not production readiness. WebKit/physical-device coverage, an authorized fresh signup recipient and email test, isolated restore infrastructure, qualified content review, privacy/retention/support decisions, named operational ownership, capacity/device acceptance and billing reconciliation remain open. Daniel’s statement that the current workflow is working as planned is recorded as overall user-reported acceptance only.
 
 The complete decision register is [RELEASE-DECISIONS.md](RELEASE-DECISIONS.md), the runbook is [PILOT-OPERATIONS.md](PILOT-OPERATIONS.md), and the durable checkpoint is `.staging/reliability-workflow-checkpoint.json`.
+
+## Release-verification follow-up
+
+The implementation work is delivered; release verification remains incomplete. The dependency advisory for `@anthropic-ai/sdk` was addressed with the justified exact upgrade to `0.91.1`, which removes the affected version range and leaves `npm audit` at zero vulnerabilities. WebKit execution remains unperformed because the existing GitHub Actions workflow only lists browser tests and has no authorized staging secrets; Windows WebKit is blocked by Code Integrity. Fresh delivered-email signup and an isolated restore drill remain blocked by the access and infrastructure decisions in the release register.

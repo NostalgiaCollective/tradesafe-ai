@@ -29,7 +29,7 @@
     "test:staging:browser:list": "playwright test --config=playwright.staging.config.mjs --list --reporter=list"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.82.0",
+    "@anthropic-ai/sdk": "0.91.1",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "next": "16.3.4",

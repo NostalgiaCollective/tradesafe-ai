@@ -34,3 +34,7 @@ The dashboard, company-scoped report library, mobile report journey, correction-
 Daniel confirms the current workflow is working as planned. This is user-reported overall acceptance; it does not invent individual phone, browser, signup, restore or permission results. The current pilot recommendation is conditional staging/pilot continuation only. Operational diagnosis now records stable failure codes for failed upload/PDF admission alongside duration and kind, without recording sensitive payloads. The incident and rollback procedure is [PILOT-OPERATIONS.md](PILOT-OPERATIONS.md).
 
 The exact delivered SHA, CI, deployment identity, hosted daily workflow and hosted interruption workflow remain those recorded in `.staging/reliability-workflow-checkpoint.json`. No new migration or deployment is implied by this decision-register update.
+
+## Release-verification wording and dependency follow-up
+
+Implemented engineering work is delivered; release verification remains incomplete. `@anthropic-ai/sdk` is now pinned to compatible patched version `0.91.1` for GHSA-p7fg-763f-g4gf/CVE-2026-41686, and the local audit reports zero vulnerabilities. This does not close WebKit execution, fresh delivered-email signup, or isolated restore. Those gates require the access and infrastructure decisions listed in the current checkpoint.
