@@ -57,6 +57,7 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await worker.getByRole('button',{name:'Continue',exact:true}).click()
   await worker.getByLabel('What was discussed in the briefing?',{exact:true}).fill('SYNTHETIC discussion of route, residual concern and responsible contact')
   await worker.getByRole('checkbox',{name:name('WORKER'),exact:true}).check();await saved(worker)
+  expect((await read()).document.briefingNote).toBe('SYNTHETIC discussion of route, residual concern and responsible contact')
   // Simulated lost response AFTER a real commit. Retrying must recover the same version/actions.
   let lost=false
   await context.route(api,async route=>{if(route.request().postDataJSON()?.command==='record'&&!lost){lost=true;const response=await route.fetch();expect(response.status()).toBe(200);await route.abort()}else await route.continue()})
@@ -77,7 +78,10 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await worker.getByRole('button',{name:'3. Hazards and controls',exact:true}).click()
   await worker.getByLabel('Control or precaution',{exact:true}).fill('SYNTHETIC revised control, needs fresh briefing');await saved(worker)
   await worker.getByRole('button',{name:'Continue',exact:true}).click();await worker.getByLabel('What was discussed in the briefing?',{exact:true}).fill('SYNTHETIC revised briefing');await saved(worker)
-  await worker.getByRole('button',{name:'Record briefing version',exact:true}).click();await expect(worker.getByRole('button',{name:'Acknowledge this version',exact:true})).toBeVisible()
+  expect((await read()).document.briefingNote).toBe('SYNTHETIC revised briefing')
+  expect((await read()).document.steps[0].control).toBe('SYNTHETIC revised control, needs fresh briefing')
+  await worker.getByRole('button',{name:'Record briefing version',exact:true}).click()
+  await expect(worker.getByRole('button',{name:'Acknowledge this version',exact:true})).toBeVisible()
   const secondVersion=(await read()).revision;expect(secondVersion).toBeGreaterThan(firstVersion)
   expect((await query('OWNER','ts_brief_versions',id)).find(v=>v.version===firstVersion)).toEqual(first)
   expect((await query('OWNER','ts_brief_acknowledgements',id)).every(a=>a.version===firstVersion)).toBe(true)
