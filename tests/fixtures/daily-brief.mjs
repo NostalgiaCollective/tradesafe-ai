@@ -97,10 +97,16 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   const reused=(await query('OWNER','ts_briefs',new URL(worker.url()).pathname.split('/').at(-1),'id'))[0]
   expect(reused.document.site).toBe(tag);expect(reused.document.steps).toEqual([]);expect(reused.document.crew).toEqual([]);expect(reused.document.date).toBe('');expect(reused.document.confirmed).toBe(false)
   const privateBrief=await brief('OWNER','create',{companyId:other,id:randomUUID()})
-  expect((await worker.goto(origin+'/briefs/'+privateBrief.id)).status()).toBe(404)
+  // loading.jsx streams the shell: Next documents HTTP 200 for a streamed notFound.
+  // Require the actual denial view and empty RLS data; API denial below remains HTTP 404.
+  await worker.goto(origin+'/briefs/'+privateBrief.id)
+  await expect(worker.getByRole('heading',{name:'Page or report not found',exact:true})).toBeVisible()
+  expect(await query('WORKER','ts_briefs',privateBrief.id,'id')).toEqual([])
   expect((await context.request.get(origin+'/api/briefs/'+privateBrief.id+'/export?version=1')).status()).toBe(404)
   await command('OWNER','member',{userId:actors.WORKER.id,role:'remove'})
-  expect((await worker.goto(origin+'/briefs/'+id)).status()).toBe(404)
+  await worker.goto(origin+'/briefs/'+id)
+  await expect(worker.getByRole('heading',{name:'Page or report not found',exact:true})).toBeVisible()
+  expect(await query('WORKER','ts_briefs',id,'id')).toEqual([])
   expect((await context.request.get(origin+'/api/briefs/'+id+'/export?version='+firstVersion)).status()).toBe(404)
   expectDatabaseError(await actors.WORKER.client.rpc('ts_brief_command',{command:'acknowledge',p:{companyId:company,id,version:secondVersion,requestId:randomUUID()}}),'TS_denied')
   record('existing Actions progress/reload/verification, original-version preservation, safe site reuse, cross-company and revoked brief/export denial PASS')
