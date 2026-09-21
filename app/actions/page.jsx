@@ -4,13 +4,14 @@ import CreateCompany from '@/app/components/CreateCompany'
 import CompanyChoice from '@/app/components/CompanyChoice'
 import {actionFilters,applyActionFilters} from '@/lib/domain/action-list'
 import {actionCounts} from '@/lib/server/action-counts'
+import {briefsEnabled} from '@/lib/server/briefs'
 import ActionList from './ActionList'
 export default async function ActionsPage({searchParams}) {
  const params=await searchParams;const w=await workspace('/actions?'+new URLSearchParams(Object.entries(params).filter(([,v])=>typeof v==='string')),params.company)
  if(!params.company&&w.companies.length>1)return <WorkspaceShell {...w} company={null}><CompanyChoice companies={w.companies} destination="/actions"/></WorkspaceShell>
  if(!w.company)return <WorkspaceShell {...w}><CreateCompany actor={w.user.id}/></WorkspaceShell>
  const filters=actionFilters(params),company=w.company.id
- const select='*,report:ts_reports(id,document,author_id,amendment_of)'
+ const select='*,report:ts_reports(id,document,author_id,amendment_of)'+(briefsEnabled()?',brief:ts_briefs!ts_actions_brief_id_fkey(id,document)':'')
  const [actions,members,counts]=await Promise.all([
   applyActionFilters(w.supabase.from('ts_actions').select(select).eq('company_id',company),filters,w.user.id).order('target_date',{nullsFirst:false}).order('id').range(filters.page*25,filters.page*25+24),
   w.supabase.from('ts_members').select('*').eq('company_id',company),
@@ -26,7 +27,7 @@ export default async function ActionsPage({searchParams}) {
  const ids=actions.data.map(a=>a.id)
  const [events,amendments]=ids.length?await Promise.all([
   w.supabase.from('ts_events').select('*').eq('company_id',company).in('entity_id',ids).in('kind',['action_opened','action_updated']).order('id',{ascending:false}).limit(500),
-  w.supabase.from('ts_reports').select('id,amendment_of,amendment_reason,lifecycle,photos:ts_evidence(id,caption,state)').eq('company_id',company).in('amendment_of',[...new Set(actions.data.map(a=>a.report_id))]).order('created_at',{ascending:false}).limit(200),
+  w.supabase.from('ts_reports').select('id,amendment_of,amendment_reason,lifecycle,photos:ts_evidence(id,caption,state)').eq('company_id',company).in('amendment_of',[...new Set(actions.data.map(a=>a.report_id).filter(Boolean))]).order('created_at',{ascending:false}).limit(200),
  ]):[{data:[],error:null},{data:[],error:null}]
  for(const result of [events,amendments])if(result.error)throw databaseError(result.error)
  return <WorkspaceShell {...w}><h1>Corrective actions</h1><p>Record progress, then request verification. The original report and PDF stay unchanged.</p>{amendments.data.length===200&&<p role="status">Showing the 200 most recent amendments for these reports. Open the original report for its full amendment history.</p>}<ActionList key={company+w.user.id+w.membership.role+JSON.stringify(filters)} amendments={amendments.data} initial={actions.data} members={members.data} events={events.data} actor={w.user.id} role={w.membership.role} companyId={company} filters={filters} initialCounts={counts}/></WorkspaceShell>

@@ -2,7 +2,7 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades)\.spec|follow-up)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades|daily-brief)\.spec|follow-up|daily-brief)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     const assertions=result.errors.flatMap(e=>{
       // Strip terminal formatting before extracting method names, never field values/URLs.
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
@@ -17,7 +17,7 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 6) && !skipped ? 'passed' : 'failed'
+    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 7) && !skipped ? 'passed' : 'failed'
     // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
     if (!recovery) for (const trade of ['plumbing', 'roofing']) {
       const path = 'test-results/trade-journeys/' + trade + '.json'

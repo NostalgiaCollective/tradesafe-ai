@@ -1,0 +1,30 @@
+'use client'
+import {useRef} from 'react'
+import {useOperation} from '@/lib/client/useOperation'
+import {briefCommand} from '@/lib/client/brief-command'
+import {ACTION_LABELS} from '@/lib/domain/action-edit'
+export default function BriefRecord({brief,version,versions,members,acknowledgements,reviews,actions,actor,role,editable}){
+ const op=useOperation(),pending=useRef(null)
+ if(!version)return <><h1>Recorded version not found</h1><a href={'/briefs/'+brief.id}>Open current brief</a></>
+ const d=version.snapshot.document,current=brief.lifecycle==='recorded'&&brief.revision===version.version
+ const name=id=>version.snapshot.people?.find(p=>p.id===id)?.name||members.find(m=>m.user_id===id)?.display_name||'Former member'
+ const ack=acknowledgements.some(a=>a.user_id===actor)
+ function run(command,itemId){void op.run('Saving…',async()=>{
+  pending.current||={command,payload:{companyId:brief.company_id,id:brief.id,revision:brief.revision,version:version.version,itemId,requestId:crypto.randomUUID()}}
+  await briefCommand(pending.current.command,pending.current.payload,actor)
+  // Load authoritative version/acknowledgement state with a fresh client component.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.assign('/briefs/'+brief.id+(command==='revise'?'':'?version='+version.version))
+ })}
+ const locked=!op.ready||op.busy||Boolean(op.error)
+ return <article className="brief-journey"><p className="eyebrow">Recorded daily brief · version {version.version}</p><h1>{d.site}</h1><p>{d.date} · {version.snapshot.company}</p><p>Recorded by {name(version.recorded_by)} at {new Date(version.recorded_at).toISOString()}. Content: {version.snapshot.sourceVersion} (draft, not approved).</p>
+ {!current&&<p className="work-notice">This is a previous version. Its acknowledgements do not apply to the current revision. <a href={'/briefs/'+brief.id}>Open current brief</a></p>}
+ <div className="work-buttons"><a className="button" href={'/api/briefs/'+brief.id+'/export?version='+version.version}>Export daily brief</a>{editable&&current&&<button disabled={locked} onClick={()=>run('revise')}>Revise brief</button>}</div><p>Revisions preserve this original. A revised briefing needs fresh acknowledgement; attendance and briefing notes must be recorded again.</p>
+ <h2>Today’s work</h2><p>{d.task}</p><p>Responsible site contact: {d.contact}</p><p>User-confirmed context: {d.jurisdiction} · {d.workplace}. App roles do not establish legal roles.</p><p>Participating crew: {d.crew.map(name).join(', ')}</p>
+ <h2>Hazards and controls</h2>{d.steps.map((s,i)=>{const review=reviews.find(r=>r.item_id===s.id),action=actions.find(a=>a.item_id===s.id);return <section className="work-panel" key={s.id} id={'hazard-'+s.id}><h3>{i+1}. {s.task}</h3><p><strong>Hazard:</strong> {s.hazard}</p><p><strong>Control:</strong> {s.control}</p><p>Responsible: {name(s.responsible)}</p><p>{s.controlState==='proposed'?'Proposed — not confirmed implemented':'Reported implemented'}</p>{review?<p>Review recorded by {name(review.reviewed_by)} at {new Date(review.reviewed_at).toISOString()} for version {review.version}.</p>:<p>No supervisor review recorded for this control in this version.</p>}{current&&['owner','supervisor'].includes(role)&&s.controlState==='reported_implemented'&&!review&&<button disabled={locked} onClick={()=>run('review_control',s.id)}>Record supervisor review of control {i+1}</button>}<p>{s.unresolved?'Unresolved concern recorded':'No unresolved concern recorded for this entry'}.</p>{action&&<p><a href={'/actions?'+new URLSearchParams({company:brief.company_id,mine:'0',status:'all',focus:action.id})}>Open follow-up action</a> · Current status: {ACTION_LABELS[action.state]} · Responsible: {name(action.responsible_id)}</p>}</section>})}
+ <p>Control reviews are recorded observations, not approval to work or a compliance determination.</p><p>{d.paused?'Work recorded as paused: '+d.pauseReason:'No work pause recorded.'}</p><p>Reported communication: {d.communication||'None recorded. Saving did not notify anyone.'}</p><p>A work pause entry is separate from the statutory work-refusal process.</p>
+ <h2>Crew briefing</h2><p>{version.briefing_note}</p><p>Attendance entered by {name(version.recorded_by)}: {version.attendance.map(name).join(', ')||'None recorded'}</p><h3>Authenticated acknowledgements — version {version.version}</h3>{acknowledgements.length?<ul>{acknowledgements.map(a=><li key={a.user_id}>{name(a.user_id)} · {new Date(a.acknowledged_at).toISOString()}</li>)}</ul>:<p>No worker acknowledgements recorded for this version.</p>}<p>Attendance entered by another person differs from your own authenticated acknowledgement. Neither proves understanding, qualification or a digital signature.</p>{current&&d.crew.includes(actor)&&(ack?<p role="status">Your acknowledgement is recorded for version {version.version}.</p>:<button className="primary" disabled={locked} onClick={()=>run('acknowledge')}>Acknowledge this version</button>)}
+ <div aria-live="polite">{op.message&&<p role="status">{op.message}</p>}{op.error&&<div role="alert"><p>{op.error}</p><p>No new result has been confirmed. Retry the same operation or open the current brief to compare; a revised brief must be read again.</p><button disabled={op.busy} onClick={()=>run(pending.current.command,pending.current.payload.itemId)}>Retry same operation</button><a href={'/briefs/'+brief.id}>Open current brief</a></div>}</div>
+ <h2>Outstanding actions</h2><p>Actions retain the finding from the version that first created them. Later revisions do not silently overwrite or reopen them. Review the linked action when circumstances change. Nothing here sends a notification.</p><a className="button" href={'/actions?company='+brief.company_id+'&mine=0'}>View outstanding actions</a>
+ <details><summary>Recorded version history ({versions.length}{versions.length===50?' most recent':''})</summary><ul>{versions.map(v=><li key={v.version}><a href={'/briefs/'+brief.id+'?version='+v.version}>Version {v.version}</a> · {new Date(v.recorded_at).toISOString()}</li>)}</ul></details></article>
+}

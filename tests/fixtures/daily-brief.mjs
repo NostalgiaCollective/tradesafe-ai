@@ -1,0 +1,108 @@
+import {expect as baseExpect} from '@playwright/test'
+import {randomUUID,randomBytes} from 'node:crypto'
+import {expectSuccess,expectDatabaseError} from '../../scripts/staging/assertions.mjs'
+const expect=baseExpect.configure({timeout:30000})
+export async function dailyBriefWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{}}){
+ const company=randomUUID(),other=randomUUID(),tag='SYNTHETIC daily brief '+company.slice(0,6),contexts=[]
+ const command=(role,command,p={})=>actors[role].client.rpc('ts_command',{command,p:{companyId:company,requestId:randomUUID(),...p}}).then(expectSuccess)
+ const brief=(role,command,p={})=>actors[role].client.rpc('ts_brief_command',{command,p:{companyId:company,requestId:randomUUID(),...p}}).then(expectSuccess)
+ const query=(role,table,id,column='brief_id')=>actors[role].client.from(table).select('*').eq(column,id).then(expectSuccess)
+ async function login(role){
+  const {localOnly,...settings}=options,context=await browser.newContext({viewport:{width:390,height:844},...settings});contexts.push(context)
+  if(localOnly)await context.route('**/*',route=>[origin,actors[role].apiOrigin].includes(new URL(route.request().url()).origin)?route.continue():route.abort())
+  const page=await context.newPage();page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(90000)
+  await page.goto(origin+'/auth/login');await page.getByLabel('Email',{exact:true}).fill(actors[role].email);await page.getByLabel('Password',{exact:true}).fill(actors[role].password);await page.getByRole('button',{name:'Sign In',exact:true}).click();await page.waitForURL('**/dashboard');return page
+ }
+ const saved=page=>expect(page.locator('.save-state')).toHaveText('Saved')
+ try{
+  await command('OWNER','create_company',{id:company,name:tag});await command('OWNER','create_company',{id:other,name:tag+' other'})
+  for(const role of ['WORKER','SUPERVISOR']){const token=randomBytes(32).toString('hex');await command('OWNER','invite',{email:actors[role].email,role:role.toLowerCase(),token});await command(role,'accept_invitation',{token})}
+  const worker=await login('WORKER'),context=worker.context(),supervisor=await login('SUPERVISOR'),api=origin+'/api/briefs'
+  await worker.goto(origin+'/dashboard?company='+company);await worker.getByRole('link',{name:'Open daily site briefs',exact:true}).click()
+  await worker.getByRole('button',{name:'Start daily brief',exact:true}).click();await worker.waitForURL(/\/briefs\/[a-f0-9-]{36}$/)
+  const id=new URL(worker.url()).pathname.split('/').at(-1),read=async()=> (await query('OWNER','ts_briefs',id,'id'))[0]
+  await worker.getByLabel('Site name or address',{exact:true}).fill(tag)
+  await worker.getByLabel('Work date',{exact:true}).fill('2026-09-21')
+  await worker.getByLabel('Jurisdiction',{exact:true}).selectOption('CA-ON');await worker.getByLabel('Workplace context',{exact:true}).selectOption('construction')
+  await worker.getByLabel('I have checked the jurisdiction and workplace context for this record.',{exact:true}).check();await saved(worker)
+  await worker.reload();await expect(worker.getByLabel('Site name or address',{exact:true})).toHaveValue(tag)
+  await worker.getByLabel('Site name or address',{exact:true}).focus();await worker.keyboard.press('Tab');await expect(worker.getByLabel('Work date',{exact:true})).toBeFocused()
+  expect(await worker.getByLabel('Work date',{exact:true}).evaluate(e=>getComputedStyle(e).outlineStyle)).toBe('solid')
+  await worker.getByRole('button',{name:'Continue',exact:true}).click();await expect(worker.locator('#brief-step')).toBeFocused()
+  await worker.getByLabel('Today’s work',{exact:true}).fill('SYNTHETIC material movement')
+  await worker.getByLabel('Responsible site contact',{exact:true}).fill('SYNTHETIC contact via local radio')
+  const members=expectSuccess(await actors.OWNER.client.from('ts_members').select('*').eq('company_id',company)),name=role=>members.find(m=>m.user_id===actors[role].id).display_name
+  await worker.getByRole('checkbox',{name:name('WORKER'),exact:true}).check();await worker.getByRole('checkbox',{name:name('SUPERVISOR'),exact:true}).check();await saved(worker)
+  await worker.getByRole('button',{name:'Continue',exact:true}).click();await worker.getByRole('button',{name:'Add task step and hazard',exact:true}).click()
+  await worker.getByLabel('Task step',{exact:true}).fill('Move synthetic material')
+  await worker.getByLabel('Hazard or concern',{exact:true}).fill('SYNTHETIC trip concern')
+  await worker.getByLabel('Control or precaution',{exact:true}).fill('Propose clearing synthetic route')
+  await worker.getByLabel('Responsible person',{exact:true}).selectOption(actors.WORKER.id);await saved(worker)
+  expect((await read()).document.steps[0].controlState).toBe('proposed')
+  // Simulated connection loss BEFORE commit. The real server record remains unchanged.
+  await context.route(api,route=>route.request().postDataJSON()?.command==='save'?route.abort():route.continue())
+  await worker.getByLabel('Control or precaution',{exact:true}).fill('SYNTHETIC route now reported clear')
+  await expect(worker.getByRole('button',{name:'Retry saving',exact:true})).toBeVisible()
+  expect((await read()).document.steps[0].control).toBe('Propose clearing synthetic route')
+  await expect(worker.getByLabel('Control or precaution',{exact:true})).toHaveValue('SYNTHETIC route now reported clear')
+  await context.unroute(api);await worker.getByRole('button',{name:'Retry saving',exact:true}).click();await saved(worker)
+  await worker.getByLabel('Control status',{exact:true}).selectOption('reported_implemented');await saved(worker)
+  await worker.getByRole('button',{name:'Back',exact:true}).click();await worker.getByRole('button',{name:'Continue',exact:true}).click();await expect(worker.getByLabel('Control or precaution',{exact:true})).toHaveValue('SYNTHETIC route now reported clear')
+  await worker.reload();await expect(worker.getByLabel('Control status',{exact:true})).toHaveValue('reported_implemented')
+  await capture(worker,'hazards');expect(await worker.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  await worker.getByRole('button',{name:'Continue',exact:true}).click()
+  await worker.getByLabel('What was discussed in the briefing?',{exact:true}).fill('SYNTHETIC discussion of route, residual concern and responsible contact')
+  await worker.getByRole('checkbox',{name:name('WORKER'),exact:true}).check();await saved(worker)
+  // Simulated lost response AFTER a real commit. Retrying must recover the same version/actions.
+  let lost=false
+  await context.route(api,async route=>{if(route.request().postDataJSON()?.command==='record'&&!lost){lost=true;const response=await route.fetch();expect(response.status()).toBe(200);await route.abort()}else await route.continue()})
+  await worker.getByRole('button',{name:'Record briefing version',exact:true}).click();await expect(worker.getByRole('button',{name:'Retry recording briefing',exact:true})).toBeVisible()
+  expect((await read()).lifecycle).toBe('recorded')
+  await worker.getByRole('button',{name:'Retry recording briefing',exact:true}).click();await expect(worker.getByRole('heading',{name:'Authenticated acknowledgements',exact:false})).toBeVisible();await context.unroute(api)
+  const first=(await query('OWNER','ts_brief_versions',id))[0],firstVersion=first.version,itemId=first.snapshot.document.steps[0].id
+  expect(await query('OWNER','ts_actions',id)).toHaveLength(1);expect(await query('OWNER','ts_brief_acknowledgements',id)).toHaveLength(0)
+  expect(first.attendance).toEqual([actors.WORKER.id])
+  await expect(worker.getByRole('button',{name:'Record supervisor review of control 1',exact:true})).toHaveCount(0)
+  const denied=await context.request.post(api,{headers:{origin,'x-expected-actor':actors.WORKER.id},data:{command:'review_control',payload:{companyId:company,id,version:firstVersion,itemId,requestId:randomUUID()}}})
+  expect(denied.status()).toBe(403)
+  await worker.getByRole('button',{name:'Acknowledge this version',exact:true}).click();await expect(worker.getByRole('status').filter({hasText:'Your acknowledgement is recorded'})).toBeVisible()
+  await supervisor.goto(origin+'/briefs/'+id);await supervisor.getByRole('button',{name:'Record supervisor review of control 1',exact:true}).click();await expect(supervisor.getByText('Review recorded by',{exact:false})).toBeVisible()
+  expect(await query('OWNER','ts_brief_reviews',id)).toHaveLength(1)
+  await worker.reload();await worker.getByRole('button',{name:'Revise brief',exact:true}).click();await expect(worker.getByLabel('Site name or address',{exact:true})).toHaveValue(tag)
+  expect((await read()).document.attendance).toEqual([])
+  await worker.getByRole('button',{name:'3. Hazards and controls',exact:true}).click()
+  await worker.getByLabel('Control or precaution',{exact:true}).fill('SYNTHETIC revised control, needs fresh briefing');await saved(worker)
+  await worker.getByRole('button',{name:'Continue',exact:true}).click();await worker.getByLabel('What was discussed in the briefing?',{exact:true}).fill('SYNTHETIC revised briefing');await saved(worker)
+  await worker.getByRole('button',{name:'Record briefing version',exact:true}).click();await expect(worker.getByRole('button',{name:'Acknowledge this version',exact:true})).toBeVisible()
+  const secondVersion=(await read()).revision;expect(secondVersion).toBeGreaterThan(firstVersion)
+  expect((await query('OWNER','ts_brief_versions',id)).find(v=>v.version===firstVersion)).toEqual(first)
+  expect((await query('OWNER','ts_brief_acknowledgements',id)).every(a=>a.version===firstVersion)).toBe(true)
+  expect((await query('OWNER','ts_brief_reviews',id)).every(r=>r.version===firstVersion)).toBe(true)
+  expect(await query('OWNER','ts_actions',id)).toHaveLength(1)
+  await expect(worker.getByText('No worker acknowledgements recorded for this version.',{exact:true})).toBeVisible()
+  const exported=await context.request.get(origin+'/api/briefs/'+id+'/export?version='+secondVersion)
+  expect(exported.status()).toBe(200);const html=await exported.text()
+  for(const text of [tag,'SYNTHETIC revised control','SYNTHETIC revised briefing','DRAFT SAFETY CONTENT','None recorded; saving did not notify anyone','Follow-up status at export'])expect(html).toContain(text)
+  await capture(worker,'recorded')
+  record('draft/reload, simulated interrupted save, lost recording response recovery, version-bound acknowledgement and supervisor review, export PASS',{company,briefId:id,firstVersion,secondVersion})
+  await worker.getByRole('link',{name:'Open follow-up action',exact:true}).click()
+  const action=(await query('OWNER','ts_actions',id))[0],card=worker.locator('#action-'+action.id)
+  await expect(card.getByRole('link',{name:'Open original hazard and control',exact:true})).toHaveAttribute('href','/briefs/'+id+'?version='+firstVersion+'#hazard-'+itemId)
+  await card.getByLabel('Status after saving',{exact:true}).selectOption('awaiting_verification');await card.getByLabel('Progress or resolution notes',{exact:true}).fill('SYNTHETIC follow-up ready for review');await card.getByRole('button',{name:'Request verification',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  await worker.reload();await expect(card.locator('.action-progress')).toContainText('SYNTHETIC follow-up ready for review')
+  await supervisor.goto(origin+'/actions?company='+company+'&mine=0&status=all&focus='+action.id)
+  const review=supervisor.locator('#action-'+action.id);await review.getByLabel('Status after saving',{exact:true}).selectOption('closed');await review.getByRole('button',{name:'Verify and close',exact:true}).click();await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  expect((await query('OWNER','ts_brief_versions',id)).find(v=>v.version===firstVersion)).toEqual(first)
+  await worker.goto(origin+'/briefs?company='+company);await worker.getByLabel('Reuse site details (optional)',{exact:true}).selectOption(id);await worker.getByRole('button',{name:'Start daily brief',exact:true}).click();await worker.waitForURL(u=>u.pathname.startsWith('/briefs/')&&u.pathname!=='/briefs/'+id)
+  const reused=(await query('OWNER','ts_briefs',new URL(worker.url()).pathname.split('/').at(-1),'id'))[0]
+  expect(reused.document.site).toBe(tag);expect(reused.document.steps).toEqual([]);expect(reused.document.crew).toEqual([]);expect(reused.document.date).toBe('');expect(reused.document.confirmed).toBe(false)
+  const privateBrief=await brief('OWNER','create',{companyId:other,id:randomUUID()})
+  expect((await worker.goto(origin+'/briefs/'+privateBrief.id)).status()).toBe(404)
+  expect((await context.request.get(origin+'/api/briefs/'+privateBrief.id+'/export?version=1')).status()).toBe(404)
+  await command('OWNER','member',{userId:actors.WORKER.id,role:'remove'})
+  expect((await worker.goto(origin+'/briefs/'+id)).status()).toBe(404)
+  expect((await context.request.get(origin+'/api/briefs/'+id+'/export?version='+firstVersion)).status()).toBe(404)
+  expectDatabaseError(await actors.WORKER.client.rpc('ts_brief_command',{command:'acknowledge',p:{companyId:company,id,version:secondVersion,requestId:randomUUID()}}),'TS_denied')
+  record('existing Actions progress/reload/verification, original-version preservation, safe site reuse, cross-company and revoked brief/export denial PASS')
+ }finally{for(const context of contexts)await context.close()}
+}

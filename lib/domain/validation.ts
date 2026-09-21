@@ -11,11 +11,11 @@ export function safeRedirect(value: unknown): string {
     const originalPath = value.split('?')[0]
     if (originalPath !== url.pathname) return fallback
     // Authentication and API endpoints are never post-login destinations.
-    if (!['/dashboard','/reports','/actions','/settings','/join'].includes(url.pathname) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname)) return fallback
+    if (!['/dashboard','/reports','/actions','/settings','/join','/briefs'].includes(url.pathname) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname) && !(/^\/briefs\//.test(url.pathname)&&UUID.test(url.pathname.slice(8)))) return fallback
     const query = new URLSearchParams()
     const one = (key:string) => url.searchParams.getAll(key).length===1 ? url.searchParams.get(key) : null
     const company=one('company')
-    if(company&&UUID.test(company)&&['/dashboard','/reports','/actions','/settings','/report/new'].includes(url.pathname))query.set('company',company)
+    if(company&&UUID.test(company)&&['/dashboard','/reports','/actions','/settings','/report/new','/briefs'].includes(url.pathname))query.set('company',company)
     if(url.pathname==='/dashboard'||url.pathname==='/reports'){
       const q=one('q'),status=one('status'),page=one('page'),trade=one('trade'),sort=one('sort')
       if(trade&&['electrical','plumbing','roofing'].includes(trade))query.set('trade',trade)
@@ -31,6 +31,11 @@ export function safeRedirect(value: unknown): string {
       if(status&&['outstanding','attention','awaiting_verification','closed','all'].includes(status))query.set('status',status)
       if(page&&/^\d{1,5}$/.test(page)&&Number(page)<=10000)query.set('page',String(Number(page)))
       if(focus&&UUID.test(focus))query.set('focus',focus)
+    }
+    if(url.pathname.startsWith('/briefs/')){
+      const step=one('step'),version=one('version')
+      if(step&&/^[1-4]$/.test(step))query.set('step',step)
+      if(version&&/^[1-9]\d{0,8}$/.test(version))query.set('version',version)
     }
     const action=one('action');if(url.pathname.startsWith('/report/')&&action&&UUID.test(action))query.set('action',action)
     const steps = url.searchParams.getAll('step')

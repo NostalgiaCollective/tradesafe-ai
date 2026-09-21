@@ -54,3 +54,9 @@ Daniel reports that the latest report-completion workflow works on his phone (th
 ## Plumbing and roofing verification
 
 The [cross-trade verification milestone](PLUMBING-ROOFING-VERIFICATION.md) adds focused local WebKit coverage using disposable synthetic fixtures. Functional passage does not approve checklist content, legacy credential terminology, numeric/code statements or compliance claims; those remain for qualified review. No content/version changes are authorized here. Daniel's praise is not physical acceptance of daily follow-up; that phone check remains pending. Existing domain/email, hosted recovery and operational/policy gates are unchanged.
+
+## Daily site safety brief
+
+The [separate staging recording workflow](DAILY-SITE-BRIEF.md) supports Ontario construction context without representing the existing installation reports as workplace assessments. Its [draft source register](DAILY-BRIEF-SOURCES.md) distinguishes legislation, ministry guidance, CCOHS/IHSA guidance and proposed product/company conventions. Direct Ontario sources returned HTTP 403; exact current consolidation/effective dates and all proposed prompts require a qualified Ontario construction-safety reviewer. Daniel must arrange that review before content approval or broader release. Functionally passing tests do not close this gate.
+
+Authenticated acknowledgements are version-bound records, not signatures, qualifications or evidence of understanding. Entered attendance, reported communication and work pauses are distinct; no notification or statutory process is performed. Privacy/retention review must include crew names, acknowledgement timestamps, version history and exported copies. Existing policy, operating ownership, hosted recovery, capacity/device and deferred domain/email gates remain pending. Daily follow-up phone acceptance also remains pending; praise is not acceptance evidence.

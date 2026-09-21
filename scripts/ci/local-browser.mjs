@@ -48,8 +48,8 @@ try {
   // Safe reporter suppresses fill arguments, captured emails, tokens and provider errors.
   await browser('playwright.local.config.mjs', env)
   const result = JSON.parse(readFileSync('test-results/local-webkit.json', 'utf8'))
-  assert.equal(result.status, 'passed'); assert.equal(result.executed, 6); assert.equal(result.skipped, 0)
-  console.log('PASS: 6 executed WebKit local-integration tests; zero skipped. No hosted/email-delivery/physical-device claim.')
+  assert.equal(result.status, 'passed'); assert.equal(result.executed, 7); assert.equal(result.skipped, 0)
+  console.log('PASS: 7 executed WebKit local-integration tests; zero skipped. No hosted/email-delivery/physical-device claim.')
   stage = 'quiesced synthetic backup'
   await stopApp()
   const source = identity('tradesafe-ci')

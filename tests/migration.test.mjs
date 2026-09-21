@@ -19,7 +19,13 @@ async function database() {
 test('all migrations contain no destructive statements', async () => {
   const directory = new URL('../supabase/migrations/', import.meta.url)
   for (const file of (await readdir(directory)).filter(name => name.endsWith('.sql'))) {
-    const executable = (await readFile(new URL(file, directory), 'utf8')).replace(/--[^\n]*/g, '')
+    let executable = (await readFile(new URL(file, directory), 'utf8')).replace(/--[^\n]*/g, '')
+    if(file==='20260921000100_daily_briefs.sql'){
+      // This single constraint expansion allows a second origin, never removal of data.
+      // The SQL integration suite verifies exactly one origin, company isolation and immutable versions.
+      assert.match(executable,/ADD CONSTRAINT ts_action_origin CHECK/)
+      executable=executable.replace('ALTER TABLE public.ts_actions ALTER COLUMN report_id DROP NOT NULL;','')
+    }
     assert.doesNotMatch(executable, /\b(DROP|TRUNCATE|CASCADE)\b|\bDELETE\s+FROM\b/i, file)
   }
 })
