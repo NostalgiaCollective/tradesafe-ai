@@ -72,7 +72,12 @@ export async function followUpWorkflow({browser,origin,actors,options={},capture
   record('real progress/reload; simulated failed save/lost response; one event per retry; denied worker/stale transitions PASS')
   await supervisor.goto(origin+'/actions?company='+company+'&mine=0&status=awaiting_verification&focus='+id);const verify=supervisor.locator('#action-'+id);await expect(verify).toBeFocused();await verify.getByLabel('Status after saving',{exact:true}).selectOption('closed');await verify.getByRole('button',{name:'Verify and close',exact:true}).click();await expect(verify.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible();await supervisor.reload();await expect(verify).toContainText('Verified by');latest=await current(id);expect(latest.verified_by).toBe(actors.SUPERVISOR.id);expect(latest.verified_at).toBeTruthy()
   await verify.getByLabel('Status after saving',{exact:true}).selectOption('open');await verify.getByRole('button',{name:'Reopen action',exact:true}).click();await expect(verify.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible();expect((await current(id)).state).toBe('open');await supervisor.reload();await verify.getByText('Action history',{exact:true}).click();await expect(verify.locator('ol')).toContainText('Closed');await capture(supervisor,'verification-supervisor')
-  await worker.goto(origin+'/actions?company='+company+'&status=attention&focus='+id);await card.getByRole('link',{name:'Add correction evidence',exact:true}).click();await expect(worker.getByLabel('Reason for correction',{exact:true})).toBeFocused();await worker.getByRole('button',{name:'Create correction draft',exact:true}).click();await worker.waitForURL(u=>u.pathname.startsWith('/report/')&&u.pathname!=='/report/'+reportId);const amendmentId=new URL(worker.url()).pathname.split('/').pop()
+  await worker.goto(origin+'/actions?company='+company+'&status=attention&focus='+id)
+  await card.getByRole('link',{name:'Add correction evidence',exact:true}).click()
+  await expect(worker.getByLabel('Reason for correction',{exact:true})).toBeFocused()
+  await worker.getByRole('button',{name:'Create correction draft',exact:true}).click()
+  await worker.waitForURL(u=>u.pathname.startsWith('/report/')&&u.pathname!=='/report/'+reportId)
+  const amendmentId=new URL(worker.url()).pathname.split('/').pop()
   await worker.getByRole('button',{name:'2. Observations',exact:true}).click();
   await worker.getByLabel('Photo file',{exact:true}).setInputFiles({name:'SYNTHETIC-correction-cone.jpg',mimeType:'image/jpeg',buffer:photo});
   await worker.getByLabel('Photo caption',{exact:true}).fill('SYNTHETIC correction evidence');

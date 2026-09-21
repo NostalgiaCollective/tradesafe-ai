@@ -3,7 +3,11 @@ export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
     const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades)\.spec|follow-up)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
-    const assertions=result.errors.flatMap(e=>[...(e.message||'').matchAll(/expect\(locator\)\.(\w+)\(\) failed/g)].map(m=>m[1]))
+    const assertions=result.errors.flatMap(e=>{
+      // Strip terminal formatting before extracting method names, never field values/URLs.
+      const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
+      return [...message.matchAll(/(?:expect\(locator\)\.(\w+)\(\)|(?:locator|page)\.(click|goto|waitForURL): Timeout)/g)].map(m=>m[1]||m[2])
+    })
     this.rows.push({ name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
     console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):''))
   }

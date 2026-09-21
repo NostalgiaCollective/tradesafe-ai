@@ -207,7 +207,11 @@ for (const trade of ['plumbing', 'roofing']) {
 
       const actions = expectSuccess(await worker.client.from('ts_actions').select('*').eq('report_id', reportId))
       expect(actions.map(a => a.item_id).sort()).toEqual([template.items[0].id, template.items[2].id].sort())
-      for (const a of actions) expect(a.observation).toBe(template.items.find(i => i.id === a.item_id).question)
+      for (const a of actions) {
+        // item_id links the template question; observation preserves the worker's finding.
+        expect(a.observation).toBe(original.document.answers[a.item_id].note)
+        expect(a.controls).toBe(original.document.answers[a.item_id].controls)
+      }
       const action = actions.find(a => a.item_id === template.items[0].id)
       await page.goto(APP_ORIGIN + '/actions?company=' + companyId + '&focus=' + action.id)
       const card = page.locator('#action-' + action.id)
