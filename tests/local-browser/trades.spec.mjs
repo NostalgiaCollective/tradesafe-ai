@@ -158,7 +158,8 @@ for (const trade of ['plumbing', 'roofing']) {
       const photoHash = hash(await photo.body())
       expect((await sharp(await photo.body()).metadata()).exif).toBeUndefined()
       await page.getByRole('button', { name: 'Continue to review', exact: true }).click()
-      await expect(page.getByRole('alert')).toHaveCount(0)
+      // Next's route announcer also has role=alert; only report validation is relevant.
+      await expect(page.locator('.report-journey [role="alert"]')).toHaveCount(0)
       await page.getByRole('button', { name: 'Continue to finalize', exact: true }).click()
       await page.getByRole('checkbox').check()
       await page.getByRole('button', { name: 'Finalize report', exact: true }).click()
