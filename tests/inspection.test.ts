@@ -37,3 +37,22 @@ test('workers author their own records; supervisor and owner permissions do not 
  assert.equal(canEditReport('worker','a','b'),false);assert.equal(canEditReport('worker','a','a'),true)
  assert.equal(canEditReport('supervisor','a','b'),true);assert.equal(canVerify('worker'),false);assert.equal(canVerify('owner'),true)
 })
+
+test('plumbing and roofing review fields and draft validation use their own immutable template IDs',()=>{
+ for(const trade of ['plumbing','roofing'] as const){
+  const template=getTemplate(trade),answers=buildChecklistState(trade),doc={job:{address:'SYNTHETIC trade validation',client:'',date:'2026-09-20'},answers}
+  assert.equal(template.items.length,trade==='plumbing'?15:18)
+  assert.equal(template.reviewStatus,'pending_qualified_review')
+  assert.deepEqual(finalizationChecklist(doc,template).map(e=>e.field),template.items.map(i=>'answer-'+i.id))
+  for(const item of template.items)answers[item.id]={state:'meets',note:'',controls:''}
+  for(const state of ['attention','not_applicable','unable'] as const){
+   const item=template.items.at(-1)!
+   answers[item.id]={state,note:'',controls:''}
+   assert.deepEqual(finalizationChecklist(doc,template),[{field:'note-'+item.id,step:3,message:item.question+': add an explanation.'}])
+   answers[item.id].note='Synthetic explanation; optional controls stay empty'
+   assert.equal(finalizationIssues(doc,template).length,0)
+  }
+  assert.equal(validDraft(doc,template),true)
+  assert.equal(validDraft({...doc,answers:{...answers,'electrical-001':{state:'meets',note:'',controls:''}}},template),false)
+ }
+})

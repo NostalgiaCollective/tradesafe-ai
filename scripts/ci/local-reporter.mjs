@@ -1,8 +1,8 @@
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up)\.spec|follow-up)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades)\.spec|follow-up)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     const assertions=result.errors.flatMap(e=>[...(e.message||'').matchAll(/expect\(locator\)\.(\w+)\(\) failed/g)].map(m=>m[1]))
     this.rows.push({ name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
     console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):''))
@@ -13,7 +13,12 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 4) && !skipped ? 'passed' : 'failed'
+    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 6) && !skipped ? 'passed' : 'failed'
+    // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
+    if (!recovery) for (const trade of ['plumbing', 'roofing']) {
+      const path = 'test-results/trade-journeys/' + trade + '.json'
+      if (existsSync(path)) console.log('TRADE_JOURNEY ' + readFileSync(path, 'utf8'))
+    }
     mkdirSync('test-results', { recursive: true })
     writeFileSync(recovery ? 'test-results/local-recovery-browser.json' : 'test-results/local-webkit.json', JSON.stringify({
       commit: process.env.GITHUB_SHA, at: new Date().toISOString(), status,

@@ -50,3 +50,7 @@ Task-owned local source/target creation is now explicitly authorized for a [synt
 ## Daily follow-up usability
 
 Daniel reports that the latest report-completion workflow works on his phone (the usability update delivered at `7c9d960`). This is overall user-reported acceptance, separate from automated checks; no individual test results, other devices, permissions or production readiness are inferred. The new [daily follow-up milestone](DAILY-FOLLOW-UP.md) does not reopen domain/email or recovery work. Existing gates and evidence remain intact; current exact CI and staging receipts remain in the durable checkpoint.
+
+## Plumbing and roofing verification
+
+The [cross-trade verification milestone](PLUMBING-ROOFING-VERIFICATION.md) adds focused local WebKit coverage using disposable synthetic fixtures. Functional passage does not approve checklist content, legacy credential terminology, numeric/code statements or compliance claims; those remain for qualified review. No content/version changes are authorized here. Daniel's praise is not physical acceptance of daily follow-up; that phone check remains pending. Existing domain/email, hosted recovery and operational/policy gates are unchanged.
