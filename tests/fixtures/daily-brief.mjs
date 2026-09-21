@@ -26,7 +26,11 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await worker.getByLabel('Jurisdiction',{exact:true}).selectOption('CA-ON');await worker.getByLabel('Workplace context',{exact:true}).selectOption('construction')
   await worker.getByLabel('I have checked the jurisdiction and workplace context for this record.',{exact:true}).check();await saved(worker)
   await worker.reload();await expect(worker.getByLabel('Site name or address',{exact:true})).toHaveValue(tag)
-  await worker.getByLabel('Site name or address',{exact:true}).focus();await worker.keyboard.press('Tab');await expect(worker.getByLabel('Work date',{exact:true})).toBeFocused()
+  // Begin with an actual user interaction after reload so Chromium has activated the field.
+  // Keep the keyboard destination and visible-focus assertions, rather than weakening them.
+  await worker.getByLabel('Site name or address',{exact:true}).click()
+  await expect(worker.getByLabel('Site name or address',{exact:true})).toBeFocused()
+  await worker.keyboard.press('Tab');await expect(worker.getByLabel('Work date',{exact:true})).toBeFocused()
   expect(await worker.getByLabel('Work date',{exact:true}).evaluate(e=>getComputedStyle(e).outlineStyle)).toBe('solid')
   await worker.getByRole('button',{name:'Continue',exact:true}).click();await expect(worker.locator('#brief-step')).toBeFocused()
   await worker.getByLabel('Today’s work',{exact:true}).fill('SYNTHETIC material movement')
@@ -37,7 +41,7 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await worker.getByLabel('Task step',{exact:true}).fill('Move synthetic material')
   await worker.getByLabel('Hazard or concern',{exact:true}).fill('SYNTHETIC trip concern')
   await worker.getByLabel('Control or precaution',{exact:true}).fill('Propose clearing synthetic route')
-  await worker.getByLabel('Responsible person',{exact:true}).selectOption(actors.WORKER.id);await saved(worker)
+  await worker.getByLabel('Responsible for this control',{exact:true}).selectOption(actors.SUPERVISOR.id);await saved(worker)
   expect((await read()).document.steps[0].controlState).toBe('proposed')
   // Simulated connection loss BEFORE commit. The real server record remains unchanged.
   await context.route(api,route=>route.request().postDataJSON()?.command==='save'?route.abort():route.continue())
@@ -60,7 +64,7 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   expect((await read()).lifecycle).toBe('recorded')
   await worker.getByRole('button',{name:'Retry recording briefing',exact:true}).click();await expect(worker.getByRole('heading',{name:'Authenticated acknowledgements',exact:false})).toBeVisible();await context.unroute(api)
   const first=(await query('OWNER','ts_brief_versions',id))[0],firstVersion=first.version,itemId=first.snapshot.document.steps[0].id
-  expect(await query('OWNER','ts_actions',id)).toHaveLength(1);expect(await query('OWNER','ts_brief_acknowledgements',id)).toHaveLength(0)
+  expect(await query('OWNER','ts_actions',id)).toHaveLength(1);expect((await query('OWNER','ts_actions',id))[0].responsible_id).toBe(actors.WORKER.id);expect(await query('OWNER','ts_brief_acknowledgements',id)).toHaveLength(0)
   expect(first.attendance).toEqual([actors.WORKER.id])
   await expect(worker.getByRole('button',{name:'Record supervisor review of control 1',exact:true})).toHaveCount(0)
   const denied=await context.request.post(api,{headers:{origin,'x-expected-actor':actors.WORKER.id},data:{command:'review_control',payload:{companyId:company,id,version:firstVersion,itemId,requestId:randomUUID()}}})
@@ -91,7 +95,11 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await card.getByLabel('Status after saving',{exact:true}).selectOption('awaiting_verification');await card.getByLabel('Progress or resolution notes',{exact:true}).fill('SYNTHETIC follow-up ready for review');await card.getByRole('button',{name:'Request verification',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
   await worker.reload();await expect(card.locator('.action-progress')).toContainText('SYNTHETIC follow-up ready for review')
   await supervisor.goto(origin+'/actions?company='+company+'&mine=0&status=all&focus='+action.id)
-  const review=supervisor.locator('#action-'+action.id);await review.getByLabel('Status after saving',{exact:true}).selectOption('closed');await review.getByRole('button',{name:'Verify and close',exact:true}).click();await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  const review=supervisor.locator('#action-'+action.id)
+  await review.getByLabel('Status after saving',{exact:true}).click()
+  await review.getByLabel('Status after saving',{exact:true}).selectOption('closed')
+  await review.getByRole('button',{name:'Verify and close',exact:true}).click()
+  await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
   expect((await query('OWNER','ts_brief_versions',id)).find(v=>v.version===firstVersion)).toEqual(first)
   await worker.goto(origin+'/briefs?company='+company);await worker.getByLabel('Reuse site details (optional)',{exact:true}).selectOption(id);await worker.getByRole('button',{name:'Start daily brief',exact:true}).click();await worker.waitForURL(u=>u.pathname.startsWith('/briefs/')&&u.pathname!=='/briefs/'+id)
   const reused=(await query('OWNER','ts_briefs',new URL(worker.url()).pathname.split('/').at(-1),'id'))[0]

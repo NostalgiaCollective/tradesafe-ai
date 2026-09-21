@@ -14,7 +14,7 @@ test('daily brief SQL: scoped durable drafts, immutable versions, authenticated 
    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
    GRANT USAGE ON SCHEMA public,auth TO authenticated,anon;`)
   for(const [i,u] of [owner,worker,supervisor,outsider].entries())await db.query('INSERT INTO auth.users VALUES($1,$2,now())',[u,`brief${i}@example.test`])
-  for(const file of ['20260911000100_staging_baseline.sql','20260911000200_company_workflow.sql','20260911000300_template_v1.sql','20260921000100_daily_briefs.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'))
+  for(const file of ['20260911000100_staging_baseline.sql','20260911000200_company_workflow.sql','20260911000300_template_v1.sql','20260921000100_daily_briefs.sql','20260921000200_brief_action_assignment.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'))
   const as=async u=>{await db.exec('RESET ROLE; SET ROLE authenticated');await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[u])}
   const call=async(fn,command,p)=>(await db.query(`SELECT public.${fn}($1,$2::jsonb) AS value`,[command,JSON.stringify({companyId,id,requestId:randomUUID(),...p})])).rows[0].value
   const cmd=(command,p={})=>call('ts_command',command,p),brief=(command,p={})=>call('ts_brief_command',command,p)
@@ -22,14 +22,14 @@ test('daily brief SQL: scoped durable drafts, immutable versions, authenticated 
   await as(owner);await cmd('create_company',{id:companyId,name:'SYNTHETIC brief crew'})
   for(const [i,u,role] of [[1,worker,'worker'],[2,supervisor,'supervisor']]){await as(owner);const token=String(i).repeat(64);await cmd('invite',{email:`brief${i}@example.test`,role,token});await as(u);await cmd('accept_invitation',{token})}
   await as(worker);let b=await brief('create');assert.equal((await brief('create')).id,id)
-  const doc={...b.document,site:'SYNTHETIC <site>',date:'2026-09-21',task:'Synthetic task',contact:'Site contact via local radio',jurisdiction:'CA-ON',workplace:'construction',confirmed:true,crew:[worker,supervisor],attendance:[worker],briefingNote:'Discussed access',steps:[{id:randomUUID(),task:'Move test material',hazard:'SYNTHETIC trip concern',control:'Clear the route',controlState:'proposed',responsible:worker,unresolved:true}]}
+  const doc={...b.document,site:'SYNTHETIC <site>',date:'2026-09-21',task:'Synthetic task',contact:'Site contact via local radio',jurisdiction:'CA-ON',workplace:'construction',confirmed:true,crew:[worker,supervisor],attendance:[worker],briefingNote:'Discussed access',steps:[{id:randomUUID(),task:'Move test material',hazard:'SYNTHETIC trip concern',control:'Clear the route',controlState:'proposed',responsible:supervisor,unresolved:true}]}
   await assert.rejects(brief('record',{revision:1}),/TS_incomplete/)
   const save={revision:1,document:doc,requestId:randomUUID()};b=await brief('save',save);assert.equal((await brief('save',save)).revision,2)
   assert.deepEqual((await rows('ts_briefs'))[0].document,doc)
   await assert.rejects(brief('save',{revision:1,document:{...doc,task:'stale'}}),/TS_conflict/)
   const record={revision:2,requestId:randomUUID()};b=await brief('record',record);await brief('record',record)
   const original=(await rows('ts_brief_versions'))[0];assert.equal(original.version,2)
-  assert.equal((await rows('ts_actions')).length,1);assert.equal((await rows('ts_events')).filter(e=>e.kind==='action_opened').length,1)
+  assert.equal((await rows('ts_actions')).length,1);assert.equal((await rows('ts_actions'))[0].responsible_id,worker);assert.equal((await rows('ts_events')).filter(e=>e.kind==='action_opened').length,1)
   await assert.rejects(brief('save',{revision:2,document:doc}),/TS_immutable/)
   await brief('acknowledge',{version:2});await brief('acknowledge',{version:2})
   assert.equal((await rows('ts_brief_acknowledgements')).length,1)
@@ -48,6 +48,7 @@ test('daily brief SQL: scoped durable drafts, immutable versions, authenticated 
   assert.equal((await rows('ts_brief_reviews')).length,1)
   await as(worker);let action=(await rows('ts_actions'))[0]
   const update={id:action.id,revision:action.revision,state:'closed',responsibleId:worker,controls:action.controls,resolution:'Synthetic resolved',targetDate:''}
+  await assert.rejects(cmd('update_action',{...update,state:'in_progress',responsibleId:supervisor}),/TS_denied/)
   await assert.rejects(cmd('update_action',update),/TS_denied/)
   action=await cmd('update_action',{...update,state:'awaiting_verification'})
   await as(supervisor);await cmd('update_action',{...update,revision:action.revision})
