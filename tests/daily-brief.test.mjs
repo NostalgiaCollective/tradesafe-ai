@@ -14,7 +14,7 @@ test('daily brief SQL: scoped durable drafts, immutable versions, authenticated 
    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
    GRANT USAGE ON SCHEMA public,auth TO authenticated,anon;`)
   for(const [i,u] of [owner,worker,supervisor,outsider].entries())await db.query('INSERT INTO auth.users VALUES($1,$2,now())',[u,`brief${i}@example.test`])
-  for(const file of ['20260911000100_staging_baseline.sql','20260911000200_company_workflow.sql','20260911000300_template_v1.sql','20260921000100_daily_briefs.sql','20260921000200_brief_action_assignment.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'))
+  for(const file of ['20260911000100_staging_baseline.sql','20260911000200_company_workflow.sql','20260911000300_template_v1.sql','20260921000100_daily_briefs.sql','20260921000200_brief_action_assignment.sql','20260921000300_brief_content.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'))
   const as=async u=>{await db.exec('RESET ROLE; SET ROLE authenticated');await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[u])}
   const call=async(fn,command,p)=>(await db.query(`SELECT public.${fn}($1,$2::jsonb) AS value`,[command,JSON.stringify({companyId,id,requestId:randomUUID(),...p})])).rows[0].value
   const cmd=(command,p={})=>call('ts_command',command,p),brief=(command,p={})=>call('ts_brief_command',command,p)

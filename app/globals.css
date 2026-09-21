@@ -255,3 +255,5 @@
 .action-filters select{grid-row:2}.daily-intro>.button:not(.primary){display:inline-flex;margin-top:.75rem}
 
 .brief-journey{overflow-wrap:anywhere;min-width:0}.brief-journey .work-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.brief-journey fieldset{min-width:0}.brief-journey .work-steps button{white-space:normal;padding:.6rem;font-size:.9rem}.brief-journey [id]{scroll-margin-block:1.5rem 12rem}.brief-journey small{display:block}.brief-journey .work-footnote{font-size:.75rem;margin:.4rem 0}.brief-journey .work-buttons{flex-wrap:wrap}@media(max-width:600px){.brief-journey{padding-bottom:12rem}}
+
+.brief-content{overflow-wrap:anywhere;min-width:0}.brief-content summary{min-height:44px;padding:.75rem 0;cursor:pointer}.brief-content section{margin:1.25rem 0}.brief-content ul{padding-left:1.25rem}.brief-content a{overflow-wrap:anywhere}

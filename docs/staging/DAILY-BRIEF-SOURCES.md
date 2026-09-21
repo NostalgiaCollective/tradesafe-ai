@@ -2,6 +2,8 @@
 
 Version: on-construction-2026-09-21-draft-1. Retrieval: 2026-09-21. **All proposed safety prompts are draft and pending qualified review.** No content approval, work authorization, completeness or compliance determination is claimed.
 
+Historical register preserved. A subsequent [source-linked pilot and verification record](SOURCE-LINKED-CONTENT.md) resolved ordinary-browser access to official Ontario text and recorded displayed dates. That later evidence does not rewrite this version's original retrieval record or approve its prompts.
+
 Direct Ontario e-Laws/ministry retrieval returned HTTP 403. Official indexed text was inspected, but current consolidation/effective dates could not be verified. This is an explicit source-verification gap, not a resolved legal review. No access control was bypassed. The generic recorder remains usable; Ontario task examples are optional and expandable. CCOHS/IHSA are supporting guidance, not legislation. No paywalled standard text was used.
 
 ## ohsa-duties

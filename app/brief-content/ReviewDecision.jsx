@@ -1,0 +1,10 @@
+'use client'
+import {useState,useRef} from 'react'
+import {useOperation} from '@/lib/client/useOperation'
+import OperationFeedback from '@/app/components/OperationFeedback'
+import {request} from '@/lib/client/request.mjs'
+export default function ReviewDecision({content,actor}){
+ const op=useOperation(),pending=useRef(null),[state,setState]=useState(content.state==='draft'?'reviewed':'superseded'),[reference,setReference]=useState(''),[notes,setNotes]=useState('')
+ function submit(e){e.preventDefault();void op.run('Recording content decision…',async()=>{pending.current||={version:content.version,expectedState:content.state,state,decisionRef:reference,notes,requestId:crypto.randomUUID()};await request('/api/brief-content/review',{method:'POST',headers:{'Content-Type':'application/json','X-Expected-Actor':actor},body:JSON.stringify(pending.current)});window.location.reload()})}
+ return <form onSubmit={submit}><h2>Record an authorized review decision</h2><p>This appointment covers the specific content version and qualification scope recorded by the operator. Decide on every prompt and limitation. This does not approve a particular site or authorize work.</p><fieldset disabled={!op.ready||op.busy||Boolean(pending.current)}><label htmlFor="review-state">Decision</label><select id="review-state" value={state} onChange={e=>setState(e.target.value)}>{content.state==='draft'&&<option value="reviewed">Reviewed within my authorized scope</option>}<option value="superseded">Superseded — retain for history</option></select><label htmlFor="review-reference">Authorized reviewer decision reference</label><input id="review-reference" required maxLength={500} value={reference} onChange={e=>setReference(e.target.value)}/><label htmlFor="review-notes">Decision, scope and unresolved limits</label><textarea id="review-notes" required maxLength={2000} value={notes} onChange={e=>setNotes(e.target.value)}/></fieldset><button disabled={!op.ready||op.busy}>{pending.current?'Retry same review decision':'Record review decision'}</button><OperationFeedback operation={op}/></form>
+}
