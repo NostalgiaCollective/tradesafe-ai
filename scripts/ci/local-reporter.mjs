@@ -6,7 +6,7 @@ export default class LocalReporter {
     const assertions=result.errors.flatMap(e=>{
       // Strip terminal formatting before extracting method names, never field values/URLs.
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
-      return [...message.matchAll(/(?:expect\(locator\)\.(\w+)\(\)|(?:locator|page)\.(click|goto|waitForURL): Timeout)/g)].map(m=>m[1]||m[2])
+      return [...message.matchAll(/(?:expect\(locator\)\.(\w+)\(\)|(?:locator|page)\.(click|goto|waitForURL): Timeout)/g)].map(m=>m[1]||m[2]).concat(message.includes('strict mode violation')?['strict_locator']:[])
     })
     this.rows.push({ name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
     console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):''))
