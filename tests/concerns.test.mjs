@@ -26,7 +26,7 @@ test('site concerns retain originals and scope drafts, photos, action history an
   let e=await rpc('ts_concern_photo','reserve',photo);assert.deepEqual(await rpc('ts_concern_photo','reserve',photo),e)
   await assert.rejects(concern('submit',{revision:c.revision}),/TS_evidence_pending/)
   await assert.rejects(db.query('SELECT public.ts_complete_concern_photo($1,$2)',[e.id,worker]),/permission denied/)
-  await as(owner,'service_role');await db.query('SELECT public.ts_complete_concern_photo($1,$2)',[e.id,worker]);await as(worker)
+  await as(owner,'service_role');assert.equal((await db.query('SELECT public.ts_concern_admit($1,$2) allowed',[id,worker])).rows[0].allowed,true);await db.query('SELECT public.ts_complete_concern_photo($1,$2)',[e.id,worker]);await as(worker)
   const submit={revision:c.revision,requestId:randomUUID()};c=await concern('submit',submit);assert.deepEqual(await concern('submit',submit),c);assert.ok(c.submitted_at);assert.equal(c.document.observedAt,document.observedAt)
   e=(await rows('ts_concern_photos'))[0];let a=(await rows('ts_actions'))[0];assert.equal(a.responsible_id,worker);assert.equal(a.concern_id,id);assert.equal((await rows('ts_actions')).length,1)
   assert.equal((await rows('ts_site_actions'))[0].site_id,site.id);assert.equal((await rows('ts_action_ownership'))[0].record_site,'SYNTHETIC site')
