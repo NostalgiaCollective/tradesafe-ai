@@ -5,7 +5,7 @@ import {useDraft} from '@/lib/client/useDraft'
 import {briefCommand,saveBrief} from '@/lib/client/brief-command'
 import PromptPanel from '../PromptPanel'
 const stages=['Site','Today’s work','Hazards and controls','Crew briefing']
-export default function BriefEditor({initial,actor,members,editable,initialStep,previousVersion,contentCatalog}){
+export default function BriefEditor({initial,actor,members,editable,initialStep,previousVersion,contentCatalog,returnTo}){
  const ready=useClientReady(),draft=useDraft(initial,actor,saveBrief),d=draft.document
  const [step,setStep]=useState(Math.max(1,Math.min(4,initialStep))),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const request=useRef(null),lock=useRef(false)
@@ -13,7 +13,7 @@ export default function BriefEditor({initial,actor,members,editable,initialStep,
  const people=members.filter(m=>m.active||d.crew.includes(m.user_id)),name=id=>members.find(m=>m.user_id===id)?.display_name||'Former member'
  // Focus during the committed step change; a delayed animation-frame focus can steal input from a field the user has already entered.
  useLayoutEffect(()=>{document.getElementById('brief-step')?.focus()},[step])
- function go(n){setStep(n);window.history.replaceState(null,'','?step='+n)}
+ function go(n){setStep(n);window.history.replaceState(null,'','?'+new URLSearchParams({step:String(n),...(returnTo?{from:returnTo}:{})}))}
  function setHazard(id,key,value){change('steps',steps=>steps.map(s=>s.id===id?{...s,[key]:value}:s))}
  const field=(key,label,type='text')=><div key={key}><label htmlFor={'brief-'+key}>{label}</label><input id={'brief-'+key} type={type} maxLength={2000} value={d[key]} onChange={e=>change(key,e.target.value)}/></div>
  async function record(){if(lock.current||!ready)return;lock.current=true;setBusy(true);setError('');try{
@@ -23,7 +23,7 @@ export default function BriefEditor({initial,actor,members,editable,initialStep,
   // Load the authoritative recorded version after a confirmed or idempotently recovered result.
   // Full navigation discards the confirmed draft buffer and loads the recorded version.
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-  window.location.assign('/briefs/'+initial.id)
+  window.location.assign('/briefs/'+initial.id+(returnTo?'?'+new URLSearchParams({from:returnTo}):''))
  }catch(e){setError(e.code==='incomplete'?'Complete site, date, context confirmation, work, contact, crew, each hazard/control/responsible person and briefing notes. Attendance is recorded separately from acknowledgement.':e.message);if(['incomplete','invalid_request'].includes(e.code))request.current=null}finally{lock.current=false;setBusy(false)}}
  return <div className="brief-journey"><p className="eyebrow">Daily brief draft · revision {draft.revision.current}</p><h1>{d.site||'Today’s site brief'}</h1>{previousVersion&&<p>Saved draft. Any earlier briefing and acknowledgements remain in version history; they do not acknowledge this revision. <a href={'/briefs/'+initial.id+'?version='+previousVersion}>Previous recorded version</a></p>}{!editable&&<p role="alert">Read only. The author, an app supervisor or owner can edit this draft.</p>}<nav className="work-steps" aria-label="Daily brief steps">{stages.map((label,i)=><button key={label} type="button" disabled={!ready||busy} aria-current={step===i+1?'step':undefined} onClick={()=>go(i+1)}>{i+1}. {label}</button>)}</nav><h2 id="brief-step" tabIndex={-1}>{stages[step-1]}</h2>
  <fieldset className="work-fieldset" disabled={!ready||!editable||busy||Boolean(request.current)||draft.blocked.current}>

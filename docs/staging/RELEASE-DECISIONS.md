@@ -69,3 +69,7 @@ Daniel confirms the daily-brief export matches his entries exactly: user-reporte
 ## Returning-site workspace
 
 Daniel confirms task prompts, source navigation and return/recall work on his phone: user-reported functional acceptance only, not qualified safety-content approval. Content remains draft. The site workspace links briefs, reports and existing Actions through explicit company-scoped associations. It introduces no regulatory claims, automatic historical matching, notification or external integration. Exact executed delivery evidence is in the durable checkpoint and `.staging/site-workspace-delivery.md`. Existing qualified review, policy/operations, capacity/device, hosted recovery and deferred domain/email gates remain unchanged.
+
+## Crew coordination
+
+[My work and Crew responses](CREW-COORDINATION.md) reuse existing version-bound acknowledgements, assignment permissions and history. Local/hosted execution receipts belong in the durable checkpoint; engineering implementation alone does not establish release verification. Removed-member responsibility is surfaced without restoring access. No notifications or professional approvals are implied. Site workspace and crew coordination phone acceptance remain pending; previous source-navigation acceptance remains separate. All existing production gates remain unchanged.

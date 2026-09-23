@@ -13,6 +13,7 @@ export default async function ActionsPage({searchParams}) {
  if(!params.company&&w.companies.length>1)return <WorkspaceShell {...w} company={null}><CompanyChoice companies={w.companies} destination="/actions"/></WorkspaceShell>
  if(!w.company)return <WorkspaceShell {...w}><CreateCompany actor={w.user.id}/></WorkspaceShell>
  const filters=actionFilters(params),company=w.company.id
+ const crewReturn=filters.from&&new URL(filters.from,'https://internal.invalid').searchParams.get('company')===company?filters.from:null
  const site=filters.site?await loadSite(w.supabase,filters.site,company):null
  const select='*,report:ts_reports(id,document,author_id,amendment_of)'+(briefsEnabled()?',brief:ts_briefs!ts_actions_brief_id_fkey(id,document)':'')
  const [actions,members,counts]=await Promise.all([
@@ -35,5 +36,5 @@ export default async function ActionsPage({searchParams}) {
   w.supabase.from('ts_reports').select('id,amendment_of,amendment_reason,lifecycle,photos:ts_evidence(id,caption,state)').eq('company_id',company).in('amendment_of',[...new Set(actions.data.map(a=>a.report_id).filter(Boolean))]).order('created_at',{ascending:false}).limit(200),
  ]):[{data:[],error:null},{data:[],error:null}]
  for(const result of [events,amendments])if(result.error)throw databaseError(result.error)
- return <WorkspaceShell {...w}>{site&&<p><Link href={'/sites/'+site.id}>Back to site: {site.document.name}</Link></p>}<h1>Corrective actions</h1><p>Record progress, then request verification. The original report and PDF stay unchanged.</p>{amendments.data.length===200&&<p role="status">Showing the 200 most recent amendments for these reports. Open the original report for its full amendment history.</p>}<ActionList key={company+w.user.id+w.membership.role+JSON.stringify(filters)} amendments={amendments.data} initial={actions.data} members={members.data} events={events.data} actor={w.user.id} role={w.membership.role} companyId={company} filters={filters} initialCounts={counts}/></WorkspaceShell>
+ return <WorkspaceShell {...w}>{crewReturn&&<p><Link href={crewReturn}>Back to My work</Link></p>}{site&&<p><Link href={'/sites/'+site.id}>Back to site: {site.document.name}</Link></p>}<h1>Corrective actions</h1><p>Record progress, then request verification. The original report and PDF stay unchanged.</p>{amendments.data.length===200&&<p role="status">Showing the 200 most recent amendments for these reports. Open the original report for its full amendment history.</p>}<ActionList key={company+w.user.id+w.membership.role+JSON.stringify(filters)} amendments={amendments.data} initial={actions.data} members={members.data} events={events.data} actor={w.user.id} role={w.membership.role} companyId={company} filters={filters} initialCounts={counts}/></WorkspaceShell>
 }
