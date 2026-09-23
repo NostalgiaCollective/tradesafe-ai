@@ -8,7 +8,8 @@ export default class LocalReporter {
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
       return [...message.matchAll(/(?:expect\(locator\)\.(\w+)\(\)|(?:locator|page)\.(click|goto|waitForURL): Timeout)/g)].map(m=>m[1]||m[2]).concat(message.includes('strict mode violation')?['strict_locator']:[])
     })
-    this.rows.push({ name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
+    const failureKinds=result.errors.map(e=>['interrupted by another navigation','cancelled','NSURLErrorDomain','ERR_CONNECTION','Target page, context or browser has been closed','Timeout'].find(k=>(e.message||'').includes(k))||'assertion or other error')
+    this.rows.push({ failureKinds, name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
     console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):''))
   }
   onStdOut() {}
