@@ -1,5 +1,5 @@
 'use client'
-import {useRef,useState} from 'react'
+import {useLayoutEffect,useRef,useState} from 'react'
 import {useClientReady} from '@/lib/client/useClientReady'
 import {useDraft} from '@/lib/client/useDraft'
 import {briefCommand,saveBrief} from '@/lib/client/brief-command'
@@ -11,7 +11,9 @@ export default function BriefEditor({initial,actor,members,editable,initialStep,
  const request=useRef(null),lock=useRef(false)
  const change=(key,value)=>draft.change(current=>({...current,[key]:typeof value==='function'?value(current[key]):value,...(['jurisdiction','workplace'].includes(key)&&current.promptTask?{promptTask:''}:{})}))
  const people=members.filter(m=>m.active||d.crew.includes(m.user_id)),name=id=>members.find(m=>m.user_id===id)?.display_name||'Former member'
- function go(n){setStep(n);window.history.replaceState(null,'','?step='+n);requestAnimationFrame(()=>document.getElementById('brief-step')?.focus())}
+ // Focus during the committed step change; a delayed animation-frame focus can steal input from a field the user has already entered.
+ useLayoutEffect(()=>{document.getElementById('brief-step')?.focus()},[step])
+ function go(n){setStep(n);window.history.replaceState(null,'','?step='+n)}
  function setHazard(id,key,value){change('steps',steps=>steps.map(s=>s.id===id?{...s,[key]:value}:s))}
  const field=(key,label,type='text')=><div key={key}><label htmlFor={'brief-'+key}>{label}</label><input id={'brief-'+key} type={type} maxLength={2000} value={d[key]} onChange={e=>change(key,e.target.value)}/></div>
  async function record(){if(lock.current||!ready)return;lock.current=true;setBusy(true);setError('');try{
