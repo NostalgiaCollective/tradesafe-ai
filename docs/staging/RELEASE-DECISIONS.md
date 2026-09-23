@@ -73,3 +73,7 @@ Daniel confirms task prompts, source navigation and return/recall work on his ph
 ## Crew coordination
 
 [My work and Crew responses](CREW-COORDINATION.md) reuse existing version-bound acknowledgements, assignment permissions and history. Local/hosted execution receipts belong in the durable checkpoint; engineering implementation alone does not establish release verification. Removed-member responsibility is surfaced without restoring access. No notifications or professional approvals are implied. Site workspace and crew coordination phone acceptance remain pending; previous source-navigation acceptance remains separate. All existing production gates remain unchanged.
+
+## Site concern capture
+
+[Site concerns](SITE-CONCERNS.md) add observation capture and existing-Action follow-up in staging. Draft access is reporter-only; submitted concern/evidence/history access is limited to the active reporter, assignee and company supervisors/owners. This is a record in the app, not notification delivery, emergency response, statutory reporting or work authorization. Content-review states and all prior release gates remain unchanged. Crew and site phone checks remain pending; praise is not test evidence. Exact verification belongs in the durable checkpoint and delivery receipt.

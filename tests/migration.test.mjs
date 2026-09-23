@@ -26,6 +26,12 @@ test('all migrations contain no destructive statements', async () => {
       assert.match(executable,/ADD CONSTRAINT ts_action_origin CHECK/)
       executable=executable.replace('ALTER TABLE public.ts_actions ALTER COLUMN report_id DROP NOT NULL;','')
     }
+    if(file==='20260923000200_site_concerns.sql'){
+      // Transactional replacement adds a third exclusive origin. No tables or data are removed.
+      assert.match(executable,/ADD CONSTRAINT ts_action_origin CHECK/)
+      assert.match(executable,/report_id IS NULL AND brief_id IS NULL AND brief_version IS NULL AND concern_id IS NOT NULL/)
+      executable=executable.replace('ALTER TABLE public.ts_actions DROP CONSTRAINT ts_action_origin;','')
+    }
     assert.doesNotMatch(executable, /\b(DROP|TRUNCATE|CASCADE)\b|\bDELETE\s+FROM\b/i, file)
   }
 })

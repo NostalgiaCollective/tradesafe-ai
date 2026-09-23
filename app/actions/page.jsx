@@ -15,7 +15,7 @@ export default async function ActionsPage({searchParams}) {
  const filters=actionFilters(params),company=w.company.id
  const crewReturn=filters.from&&new URL(filters.from,'https://internal.invalid').searchParams.get('company')===company?filters.from:null
  const site=filters.site?await loadSite(w.supabase,filters.site,company):null
- const select='*,report:ts_reports(id,document,author_id,amendment_of)'+(briefsEnabled()?',brief:ts_briefs!ts_actions_brief_id_fkey(id,document)':'')
+ const select='*,report:ts_reports(id,document,author_id,amendment_of)'+(briefsEnabled()?',brief:ts_briefs!ts_actions_brief_id_fkey(id,document),concern:ts_concerns(id,site_snapshot)':'')
  const [actions,members,counts]=await Promise.all([
   applyActionFilters(w.supabase.from(site?'ts_site_actions':'ts_actions').select(select).eq('company_id',company),filters,w.user.id).order('target_date',{nullsFirst:false}).order('id').range(filters.page*25,filters.page*25+24),
   w.supabase.from('ts_members').select('*').eq('company_id',company),

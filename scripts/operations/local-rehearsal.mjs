@@ -97,6 +97,7 @@ export async function capture(source, status) {
   }
   const references = json(source.container, `select coalesce(json_agg(r),'[]') from (
     select 'tradesafe-evidence' as bucket,object_path,sha256,byte_size from public.ts_evidence where state='ready'
+    union all select 'tradesafe-evidence',object_path,sha256,byte_size from public.ts_concern_photos where state='ready'
     union all select 'tradesafe-exports',object_path,sha256,byte_size from public.ts_exports where state='ready') r`)
   assert.ok(references.length >= 2)
   for (const r of references) {

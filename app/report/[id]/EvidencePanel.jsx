@@ -21,7 +21,7 @@ async function api(url,options,trace=()=>{}){
  return data
  }finally{clearTimeout(timer)}
 }
-export default function EvidencePanel({reportId,actor,editable=false,disabled=false,stagingBuild=null,onStateChange}){
+export default function EvidencePanel({reportId,concernId,actor,editable=false,disabled=false,stagingBuild=null,onStateChange}){
  const ready=useSyncExternalStore(subscribe,clientReady,serverReady)
  const [stages,setStages]=useState([]),[clientErrors,setClientErrors]=useState(0),[servedBuild,setServedBuild]=useState('not checked')
  const trace=stage=>{if(stagingBuild)setStages(previous=>[...previous.slice(-7),stage])}
@@ -29,7 +29,7 @@ export default function EvidencePanel({reportId,actor,editable=false,disabled=fa
  const [loading,setLoading]=useState(true),[listFailed,setListFailed]=useState(false),[attempted,setAttempted]=useState(false)
  useUnsavedWarning(Boolean(file||caption.trim()||attempted||busy))
  const actionLock=useRef(false)
- const requestId=useRef(null),input=useRef(null),captionInput=useRef(null),feedback=useRef(null),base='/api/reports/'+reportId+'/evidence'
+ const requestId=useRef(null),input=useRef(null),captionInput=useRef(null),feedback=useRef(null),base=concernId?'/api/concerns/'+concernId+'/evidence':'/api/reports/'+reportId+'/evidence'
  useEffect(()=>{
   if(!stagingBuild)return
   let active=true
@@ -72,7 +72,7 @@ export default function EvidencePanel({reportId,actor,editable=false,disabled=fa
  <div ref={feedback} aria-busy={busy} className="photo-feedback">{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}</div>
  <h3>Saved photos ({rows.filter(r=>r.state==='ready').length}/10)</h3>
  {loading?<p role="status">Loading saved photos…</p>:!rows.some(r=>r.state!=='removed')&&<p>No photos saved yet. You can continue without photos.</p>}
- <ul className="review-list photo-list">{rows.filter(r=>r.state!=='removed').map(row=><li key={row.id}><strong>{row.caption}</strong><p>{row.state==='ready'?'Saved':'Upload incomplete — retry or remove before finalizing'}</p>
+ <ul className="review-list photo-list">{rows.filter(r=>r.state!=='removed').map(row=><li key={row.id}><strong>{row.caption}</strong><p>{row.state==='ready'?'Saved':'Upload incomplete — retry or remove before submitting'}</p>
  {row.state==='ready'&&<a className="photo-preview" href={base+'/'+row.id} target="_blank" rel="noopener noreferrer"><img src={base+'/'+row.id} alt={row.caption} width={row.width} height={row.height}/><span>Open full photo</span></a>}
  <details><summary>Photo details</summary><p>Uploaded by {row.uploader_label}{row.uploaded_at?' at '+new Date(row.uploaded_at).toLocaleString():'. Upload time not yet recorded.'}</p></details>
  {editable&&<div className="work-buttons">{row.state==='pending'&&<button type="button" disabled={busy||disabled} onClick={()=>{setAttempted(false);setRetryId(row.id);requestId.current=row.id;setCaption(row.caption);setFile(null);if(input.current){input.current.value='';input.current.focus()}setMessage('Select the same original image, then retry uploading.')}}>Retry photo upload</button>}
@@ -80,7 +80,7 @@ export default function EvidencePanel({reportId,actor,editable=false,disabled=fa
  <button type="button" disabled={busy||disabled||!ready} onClick={()=>action(async()=> 'Photo list refreshed.')}>Refresh photos</button>
  <details><summary>Photo upload troubleshooting</summary><p>Keep this page open until Saved. If an upload was interrupted, check saved uploads before retrying. Do not close this page if a selected file has not been saved.</p>
  {editable&&<button type="button" disabled={busy||disabled||!ready} onClick={()=>action(async()=>{const r=await api(base+'/reconcile',{method:'POST',headers:{'X-Expected-Actor':actor}});return r.results.some(x=>x.error)?'Some uploads remain incomplete. Select the original file to retry, or remove them.':'Saved uploads checked. The photo list is up to date.'})}>Check interrupted uploads</button>}
- <p>Photos are normalized to JPEG within a 3 MiB stored-file limit and EXIF metadata is removed. Upload time is recorded by the server; capture time and location are unverified. Finalizing locks photos; amendments use separate photos.</p>
+ <p>Photos are normalized to JPEG within a 3 MiB stored-file limit and EXIF metadata is removed. Upload time is recorded by the server; capture time and location are unverified. {concernId?'Submitting locks the original concern photos. Later notes and action updates remain separate.':'Finalizing locks photos; amendments use separate photos.'}</p>
  {stagingBuild&&<div data-testid="upload-diagnostics" className="photo-diagnostics"><strong>Staging upload diagnostics</strong><p>Page build: {stagingBuild.slice(0,7)} · Server now: {servedBuild} · Client: {ready?'ready / photo-trace-1':'waiting'}</p><p>Controls: {!ready?'loading':busy?'busy':disabled?'report locked':'enabled'} · File: {file?'selected':'none'} · Caption: {caption.trim()?'present':'empty'} · Client errors: {clientErrors}</p><p>Last stages: {stages.length?stages.join(' → '):'no interaction yet'}</p><p>Feedback: {error?'error rendered':message?'status rendered':'none'}</p></div>}
  </details>
  </section>
