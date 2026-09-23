@@ -6,7 +6,6 @@ CREATE TABLE public.ts_sites (
  id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.ts_companies(id) ON DELETE RESTRICT,
  author_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
  document jsonb NOT NULL, revision integer NOT NULL DEFAULT 1,
- lifecycle text NOT NULL DEFAULT 'draft' CHECK(lifecycle='draft'), -- existing draft save hook contract
  archived boolean NOT NULL DEFAULT false, last_request uuid,
  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(company_id,id)
 );
