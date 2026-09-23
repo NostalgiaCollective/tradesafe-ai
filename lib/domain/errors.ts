@@ -1,4 +1,5 @@
 export const ERROR_MESSAGES = {
+  site_archived: 'This site is archived. Open the site to view existing work, or ask a supervisor or owner to restore it before starting new activity.',
   account_changed: 'The signed-in account has changed. These entries have not been submitted by the new account. Sign back in as the original account, or open a fresh page before making changes.',
   request_timeout: 'The upload took too long to arrive. Check your connection, then retry the same photo. Keep this page open to preserve your selection and caption.',
   resource_limited: 'The photo or PDF request limit has been reached. Wait 10 minutes, then retry the same operation. Existing saved photos and PDFs remain available.',
@@ -27,6 +28,7 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  site_archived: 409,
   account_changed: 409,
   request_timeout: 408,
   resource_limited: 429, resource_busy: 503,

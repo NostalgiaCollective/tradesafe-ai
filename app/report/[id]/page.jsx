@@ -1,3 +1,4 @@
+import RecordSite from '@/app/sites/RecordSite'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { loadReport,workspace,databaseError } from '@/lib/server/workspace'
@@ -26,11 +27,11 @@ export default async function ReportPage({params,searchParams}) {
  const w=await workspace('/report/'+id,report.company_id);w.returnTo=listReturn(query.from,report.company_id)
  const stagingBuild=process.env.HOSTED_STAGING==='1'&&/^[a-f0-9]{40}$/.test(process.env.RENDER_GIT_COMMIT||'')?process.env.RENDER_GIT_COMMIT:null
  const editable=canEditReport(membership.role,user.id,report.author_id)
- if(report.lifecycle==='draft'){const initialStep=[2,3,4,5].includes(Number(query.step))?Number(query.step):2;return <WorkspaceShell {...w}><ReportEditor key={report.id} report={report} actor={user.id} editable={editable} initialStep={initialStep} stagingBuild={stagingBuild} returnTo={w.returnTo}/></WorkspaceShell>}
+ if(report.lifecycle==='draft'){const initialStep=[2,3,4,5].includes(Number(query.step))?Number(query.step):2;return <WorkspaceShell {...w}><RecordSite supabase={supabase} companyId={report.company_id} actor={user.id} id={id} kind="report" editable={editable}/><ReportEditor key={report.id} report={report} actor={user.id} editable={editable} initialStep={initialStep} stagingBuild={stagingBuild} returnTo={w.returnTo}/></WorkspaceShell>}
  const [actions,amendments,members]=await Promise.all([supabase.from('ts_actions').select('*').eq('report_id',id),supabase.from('ts_reports').select('id,lifecycle,amendment_reason').eq('amendment_of',id),supabase.from('ts_members').select('user_id,display_name').eq('company_id',report.company_id)])
  for(const r of [actions,amendments,members])if(r.error)throw databaseError(r.error)
  const name=id=>members.data.find(m=>m.user_id===id)?.display_name||id
- return <WorkspaceShell {...w}><article className="inspection-print"><p className="eyebrow">Finalized observations | {report.template_snapshot.trade}</p><h1>{report.document.job.address}</h1><ExportPanel reportId={report.id}/><p>{report.business_snapshot.name} | Work date {report.document.job.date}</p>
+ return <WorkspaceShell {...w}><RecordSite supabase={supabase} companyId={report.company_id} actor={user.id} id={id} kind="report" editable={editable}/><article className="inspection-print"><p className="eyebrow">Finalized observations | {report.template_snapshot.trade}</p><h1>{report.document.job.address}</h1><ExportPanel reportId={report.id}/><p>{report.business_snapshot.name} | Work date {report.document.job.date}</p>
  <p>Recorded by {name(report.author_id)}. Finalized by {name(report.finalized_by)} on {new Date(report.finalized_at).toLocaleString('en-CA')}.</p><details><summary>Record details</summary><p>Template {report.template_snapshot.version} | Snapshot {report.snapshot_version} | Record {report.id}</p></details>
  <div className="work-notice">Checklist content pending qualified review. Finalization acknowledges recorded observations; it does not certify compliance, authorize work or resolve hazards.</div>
  {report.amendment_of&&<p>Amendment to <Link href={'/report/'+report.amendment_of}>original record</Link>. Reason: {report.amendment_reason}</p>}

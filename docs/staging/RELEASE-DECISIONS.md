@@ -64,3 +64,8 @@ Authenticated acknowledgements are version-bound records, not signatures, qualif
 ## Source-linked draft content and review
 
 Daniel confirms the daily-brief export matches his entries exactly: user-reported physical export acceptance only. No additional device results are inferred. [The bounded plumbing-materials pilot](SOURCE-LINKED-CONTENT.md) adds source disclosure and immutable content/review provenance. Ordinary public-browser access resolved the prior Ontario access gap; OHSA and Construction Projects consolidation metadata are verified through displayed e-Laws currency 2026-09-16. Individual commencement histories, later changes and IHSA publication/revision date are not inferred. Qualification, applicability and wording remain for a separately appointed reviewer. No reviewer or approval is seeded; owner/supervisor roles do not authorize professional review. Other release gates remain unchanged.
+
+
+## Returning-site workspace
+
+Daniel confirms task prompts, source navigation and return/recall work on his phone: user-reported functional acceptance only, not qualified safety-content approval. Content remains draft. The site workspace links briefs, reports and existing Actions through explicit company-scoped associations. It introduces no regulatory claims, automatic historical matching, notification or external integration. Exact executed delivery evidence is in the durable checkpoint and `.staging/site-workspace-delivery.md`. Existing qualified review, policy/operations, capacity/device, hosted recovery and deferred domain/email gates remain unchanged.

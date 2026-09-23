@@ -2,9 +2,10 @@ import 'server-only'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {databaseError} from './workspace'
 // Exact counts over the authorized company set, independent of the displayed page.
-export async function actionCounts(supabase:SupabaseClient,company:string,actor:string,mine:boolean){
+export async function actionCounts(supabase:SupabaseClient,company:string,actor:string,mine:boolean,site?:string){
  const rows=await Promise.all(['open','in_progress','awaiting_verification','closed'].map(state=>{
-  let query=supabase.from('ts_actions').select('id',{count:'exact',head:true}).eq('company_id',company).eq('state',state)
+  let query=supabase.from(site?'ts_site_actions':'ts_actions').select('id',{count:'exact',head:true}).eq('company_id',company).eq('state',state)
+  if(site)query=query.eq('site_id',site)
   if(mine)query=query.eq('responsible_id',actor)
   return query
  }))
