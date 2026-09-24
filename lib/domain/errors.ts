@@ -19,6 +19,7 @@ export const ERROR_MESSAGES = {
   configuration: 'This service is not configured yet. Please try again after setup is complete.',
   unavailable: 'We could not connect to the service. Please try again.',
   unauthorized: 'Please sign in to continue.',
+  session_missing: 'This page needs a current sign-in session. Sign in below. If you just signed in, check that cookies are allowed for this site, then try again. Your saved records have not been changed.',
   not_found: 'This report could not be found or is not available to your account.',
   invalid_request: 'Please check the information and try again.',
   auth_failed: 'We could not complete sign-in. Request a new link or try signing in again.',
@@ -34,7 +35,7 @@ const statuses: Record<ErrorCode, number> = {
   resource_limited: 429, resource_busy: 503,
   image_invalid: 422, evidence_pending: 409, evidence_limit: 409, evidence_missing: 503, export_busy: 409,
   denied: 403, conflict: 409, immutable: 409, incomplete: 422, invitation: 400, last_owner: 409, deferred: 503,
-  configuration: 503, unavailable: 503, unauthorized: 401, not_found: 404,
+  configuration: 503, unavailable: 503, unauthorized: 401, session_missing: 401, not_found: 404,
   invalid_request: 400, auth_failed: 400, payment_failed: 502,
   verification_failed: 502, query_failed: 503,
 }

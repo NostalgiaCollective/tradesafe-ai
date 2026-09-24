@@ -1,0 +1,11 @@
+# Prepared-account sign-in incident
+
+Daniel reported that the prepared supervisor account returned to the TradeSafe sign-in page on his phone. This is a failed physical acceptance step. Automated passes do not close it; the phone retry remains pending.
+
+Hosted Chromium inspection used the existing ignored `.staging/workday-phone-private.json` accounts and site. Both passwords matched the existing fixture configuration, provider authentication and server session confirmation returned 200, secure first-party session cookies survived reload, and supervisor/worker memberships were active with the expected roles. Sign-out removed application access; signing in again returned to the intended site. The separate staging HTTP access gate returned its own 401 challenge without its credential. No accounts were reset or replaced.
+
+The reported phone cause is not established by those results. A controlled cookie-loss test did expose a feedback defect: loss after successful `/api/auth/session` confirmation caused a server redirect to a blank sign-in form. Missing-session redirects from both middleware and server pages now carry an explicit explanation with a cookie/retry recovery action and retain the validated destination. They do not reinterpret denied membership as an authentication error, restore access, weaken the staging gate, or automatically retry authentication.
+
+The focused browser regression exercises supervisor and worker login/reload/sign-out/account switching, exact site return, cookie loss before and after server confirmation, visible recovery feedback and explicit retry. Cookie loss is injected; provider authentication and application persistence checks are real. Local WebKit, hosted Chromium and physical evidence remain separate. Exact CI/deployment receipts, the unresolved phone diagnosis and the requested non-secret device observations belong in `.staging/reliability-workflow-checkpoint.json` and `.staging/supervisor-signin-delivery.md`.
+
+The prepared-account file and separate `.staging/hosted-access.json` gate file stay ignored. Never print their credentials, cookie values, session tokens or provider response bodies. All prior production, domain/email, content-review and evidence-preservation boundaries remain in force.

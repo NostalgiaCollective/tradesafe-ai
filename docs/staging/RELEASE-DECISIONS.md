@@ -81,3 +81,7 @@ Daniel confirms task prompts, source navigation and return/recall work on his ph
 ## Complete workday integration
 
 The connected workday check follows existing brief, acknowledgement, concern and Action records on one synthetic site. Its focused navigation/count fixes do not expand permissions or alter historical snapshots. Executed results and limits belong in `.staging/workday-integration-delivery.md` and the current checkpoint. Site, crew and concern phone acceptance remain pending; an automated workday does not establish physical acceptance, content approval or production readiness. All prior release gates and domain/email deferrals remain unchanged.
+
+## Supervisor phone sign-in failure
+
+Daniel subsequently reported the prepared supervisor sign-in returning to the sign-in page. Record that physical step as failed, with retry pending. [Sign-in inspection](SIGN-IN-VERIFICATION.md) distinguishes valid prepared credentials/memberships and passing hosted sessions from the unconfirmed device cause. The reproduced missing-session feedback gap is addressed separately; neither that fix nor browser automation establishes a successful phone retry. Feature development is paused for this incident. Existing release gates stay open.

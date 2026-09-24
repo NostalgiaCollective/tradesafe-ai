@@ -11,7 +11,7 @@ export async function pageClient(returnTo: string) {
   try { return await authenticatedClient() }
   catch (error) {
     if (error instanceof AppError && error.code === 'unauthorized') {
-      redirect('/auth/login?' + new URLSearchParams({ redirect: safeRedirect(returnTo) }))
+      redirect('/auth/login?' + new URLSearchParams({ redirect: safeRedirect(returnTo), error: 'session_missing' }))
     }
     throw error
   }
