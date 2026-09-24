@@ -77,3 +77,7 @@ Daniel confirms task prompts, source navigation and return/recall work on his ph
 ## Site concern capture
 
 [Site concerns](SITE-CONCERNS.md) add observation capture and existing-Action follow-up in staging. Draft access is reporter-only; submitted concern/evidence/history access is limited to the active reporter, assignee and company supervisors/owners. This is a record in the app, not notification delivery, emergency response, statutory reporting or work authorization. Content-review states and all prior release gates remain unchanged. Crew and site phone checks remain pending; praise is not test evidence. Exact verification belongs in the durable checkpoint and delivery receipt.
+
+## Complete workday integration
+
+The connected workday check follows existing brief, acknowledgement, concern and Action records on one synthetic site. Its focused navigation/count fixes do not expand permissions or alter historical snapshots. Executed results and limits belong in `.staging/workday-integration-delivery.md` and the current checkpoint. Site, crew and concern phone acceptance remain pending; an automated workday does not establish physical acceptance, content approval or production readiness. All prior release gates and domain/email deferrals remain unchanged.

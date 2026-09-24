@@ -1,5 +1,4 @@
 import {loadSite} from '@/lib/server/sites'
-import Link from 'next/link'
 import { workspace,databaseError } from '@/lib/server/workspace'
 import WorkspaceShell from '@/app/components/WorkspaceShell'
 import CreateCompany from '@/app/components/CreateCompany'
@@ -36,5 +35,5 @@ export default async function ActionsPage({searchParams}) {
   w.supabase.from('ts_reports').select('id,amendment_of,amendment_reason,lifecycle,photos:ts_evidence(id,caption,state)').eq('company_id',company).in('amendment_of',[...new Set(actions.data.map(a=>a.report_id).filter(Boolean))]).order('created_at',{ascending:false}).limit(200),
  ]):[{data:[],error:null},{data:[],error:null}]
  for(const result of [events,amendments])if(result.error)throw databaseError(result.error)
- return <WorkspaceShell {...w}>{crewReturn&&<p><Link href={crewReturn}>Back to My work</Link></p>}{site&&<p><Link href={'/sites/'+site.id}>Back to site: {site.document.name}</Link></p>}<h1>Corrective actions</h1><p>Record progress, then request verification. The original report and PDF stay unchanged.</p>{amendments.data.length===200&&<p role="status">Showing the 200 most recent amendments for these reports. Open the original report for its full amendment history.</p>}<ActionList key={company+w.user.id+w.membership.role+JSON.stringify(filters)} amendments={amendments.data} initial={actions.data} members={members.data} events={events.data} actor={w.user.id} role={w.membership.role} companyId={company} filters={filters} initialCounts={counts}/></WorkspaceShell>
+ return <WorkspaceShell {...w}>{crewReturn&&<p><a href={crewReturn}>Back to My work</a></p>}{site&&<p><a href={'/sites/'+site.id}>Back to site: {site.document.name}</a></p>}<h1>Corrective actions</h1><p>Record progress, then request verification. Original findings and retained evidence stay unchanged.</p>{amendments.data.length===200&&<p role="status">Showing the 200 most recent amendments for these reports. Open the original report for its full amendment history.</p>}<ActionList key={company+w.user.id+w.membership.role+JSON.stringify(filters)} amendments={amendments.data} initial={actions.data} members={members.data} events={events.data} actor={w.user.id} role={w.membership.role} companyId={company} filters={filters} initialCounts={counts}/></WorkspaceShell>
 }

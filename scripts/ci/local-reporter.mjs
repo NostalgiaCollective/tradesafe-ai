@@ -18,9 +18,10 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 10) && !skipped ? 'passed' : 'failed'
+    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 11) && !skipped ? 'passed' : 'failed'
     // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
     if(!recovery&&existsSync('test-results/concern-stage.json'))console.log('CONCERN_STAGE '+readFileSync('test-results/concern-stage.json','utf8'))
+    if(!recovery&&existsSync('test-results/workday-stage.json'))console.log('WORKDAY_STAGE '+readFileSync('test-results/workday-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/crew-stage.json'))console.log('CREW_STAGE '+readFileSync('test-results/crew-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/site-stage.json'))console.log('SITE_STAGE '+readFileSync('test-results/site-stage.json','utf8'))
     if (!recovery) for (const trade of ['plumbing', 'roofing']) {

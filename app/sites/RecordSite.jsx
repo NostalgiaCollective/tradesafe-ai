@@ -3,9 +3,9 @@ import {siteLink} from '@/lib/server/sites'
 import {databaseError} from '@/lib/server/workspace'
 import SiteContext from './SiteContext'
 import LinkRecord from './LinkRecord'
-export default async function RecordSite({supabase,companyId,actor,id,kind,editable}){
+export default async function RecordSite({supabase,companyId,actor,id,kind,editable,link:knownLink}){
  if(!briefsEnabled())return null
- const link=await siteLink(supabase,id,kind)
+ const link=knownLink===undefined?await siteLink(supabase,id,kind):knownLink
  if(link)return <SiteContext link={link}/>
  if(!editable)return null
  const r=await supabase.from('ts_sites').select('*').eq('company_id',companyId).eq('archived',false).order('updated_at',{ascending:false}).limit(100)
