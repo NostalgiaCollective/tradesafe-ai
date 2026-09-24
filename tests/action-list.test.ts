@@ -22,4 +22,8 @@ test('action return destinations retain permitted scope, status, page and select
  assert.equal(listReturn('/actions?company='+focus+'&focus='+focus,company),'/reports?company='+company)
  assert.equal(listReturn(url+'&token=secret',company),url)
  assert.equal(safeRedirect('/actions?company='+company+'&focus=bad&status=unsafe&page=999999'),'/actions?company='+company)
+ const workerUrl=actionListUrl(company,actionFilters({mine:'1',focus}))
+ const workerReturn=new URL(safeRedirect(workerUrl),'https://internal.invalid')
+ assert.equal(workerReturn.searchParams.has('mine'),false)
+ assert.deepEqual(actionFilters(Object.fromEntries(workerReturn.searchParams)),actionFilters({mine:'1',focus}))
 })
