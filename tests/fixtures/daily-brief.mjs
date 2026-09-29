@@ -129,12 +129,17 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
   expect((await query('OWNER','ts_brief_versions',id)).find(v=>v.version===firstVersion)).toEqual(first)
   await worker.goto(origin+'/briefs?company='+company);await worker.getByLabel('Reuse site details (optional)',{exact:true}).selectOption(id);await worker.getByRole('button',{name:'Start daily brief',exact:true}).click();await worker.waitForURL(u=>u.pathname.startsWith('/briefs/')&&u.pathname!=='/briefs/'+id)
+  await expect(worker.getByLabel('Site name or address',{exact:true})).toBeEditable();await expect(worker.getByLabel('Site name or address',{exact:true})).toHaveValue(tag)
   const reused=(await query('OWNER','ts_briefs',new URL(worker.url()).pathname.split('/').at(-1),'id'))[0]
   expect(reused.document.site).toBe(tag);expect(reused.document.steps).toEqual([]);expect(reused.document.crew).toEqual([]);expect(reused.document.date).toBe('');expect(reused.document.confirmed).toBe(false)
   const privateBrief=await brief('OWNER','create',{companyId:other,id:randomUUID()})
   // loading.jsx streams the shell: Next documents HTTP 200 for a streamed notFound.
   // Require the actual denial view and empty RLS data; API denial below remains HTTP 404.
-  await worker.goto(origin+'/briefs/'+privateBrief.id,{waitUntil:'domcontentloaded'})
+  const deniedUrl=origin+'/briefs/'+privateBrief.id
+  // A streamed Next notFound can replace its own navigation in WebKit. Accept only
+  // that same-URL browser interruption; the denial view, RLS and API assertions below remain mandatory.
+  try{await worker.goto(deniedUrl,{waitUntil:'domcontentloaded'})}catch(e){if(!e.message.includes('interrupted by another navigation')||worker.url()!==deniedUrl)throw e}
+  await expect(worker).toHaveURL(deniedUrl)
   await expect(worker.getByRole('heading',{name:'Page or report not found',exact:true})).toBeVisible()
   expect(await query('WORKER','ts_briefs',privateBrief.id,'id')).toEqual([])
   expect((await context.request.get(origin+'/api/briefs/'+privateBrief.id+'/export?version=1')).status()).toBe(404)
