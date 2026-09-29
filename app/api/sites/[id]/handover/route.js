@@ -7,7 +7,7 @@ export async function GET(request,{params}){
  try{
   const {supabase,user}=await authenticatedClient();assertExpectedActor(user.id,request.headers.get('x-expected-actor'))
   const {id}=await params,url=new URL(request.url),s=await loadHandover(supabase,id,url.searchParams.get('date'),url.searchParams.get('timezone'))
-  if(url.searchParams.get('download')==='1'){const html=handoverExport(s,url.origin);if(Buffer.byteLength(html,'utf8')>2097152)throw new AppError('summary_limit');return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Content-Disposition':`attachment; filename="site-handover-${id}-${s.date}.html"`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; sandbox"}})}
+  if(url.searchParams.get('download')==='1'){const html=handoverExport(s,new URL(process.env.NEXT_PUBLIC_APP_URL).origin);if(Buffer.byteLength(html,'utf8')>2097152)throw new AppError('summary_limit');return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Content-Disposition':`attachment; filename="site-handover-${id}-${s.date}.html"`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; sandbox"}})}
   return Response.json(s,{headers:{'Cache-Control':'private, no-store'}})
  }catch(e){return errorResponse(e)}
 }
