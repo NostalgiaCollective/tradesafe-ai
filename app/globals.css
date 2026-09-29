@@ -260,3 +260,5 @@
 
 .work-header nav.with-sites{grid-template-columns:repeat(5,minmax(0,1fr))}
 .preserve-lines{white-space:pre-wrap;overflow-wrap:anywhere}
+
+.site-handover{margin-block:1.5rem;padding-block:1rem;border-block:1px solid var(--border,#ddd);overflow-wrap:anywhere}.handover-filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end}.handover-filters label{display:grid;gap:.35rem;min-width:0;flex:1 1 10rem}.handover-filters input,.handover-filters select{max-width:100%;min-height:44px;min-width:0;width:100%}.site-handover summary{min-height:44px;padding-block:.7rem;cursor:pointer}.handover-list{list-style:none;padding:0}.handover-list li,.site-handover article{padding-block:.75rem;border-bottom:1px solid var(--border,#ddd)}.site-handover a{display:inline-block;min-height:44px;padding-block:.5rem}.site-handover p{margin-block:.5rem}

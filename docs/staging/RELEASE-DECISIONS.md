@@ -85,3 +85,7 @@ The connected workday check follows existing brief, acknowledgement, concern and
 ## Supervisor phone sign-in failure
 
 Daniel subsequently reported the prepared supervisor sign-in returning to the sign-in page. Record that physical step as failed, with retry pending. [Sign-in inspection](SIGN-IN-VERIFICATION.md) distinguishes valid prepared credentials/memberships and passing hosted sessions from the unconfirmed device cause. The reproduced missing-session feedback gap is addressed separately; neither that fix nor browser automation establishes a successful phone retry. Feature development is paused for this incident. Existing release gates stay open.
+
+## Sign-in retry accepted; site handover milestone
+
+On 2026-09-29 Daniel confirmed: “This has been tested and is working perfectly.” This resolves the reported sign-in retry by user-reported acceptance of the latest retry and working flow. Preserve the original failure and unconfirmed device-specific cause; do not infer individual test results or production readiness. Feature development resumes for the bounded site handover milestone. All unrelated release gates remain unchanged.

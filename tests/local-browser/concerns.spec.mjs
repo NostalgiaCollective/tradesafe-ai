@@ -1,3 +1,4 @@
+import {handoverWorkflow} from '../fixtures/handover.mjs'
 import {test,devices} from '@playwright/test'
 import {createClient} from '@supabase/supabase-js'
 import {randomBytes,randomUUID} from 'node:crypto'
@@ -25,3 +26,5 @@ test('WebKit supervisor and worker site sign-in, account switching and lost-sess
  const actors=await localActors(),site=await prepareConcerns(actors,'SYNTHETIC site sign-in')
  await siteSignInWorkflow({browser,origin:APP_ORIGIN,accounts:{supervisor:actors.SUPERVISOR,worker:actors.WORKER},siteId:site.siteId,siteName:site.tag,options:{...devices['iPhone 13'],localOnly:true,apiOrigin:API_ORIGIN}})
 })
+
+test('WebKit site handover: dated activity, current follow-up, version acknowledgements and authorized export',async({browser})=>{await handoverWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})})

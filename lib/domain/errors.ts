@@ -1,4 +1,5 @@
 export const ERROR_MESSAGES = {
+  summary_limit: 'This handover exceeds the complete-summary limit (200 records per section, 2,000 acknowledgements or 2 MiB). No partial handover was produced. Use the original site lists and contact support to arrange a complete export.',
   site_archived: 'This site is archived. Open the site to view existing work, or ask a supervisor or owner to restore it before starting new activity.',
   account_changed: 'The signed-in account has changed. These entries have not been submitted by the new account. Sign back in as the original account, or open a fresh page before making changes.',
   request_timeout: 'The upload took too long to arrive. Check your connection, then retry the same photo. Keep this page open to preserve your selection and caption.',
@@ -29,6 +30,7 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  summary_limit: 422,
   site_archived: 409,
   account_changed: 409,
   request_timeout: 408,

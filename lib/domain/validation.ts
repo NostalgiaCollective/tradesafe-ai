@@ -18,6 +18,7 @@ export function safeRedirect(value: unknown): string {
     if(company&&UUID.test(company)&&['/my-work','/dashboard','/reports','/actions','/settings','/report/new','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname))query.set('company',company)
     if(url.pathname==='/my-work'){if(one('view')==='crew')query.set('view','crew');const page=one('page');if(page&&/^\d{1,5}$/.test(page)&&Number(page)<=10000)query.set('page',String(Number(page)))}
     const site=one('site');if(site&&UUID.test(site)&&['/concerns/new','/reports','/actions','/report/new','/briefs'].includes(url.pathname))query.set('site',site)
+    if(/^\/sites\/[a-f0-9-]{36}$/.test(url.pathname)){const date=one('date'),zone=one('timezone');if(date&&/^20\d{2}-\d{2}-\d{2}$|^2100-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date))&&new Date(date).toISOString().slice(0,10)===date)query.set('date',date);if(zone&&['America/Toronto','America/Winnipeg','UTC'].includes(zone))query.set('timezone',zone)}
     if(url.pathname==='/sites'){const q=one('q'),page=one('page');if(one('archived')==='1')query.set('archived','1');if(q&&q.length<=120)query.set('q',q);if(page&&/^\d{1,5}$/.test(page))query.set('page',String(Number(page)))}
     if(url.pathname==='/dashboard'||url.pathname==='/reports'){
       const q=one('q'),status=one('status'),page=one('page'),trade=one('trade'),sort=one('sort')
