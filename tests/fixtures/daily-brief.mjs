@@ -134,7 +134,7 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   const privateBrief=await brief('OWNER','create',{companyId:other,id:randomUUID()})
   // loading.jsx streams the shell: Next documents HTTP 200 for a streamed notFound.
   // Require the actual denial view and empty RLS data; API denial below remains HTTP 404.
-  await worker.goto(origin+'/briefs/'+privateBrief.id)
+  await worker.goto(origin+'/briefs/'+privateBrief.id,{waitUntil:'domcontentloaded'})
   await expect(worker.getByRole('heading',{name:'Page or report not found',exact:true})).toBeVisible()
   expect(await query('WORKER','ts_briefs',privateBrief.id,'id')).toEqual([])
   expect((await context.request.get(origin+'/api/briefs/'+privateBrief.id+'/export?version=1')).status()).toBe(404)
