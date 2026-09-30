@@ -2,6 +2,7 @@ import {expect as baseExpect} from '@playwright/test'
 import {mkdirSync,writeFileSync} from 'node:fs'
 import {randomUUID,randomBytes} from 'node:crypto'
 import {expectSuccess,expectDatabaseError} from '../../scripts/staging/assertions.mjs'
+import {verifySiteMobile} from './site-mobile.mjs'
 const expect=baseExpect.configure({timeout:30000})
 export async function siteWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{}}){
  const company=randomUUID(),other=randomUUID(),tag='SYNTHETIC returning site '+company.slice(0,6),contexts=[]
@@ -28,7 +29,7 @@ export async function siteWorkflow({browser,origin,actors,options={},capture=asy
   mark('retry-create');await page.getByRole('button',{name:'Retry site operation',exact:true}).click();await page.waitForURL(/\/sites\/[a-f0-9-]{36}$/);await ctx.unroute(api)
   const id=new URL(page.url()).pathname.split('/').at(-1),readSite=async()=>(await rows('OWNER','ts_sites',id))[0]
   expect((await actors.WORKER.client.from('ts_sites').select('*').eq('company_id',company).then(expectSuccess))).toHaveLength(1)
-  await page.reload();await expect(page.getByRole('heading',{name:tag,exact:true})).toBeVisible();await screen(page,'site-empty')
+  await page.reload();await expect(page.getByRole('heading',{name:tag,exact:true})).toBeVisible();await verifySiteMobile(page);await screen(page,'site-empty')
   mark('first-brief');await page.getByRole('button',{name:'Start today’s brief',exact:true}).click();await page.waitForURL(/\/briefs\/[a-f0-9-]{36}$/)
   const briefId=new URL(page.url()).pathname.split('/').at(-1)
   await expect(page.getByLabel('Site name or address',{exact:true})).toHaveValue(tag+' — SYNTHETIC west loading entrance')
@@ -50,6 +51,7 @@ export async function siteWorkflow({browser,origin,actors,options={},capture=asy
   await page.getByRole('link',{name:'Back to site: '+tag,exact:true}).click();await page.getByRole('link',{name:/Date not set · Resume brief/}).click();await expect(page).toHaveURL(origin+'/briefs/'+nextId)
   mark('report-creation');await page.getByRole('link',{name:'Back to site: '+tag,exact:true}).click();await page.getByRole('link',{name:'New site report',exact:true}).click();await page.getByRole('button',{name:'Create saved draft',exact:true}).click();await page.waitForURL(/\/report\/[a-f0-9-]{36}/)
   const reportId=new URL(page.url()).pathname.split('/').at(-1),reportDraft=(await rows('OWNER','ts_reports',reportId))[0];expect(reportDraft.document.job.address).toBe('SYNTHETIC west loading entrance');expect(reportDraft.site_snapshot.name).toBe(tag)
+  mark('mobile-saved-work');await page.getByRole('link',{name:'Back to site: '+tag,exact:true}).click();await verifySiteMobile(page,{saved:true});const savedWork=page.getByRole('region',{name:'Continue saved work',exact:true});await expect(savedWork.locator('a[href="/briefs/'+nextId+'"]')).toHaveCount(1);await expect(savedWork.getByRole('link',{name:/Resume report/})).toHaveCount(1);await expect(page.locator('a[href="/briefs/'+nextId+'"]')).toHaveCount(1);await savedWork.getByRole('link',{name:/Resume report/}).click();await expect(page.getByLabel('Job address',{exact:true})).toHaveValue('SYNTHETIC west loading entrance')
   mark('report-filter');await page.getByRole('link',{name:'Back to site: '+tag,exact:true}).click();await page.getByRole('link',{name:'View site reports',exact:true}).click();await page.getByLabel('Report status',{exact:true}).selectOption('draft');await page.getByRole('button',{name:'Find reports',exact:true}).click();await expect.poll(()=>new URL(page.url()).searchParams.get('status')).toBe('draft');await expect(page.getByRole('status').filter({hasText:'1 matching report'})).toBeVisible()
   await page.getByRole('link',{name:/SYNTHETIC west loading entrance/}).click();await page.getByRole('link',{name:'Back to reports',exact:true}).click();await expect.poll(()=>new URL(page.url()).searchParams.get('site')).toBe(id);expect(new URL(page.url()).searchParams.get('status')).toBe('draft')
   mark('action-navigation');await page.goto(origin+'/sites/'+id);await page.getByRole('link',{name:'Site actions (1 outstanding)',exact:true}).click();await expect(page.getByText('SYNTHETIC obstructed route',{exact:true}).first()).toBeVisible();await page.getByLabel('Work status',{exact:true}).selectOption('attention');await page.getByRole('button',{name:'Show actions',exact:true}).click()
