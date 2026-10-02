@@ -1,3 +1,4 @@
+import {filterPlanning,orderPlanning} from '@/lib/domain/action-planning'
 import {loadSite} from '@/lib/server/sites'
 import { workspace,databaseError } from '@/lib/server/workspace'
 import WorkspaceShell from '@/app/components/WorkspaceShell'
@@ -16,9 +17,9 @@ export default async function ActionsPage({searchParams}) {
  const site=filters.site?await loadSite(w.supabase,filters.site,company):null
  const select='*,report:ts_reports(id,document,author_id,amendment_of)'+(briefsEnabled()?',brief:ts_briefs!ts_actions_brief_id_fkey(id,document),concern:ts_concerns(id,site_snapshot)':'')
  const [actions,members,counts]=await Promise.all([
-  applyActionFilters(w.supabase.from(site?'ts_site_actions':'ts_actions').select(select).eq('company_id',company),filters,w.user.id).order('target_date',{nullsFirst:false}).order('id').range(filters.page*25,filters.page*25+24),
+  orderPlanning(filterPlanning(applyActionFilters(w.supabase.from(site?'ts_site_actions':'ts_actions').select(select).eq('company_id',company),filters,w.user.id),filters),filters.sort).range(filters.page*25,filters.page*25+24),
   w.supabase.from('ts_members').select('*').eq('company_id',company),
-  actionCounts(w.supabase,company,w.user.id,filters.mine,filters.site),
+  actionCounts(w.supabase,company,w.user.id,filters.mine,filters.site,filters),
  ])
  for(const r of [actions,members])if(r.error)throw databaseError(r.error)
  // A selected action may have moved after an update; keep it reachable without changing list counts.

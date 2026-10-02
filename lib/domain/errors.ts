@@ -1,4 +1,7 @@
 export const ERROR_MESSAGES = {
+  package_limit: 'This package exceeds its limits: 31 days, 200 activity records, 100 files or 64 MiB. Narrow the date range and try again. No partial package was issued.',
+  package_changed: 'Site records or your access changed while the package was being prepared. No package was issued. Refresh the site and retry.',
+  package_missing: 'A retained PDF or photo is missing or failed its integrity check. No partial package was issued. Open the original report to generate its PDF if none exists, then retry; contact support if retained evidence is unavailable.',
   summary_limit: 'This handover exceeds the complete-summary limit (200 records per section, 2,000 acknowledgements or 2 MiB). No partial handover was produced. Use the original site lists and contact support to arrange a complete export.',
   site_archived: 'This site is archived. Open the site to view existing work, or ask a supervisor or owner to restore it before starting new activity.',
   account_changed: 'The signed-in account has changed. These entries have not been submitted by the new account. Sign back in as the original account, or open a fresh page before making changes.',
@@ -30,6 +33,7 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  package_limit: 422, package_changed: 409, package_missing: 503,
   summary_limit: 422,
   site_archived: 409,
   account_changed: 409,
