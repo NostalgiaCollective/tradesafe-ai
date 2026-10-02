@@ -4,7 +4,7 @@ Three increments extend existing Sites, Actions, My work and Daily handover. No 
 
 ## Planning
 
-Supervisors/owners can change or clear due dates and choose Low, Normal or High operational priority. Workers retain progress/request-verification rights but cannot alter scheduling. Actor, server timestamp and before/after values stay in action history. Persistent request receipts reject changed payloads and deduplicate retries even after later updates. Revision checks and existing verification/reopening rules remain enforced in SQL.
+Supervisors/owners can change or clear due dates and choose Low, Normal or High operational priority; Not set explicitly clears it. New actions start with no priority selected. The original saved values and audit history remain intact. Workers retain progress/request-verification rights but cannot alter scheduling. Actor, server timestamp and before/after values stay in action history. Persistent request receipts reject changed payloads and deduplicate retries even after later updates. Revision checks and existing verification/reopening rules remain enforced in SQL.
 
 The company/site planning convention is America/Toronto. Due today means that calendar date; overdue means an earlier saved due date on an action that is not closed. Reopening preserves the current deadline. Unscheduled means no date. These are human-entered planning values, not safety ratings or legal deadlines. Site and handover counts use authorized rows, independently of the selected historical activity day.
 
@@ -24,7 +24,7 @@ Database selection uses one caller-authorized MVCC statement snapshot. Storage r
 
 ## Evidence and remaining gates
 
-Additive migrations: `20261002000100_action_planning.sql`, `20261002000200_site_history.sql`, `20261002000300_site_evidence_package.sql`. Apply only once to verified isolated staging after exact-commit CI. No applied migration is edited or replayed.
+Additive migrations: `20261002000100_action_planning.sql`, `20261002000200_site_history.sql`, `20261002000300_site_evidence_package.sql`, `20261002000400_action_priority_clear.sql`. Apply only once to verified isolated staging after exact-commit CI. No applied migration is edited or replayed.
 
 Local SQL covers scheduling authorization, concurrency/deduplication, date boundaries, keyset pagination over representative synthetic events and resource/access denial. Local WebKit exercises the connected browser workflow and a missing task-owned local storage object. Hosted Chromium uses new synthetic records and never removes hosted evidence. Injected response loss is labelled simulated; persistence, downloads and hashes are actual integrations. Exact receipts and screenshots belong in `.staging/worksite-operations-delivery.md` and `test-results/worksite-operations/`.
 

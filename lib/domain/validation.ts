@@ -16,7 +16,7 @@ export function safeRedirect(value: unknown): string {
     const one = (key:string) => url.searchParams.getAll(key).length===1 ? url.searchParams.get(key) : null
     const company=one('company')
     if(company&&UUID.test(company)&&['/my-work','/dashboard','/reports','/actions','/settings','/report/new','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname))query.set('company',company)
-    if(['/my-work','/actions'].includes(url.pathname)){for(const [key,allowed] of Object.entries({deadline:['overdue','today','upcoming','unscheduled'],priority:['low','normal','high'],sort:['priority']})){const v=one(key);if(v&&allowed.includes(v))query.set(key,v)}}
+    if(['/my-work','/actions'].includes(url.pathname)){for(const [key,allowed] of Object.entries({deadline:['overdue','today','upcoming','unscheduled'],priority:['low','normal','high','unspecified'],sort:['priority']})){const v=one(key);if(v&&allowed.includes(v))query.set(key,v)}}
     if(url.pathname==='/my-work'){if(one('view')==='crew')query.set('view','crew');const page=one('page');if(page&&/^\d{1,5}$/.test(page)&&Number(page)<=10000)query.set('page',String(Number(page)))}
     const site=one('site');if(site&&UUID.test(site)&&['/concerns/new','/reports','/actions','/report/new','/briefs'].includes(url.pathname))query.set('site',site)
     if(/^\/sites\/[a-f0-9-]{36}$/.test(url.pathname)){const date=one('date'),zone=one('timezone');if(date&&/^20\d{2}-\d{2}-\d{2}$|^2100-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date))&&new Date(date).toISOString().slice(0,10)===date)query.set('date',date);if(zone&&['America/Toronto','America/Winnipeg','UTC'].includes(zone))query.set('timezone',zone)}
