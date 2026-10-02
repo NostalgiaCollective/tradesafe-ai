@@ -66,7 +66,7 @@ export async function workdayWorkflow({browser,origin,actors,options={},capture=
  const navigationSummary=url=>({path:url.pathname,keys:[...url.searchParams.keys()].sort(),fields:Object.fromEntries(['company','site','focus','mine','page','status'].map(k=>[k,url.searchParams.get(k)])),fromPath:url.searchParams.has('from')?new URL(url.searchParams.get('from'),origin).pathname:null})
  const rows=(t,k,v)=>actors.OWNER.client.from(t).select('*').eq(k,v).then(expectSuccess)
  const rpc=(role,fn,command,p)=>actors[role].client.rpc(fn,{command,p:{companyId:company,requestId:randomUUID(),...p}})
- const site='/sites/'+siteId,work='/my-work?company='+company,saved=p=>expect(p.locator('.save-state')).toHaveText('Saved')
+ const site='/sites/'+siteId,work='/my-work?company='+company,saved=p=>expect(p.locator('.save-state')).toHaveText(/^Saved(?: to server)?$/)
  const gap=(ok,name)=>{if(!ok){gaps.push(name);record('Integration gap: '+name,{...f,gaps:[...gaps]})}}
  const screen=async(p,n)=>{expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await capture(p,n)}
  async function login(role){const {localOnly,...settings}=options,c=await browser.newContext({viewport:{width:390,height:844},...settings});contexts.push(c);if(localOnly)await c.route('**/*',r=>[origin,actors[role].apiOrigin].includes(new URL(r.request().url()).origin)?r.continue():r.abort());const p=await c.newPage();p.setDefaultTimeout(30000);p.setDefaultNavigationTimeout(90000);await p.goto(origin+'/auth/login');await p.getByLabel('Email',{exact:true}).fill(actors[role].email);await p.getByLabel('Password',{exact:true}).fill(actors[role].password);await p.getByRole('button',{name:'Sign In',exact:true}).click();await p.waitForURL('**/dashboard');return p}

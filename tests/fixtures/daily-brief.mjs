@@ -13,7 +13,7 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   const page=await context.newPage();page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(90000)
   await page.goto(origin+'/auth/login');await page.getByLabel('Email',{exact:true}).fill(actors[role].email);await page.getByLabel('Password',{exact:true}).fill(actors[role].password);await page.getByRole('button',{name:'Sign In',exact:true}).click();await page.waitForURL('**/dashboard');return page
  }
- const saved=page=>expect(page.locator('.save-state')).toHaveText('Saved')
+ const saved=page=>expect(page.locator('.save-state')).toHaveText(/^Saved(?: to server)?$/)
  try{
   await command('OWNER','create_company',{id:company,name:tag});await command('OWNER','create_company',{id:other,name:tag+' other'})
   for(const role of ['WORKER','SUPERVISOR']){const token=randomBytes(32).toString('hex');await command('OWNER','invite',{email:actors[role].email,role:role.toLowerCase(),token});await command(role,'accept_invitation',{token})}

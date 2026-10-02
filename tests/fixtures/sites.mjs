@@ -14,7 +14,7 @@ export async function siteWorkflow({browser,origin,actors,options={},capture=asy
  const checks={}
  let stage='setup'
  const mark=value=>{stage=value}
- const saved=page=>expect(page.locator('.save-state')).toHaveText('Saved')
+ const saved=page=>expect(page.locator('.save-state')).toHaveText(/^Saved(?: to server)?$/)
  try{
   await cmd('OWNER','create_company',{id:company,name:tag});await cmd('SUPERVISOR','create_company',{id:other,name:tag+' other company'})
   const token=randomBytes(32).toString('hex');await cmd('OWNER','invite',{email:actors.WORKER.email,role:'worker',token});await cmd('WORKER','accept_invitation',{token})

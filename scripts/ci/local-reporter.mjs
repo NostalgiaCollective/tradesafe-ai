@@ -18,8 +18,9 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 14) && !skipped ? 'passed' : 'failed'
+    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 15) && !skipped ? 'passed' : 'failed'
     // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
+    if(!recovery&&existsSync('test-results/device-drafts-stage.json'))console.log('DEVICE_DRAFTS_STAGE '+readFileSync('test-results/device-drafts-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/handover-stage.json'))console.log('HANDOVER_STAGE '+readFileSync('test-results/handover-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/operations-stage.json'))console.log('OPERATIONS_STAGE '+readFileSync('test-results/operations-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/concern-stage.json'))console.log('CONCERN_STAGE '+readFileSync('test-results/concern-stage.json','utf8'))
