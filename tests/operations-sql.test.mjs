@@ -36,7 +36,7 @@ test('operations: scheduling authorization, audit, retries, stale edits and RLS 
  await assert.rejects(db.query("SELECT public.ts_site_evidence_snapshot($1,'2026-01-01','2026-03-01')",[site]),/TS_invalid/)
  // Representative authorized history at a single timestamp: keyset pagination must neither
  // duplicate nor drop rows, including lexically ordered numeric event IDs.
- await db.exec('RESET ROLE');await db.query(`INSERT INTO public.ts_events(company_id,actor_id,kind,entity_id,before_value,after_value) SELECT $1,$2,'action_updated',$3,$4,$4 FROM generate_series(1,1500)`,[company,owner,a.id,JSON.stringify(a)]);await as(owner)
+ await db.exec('RESET ROLE');await assert.rejects(db.query('UPDATE public.ts_actions SET priority=$1 WHERE id=$2',['unsafe',a.id]),/ts_actions_priority_check/);await db.query(`INSERT INTO public.ts_events(company_id,actor_id,kind,entity_id,before_value,after_value) SELECT $1,$2,'action_updated',$3,$4,$4 FROM generate_series(1,1500)`,[company,owner,a.id,JSON.stringify(a)]);await as(owner)
  const began=performance.now(),plan=(await db.query("EXPLAIN (ANALYZE,FORMAT JSON) SELECT * FROM public.ts_site_history WHERE site_id=$1 AND kind='action' ORDER BY occurred_at DESC,event_key DESC LIMIT 31",[site])).rows
  assert.ok(plan.length);assert.ok(performance.now()-began<8000)
  const first=await search('','action'),last=first.rows[29],next=await search('','action',first.cutoff,last.occurred_at,last.event_key)

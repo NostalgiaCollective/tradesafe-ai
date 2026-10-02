@@ -32,6 +32,14 @@ test('all migrations contain no destructive statements', async () => {
       assert.match(executable,/report_id IS NULL AND brief_id IS NULL AND brief_version IS NULL AND concern_id IS NOT NULL/)
       executable=executable.replace('ALTER TABLE public.ts_actions DROP CONSTRAINT ts_action_origin;','')
     }
+    if(file==='20261002000400_action_priority_clear.sql'){
+      // A transactional enum expansion, not data removal. Preserve every previous
+      // value and reject arbitrary priorities; operations SQL tests verify the live constraint.
+      assert.match(executable,/BEGIN;/)
+      assert.match(executable,/ADD CONSTRAINT ts_actions_priority_check CHECK\(priority IN \('low','normal','high','unspecified'\)\);/)
+      assert.match(executable,/COMMIT;/)
+      executable=executable.replace('ALTER TABLE public.ts_actions DROP CONSTRAINT ts_actions_priority_check;','')
+    }
     assert.doesNotMatch(executable, /\b(DROP|TRUNCATE|CASCADE)\b|\bDELETE\s+FROM\b/i, file)
   }
 })
