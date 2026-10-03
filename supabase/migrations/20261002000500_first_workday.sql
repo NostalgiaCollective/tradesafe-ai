@@ -37,7 +37,11 @@ CREATE FUNCTION public.ts_pilot_command(command text,p jsonb) RETURNS jsonb LANG
 DECLARE actor uuid:=auth.uid(); company uuid:=(p->>'companyId')::uuid; role text; req uuid:=(p->>'requestId')::uuid; prior public.ts_pilot_requests; f public.ts_pilot_feedback; result jsonb; next_status text;
 BEGIN
  IF actor IS NULL THEN RAISE EXCEPTION 'TS_unauthorized'; END IF;
+ -- Share the existing membership-command lock; revocation cannot race a write.
+ PERFORM 1 FROM public.ts_companies WHERE id=company FOR UPDATE;
  role:=public.ts_role(company);IF role IS NULL THEN RAISE EXCEPTION 'TS_denied'; END IF;
+ -- Recheck current privileges even when returning an earlier retry receipt.
+ IF command IN ('status','practice') AND role<>'owner' THEN RAISE EXCEPTION 'TS_denied';END IF;
  IF req IS NULL OR octet_length(p::text)>16000 THEN RAISE EXCEPTION 'TS_invalid'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended(company::text,17));
  SELECT * INTO prior FROM public.ts_pilot_requests WHERE company_id=company AND request_id=req;

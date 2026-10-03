@@ -29,5 +29,6 @@ test('pilot feedback: privacy, idempotency, owner status history, revocation and
  await assert.rejects(rpc('ts_pilot_command','status',{...change,requestId:randomUUID(),status:'resolved'}),/TS_conflict/);
  await rpc('ts_command','member',{userId:worker,role:'remove'});await as(worker);assert.equal((await db.query('SELECT * FROM ts_pilot_feedback')).rows.length,0);assert.equal((await db.query('SELECT * FROM ts_pilot_preferences')).rows.length,0);
  await assert.rejects(rpc('ts_pilot_command','submit',p),/TS_denied/);
+ await db.exec('RESET ROLE');await db.query("UPDATE ts_members SET role='worker' WHERE company_id=$1 AND user_id=$2",[company,owner]);await as(owner);await assert.rejects(rpc('ts_pilot_command','status',change),/TS_denied/);
  }finally{await db.close()}
 })
