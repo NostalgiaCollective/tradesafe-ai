@@ -89,3 +89,7 @@ Daniel subsequently reported the prepared supervisor sign-in returning to the si
 ## Sign-in retry accepted; site handover milestone
 
 On 2026-09-29 Daniel confirmed: “This has been tested and is working perfectly.” This resolves the reported sign-in retry by user-reported acceptance of the latest retry and working flow. Preserve the original failure and unconfirmed device-specific cause; do not infer individual test results or production readiness. Feature development resumes for the bounded site handover milestone. All unrelated release gates remain unchanged.
+
+## First workday / pilot feedback
+
+Implementation adds record-based guidance, an isolated practice designation and private company feedback. Execution receipts remain in the checkpoint; implementation is not staging delivery. [The first-workday record](FIRST-WORKDAY.md) documents newly observed CVE-2026-93687 in the Next lint dependency chain, with no compatible patched version found on 2026-10-03 UTC. The required full audit is not waived even though the affected dependency is used by lint tooling. Finish independent browser verification, retain the prepared unapplied migration, and wait for a justified compatible remediation before deployment. No external email, paid infrastructure, automatic content approval or physical acceptance is inferred.
