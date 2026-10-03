@@ -1,3 +1,5 @@
+import {navigationDiagnostic} from './navigation-diagnostic.mjs'
+import {mkdirSync,writeFileSync} from 'node:fs'
 import {expect as baseExpect} from '@playwright/test'
 import {randomUUID,randomBytes} from 'node:crypto'
 import {expectSuccess,expectDatabaseError} from '../../scripts/staging/assertions.mjs'
@@ -150,5 +152,5 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   expect((await context.request.get(origin+'/api/briefs/'+id+'/export?version='+firstVersion)).status()).toBe(404)
   expectDatabaseError(await actors.WORKER.client.rpc('ts_brief_command',{command:'acknowledge',p:{companyId:company,id,version:secondVersion,requestId:randomUUID()}}),'TS_denied')
   record('existing Actions progress/reload/verification, original-version preservation, safe site reuse, cross-company and revoked brief/export denial PASS')
- }finally{for(const context of contexts)await context.close()}
+ }catch(e){mkdirSync('test-results',{recursive:true});writeFileSync('test-results/daily-brief-stage.json',JSON.stringify(await navigationDiagnostic(contexts,e)));throw e}finally{for(const context of contexts)await context.close()}
 }
