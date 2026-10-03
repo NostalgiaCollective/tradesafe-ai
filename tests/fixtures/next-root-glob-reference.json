@@ -1,0 +1,891 @@
+{
+  "paths": {
+    "literal": [
+      "<fixture>/one"
+    ],
+    "trailing": [
+      "<fixture>/one/"
+    ],
+    "windowsSeparators": [
+      "<fixture>/one"
+    ],
+    "wildcard": [
+      "<fixture>/linked",
+      "<fixture>/number1",
+      "<fixture>/number2",
+      "<fixture>/one",
+      "<fixture>/space name",
+      "<fixture>/two",
+      "<fixture>/unicode-é"
+    ],
+    "recursive": [
+      "<fixture>/linked",
+      "<fixture>/linked/embedded",
+      "<fixture>/linked/embedded/pages",
+      "<fixture>/linked/pages",
+      "<fixture>/number1",
+      "<fixture>/number1/pages",
+      "<fixture>/number2",
+      "<fixture>/number2/pages",
+      "<fixture>/one",
+      "<fixture>/one/embedded",
+      "<fixture>/one/embedded/pages",
+      "<fixture>/one/pages",
+      "<fixture>/space name",
+      "<fixture>/space name/pages",
+      "<fixture>/two",
+      "<fixture>/two/app",
+      "<fixture>/two/app/valid",
+      "<fixture>/unicode-é",
+      "<fixture>/unicode-é/pages"
+    ],
+    "braces": [
+      "<fixture>/one",
+      "<fixture>/two"
+    ],
+    "numeric": [
+      "<fixture>/number1",
+      "<fixture>/number2"
+    ],
+    "extglob": [
+      "<fixture>/one",
+      "<fixture>/two"
+    ],
+    "excluded": [
+      "<fixture>/.hidden",
+      "<fixture>/linked",
+      "<fixture>/number1",
+      "<fixture>/number2",
+      "<fixture>/one",
+      "<fixture>/space name",
+      "<fixture>/unicode-é"
+    ],
+    "negative": [],
+    "missing": [],
+    "file": [],
+    "space": [
+      "<fixture>/space name"
+    ],
+    "unicode": [
+      "<fixture>/unicode-é"
+    ],
+    "hidden": [
+      "<fixture>/.hidden"
+    ],
+    "relative": [
+      "<relative>/one"
+    ],
+    "relativeDot": [
+      "./<relative>/one"
+    ],
+    "linked": [
+      "<fixture>/linked"
+    ],
+    "array": [
+      "<fixture>/one",
+      "<fixture>/two"
+    ]
+  },
+  "rules": {
+    "app/lint-probe.jsx": {
+      "@next/next/google-font-display": [
+        1
+      ],
+      "@next/next/google-font-preconnect": [
+        1
+      ],
+      "@next/next/inline-script-id": [
+        2
+      ],
+      "@next/next/next-script-for-ga": [
+        1
+      ],
+      "@next/next/no-assign-module-variable": [
+        2
+      ],
+      "@next/next/no-async-client-component": [
+        1
+      ],
+      "@next/next/no-before-interactive-script-outside-document": [
+        1
+      ],
+      "@next/next/no-css-tags": [
+        1
+      ],
+      "@next/next/no-document-import-in-page": [
+        2
+      ],
+      "@next/next/no-duplicate-head": [
+        2
+      ],
+      "@next/next/no-head-element": [
+        1
+      ],
+      "@next/next/no-head-import-in-document": [
+        2
+      ],
+      "@next/next/no-html-link-for-pages": [
+        2
+      ],
+      "@next/next/no-img-element": [
+        1
+      ],
+      "@next/next/no-location-assign-relative-destination": [
+        1
+      ],
+      "@next/next/no-page-custom-font": [
+        1
+      ],
+      "@next/next/no-script-component-in-head": [
+        2
+      ],
+      "@next/next/no-styled-jsx-in-document": [
+        1
+      ],
+      "@next/next/no-sync-scripts": [
+        2
+      ],
+      "@next/next/no-title-in-document-head": [
+        1
+      ],
+      "@next/next/no-typos": [
+        1
+      ],
+      "@next/next/no-unwanted-polyfillio": [
+        1
+      ],
+      "@typescript-eslint/ban-ts-comment": [
+        2
+      ],
+      "@typescript-eslint/no-array-constructor": [
+        2
+      ],
+      "@typescript-eslint/no-duplicate-enum-values": [
+        2
+      ],
+      "@typescript-eslint/no-empty-object-type": [
+        2
+      ],
+      "@typescript-eslint/no-explicit-any": [
+        2
+      ],
+      "@typescript-eslint/no-extra-non-null-assertion": [
+        2
+      ],
+      "@typescript-eslint/no-misused-new": [
+        2
+      ],
+      "@typescript-eslint/no-namespace": [
+        2
+      ],
+      "@typescript-eslint/no-non-null-asserted-optional-chain": [
+        2
+      ],
+      "@typescript-eslint/no-require-imports": [
+        2
+      ],
+      "@typescript-eslint/no-this-alias": [
+        2
+      ],
+      "@typescript-eslint/no-unnecessary-type-constraint": [
+        2
+      ],
+      "@typescript-eslint/no-unsafe-declaration-merging": [
+        2
+      ],
+      "@typescript-eslint/no-unsafe-function-type": [
+        2
+      ],
+      "@typescript-eslint/no-unused-expressions": [
+        1,
+        {
+          "allowShortCircuit": false,
+          "allowTaggedTemplates": false,
+          "allowTernary": false
+        }
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        1
+      ],
+      "@typescript-eslint/no-wrapper-object-types": [
+        2
+      ],
+      "@typescript-eslint/prefer-as-const": [
+        2
+      ],
+      "@typescript-eslint/prefer-namespace-keyword": [
+        2
+      ],
+      "@typescript-eslint/triple-slash-reference": [
+        2
+      ],
+      "import/no-anonymous-default-export": [
+        1
+      ],
+      "jsx-a11y/alt-text": [
+        1,
+        {
+          "elements": [
+            "img"
+          ],
+          "img": [
+            "Image"
+          ]
+        }
+      ],
+      "jsx-a11y/aria-props": [
+        1
+      ],
+      "jsx-a11y/aria-proptypes": [
+        1
+      ],
+      "jsx-a11y/aria-unsupported-elements": [
+        1
+      ],
+      "jsx-a11y/role-has-required-aria-props": [
+        1
+      ],
+      "jsx-a11y/role-supports-aria-props": [
+        1
+      ],
+      "react-hooks/component-hook-factories": [
+        2
+      ],
+      "react-hooks/config": [
+        2
+      ],
+      "react-hooks/error-boundaries": [
+        2
+      ],
+      "react-hooks/exhaustive-deps": [
+        1
+      ],
+      "react-hooks/gating": [
+        2
+      ],
+      "react-hooks/globals": [
+        2
+      ],
+      "react-hooks/immutability": [
+        2
+      ],
+      "react-hooks/incompatible-library": [
+        1
+      ],
+      "react-hooks/preserve-manual-memoization": [
+        2
+      ],
+      "react-hooks/purity": [
+        2
+      ],
+      "react-hooks/refs": [
+        2
+      ],
+      "react-hooks/rules-of-hooks": [
+        2
+      ],
+      "react-hooks/set-state-in-effect": [
+        2
+      ],
+      "react-hooks/set-state-in-render": [
+        2
+      ],
+      "react-hooks/static-components": [
+        2
+      ],
+      "react-hooks/unsupported-syntax": [
+        1
+      ],
+      "react-hooks/use-memo": [
+        2
+      ],
+      "react/display-name": [
+        2
+      ],
+      "react/jsx-key": [
+        2
+      ],
+      "react/jsx-no-comment-textnodes": [
+        2
+      ],
+      "react/jsx-no-duplicate-props": [
+        2
+      ],
+      "react/jsx-no-undef": [
+        2
+      ],
+      "react/jsx-uses-react": [
+        2
+      ],
+      "react/jsx-uses-vars": [
+        2
+      ],
+      "react/no-children-prop": [
+        2
+      ],
+      "react/no-danger-with-children": [
+        2
+      ],
+      "react/no-deprecated": [
+        2
+      ],
+      "react/no-direct-mutation-state": [
+        2
+      ],
+      "react/no-find-dom-node": [
+        2
+      ],
+      "react/no-is-mounted": [
+        2
+      ],
+      "react/no-render-return-value": [
+        2
+      ],
+      "react/no-string-refs": [
+        2
+      ],
+      "react/no-unescaped-entities": [
+        2
+      ],
+      "react/require-render-return": [
+        2
+      ]
+    },
+    "lib/lint-probe.ts": {
+      "@next/next/google-font-display": [
+        1
+      ],
+      "@next/next/google-font-preconnect": [
+        1
+      ],
+      "@next/next/inline-script-id": [
+        2
+      ],
+      "@next/next/next-script-for-ga": [
+        1
+      ],
+      "@next/next/no-assign-module-variable": [
+        2
+      ],
+      "@next/next/no-async-client-component": [
+        1
+      ],
+      "@next/next/no-before-interactive-script-outside-document": [
+        1
+      ],
+      "@next/next/no-css-tags": [
+        1
+      ],
+      "@next/next/no-document-import-in-page": [
+        2
+      ],
+      "@next/next/no-duplicate-head": [
+        2
+      ],
+      "@next/next/no-head-element": [
+        1
+      ],
+      "@next/next/no-head-import-in-document": [
+        2
+      ],
+      "@next/next/no-html-link-for-pages": [
+        2
+      ],
+      "@next/next/no-img-element": [
+        1
+      ],
+      "@next/next/no-location-assign-relative-destination": [
+        1
+      ],
+      "@next/next/no-page-custom-font": [
+        1
+      ],
+      "@next/next/no-script-component-in-head": [
+        2
+      ],
+      "@next/next/no-styled-jsx-in-document": [
+        1
+      ],
+      "@next/next/no-sync-scripts": [
+        2
+      ],
+      "@next/next/no-title-in-document-head": [
+        1
+      ],
+      "@next/next/no-typos": [
+        1
+      ],
+      "@next/next/no-unwanted-polyfillio": [
+        1
+      ],
+      "@typescript-eslint/ban-ts-comment": [
+        2
+      ],
+      "@typescript-eslint/no-array-constructor": [
+        2
+      ],
+      "@typescript-eslint/no-duplicate-enum-values": [
+        2
+      ],
+      "@typescript-eslint/no-empty-object-type": [
+        2
+      ],
+      "@typescript-eslint/no-explicit-any": [
+        2
+      ],
+      "@typescript-eslint/no-extra-non-null-assertion": [
+        2
+      ],
+      "@typescript-eslint/no-misused-new": [
+        2
+      ],
+      "@typescript-eslint/no-namespace": [
+        2
+      ],
+      "@typescript-eslint/no-non-null-asserted-optional-chain": [
+        2
+      ],
+      "@typescript-eslint/no-require-imports": [
+        2
+      ],
+      "@typescript-eslint/no-this-alias": [
+        2
+      ],
+      "@typescript-eslint/no-unnecessary-type-constraint": [
+        2
+      ],
+      "@typescript-eslint/no-unsafe-declaration-merging": [
+        2
+      ],
+      "@typescript-eslint/no-unsafe-function-type": [
+        2
+      ],
+      "@typescript-eslint/no-unused-expressions": [
+        1,
+        {
+          "allowShortCircuit": false,
+          "allowTaggedTemplates": false,
+          "allowTernary": false
+        }
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        1
+      ],
+      "@typescript-eslint/no-wrapper-object-types": [
+        2
+      ],
+      "@typescript-eslint/prefer-as-const": [
+        2
+      ],
+      "@typescript-eslint/prefer-namespace-keyword": [
+        2
+      ],
+      "@typescript-eslint/triple-slash-reference": [
+        2
+      ],
+      "import/no-anonymous-default-export": [
+        1
+      ],
+      "jsx-a11y/alt-text": [
+        1,
+        {
+          "elements": [
+            "img"
+          ],
+          "img": [
+            "Image"
+          ]
+        }
+      ],
+      "jsx-a11y/aria-props": [
+        1
+      ],
+      "jsx-a11y/aria-proptypes": [
+        1
+      ],
+      "jsx-a11y/aria-unsupported-elements": [
+        1
+      ],
+      "jsx-a11y/role-has-required-aria-props": [
+        1
+      ],
+      "jsx-a11y/role-supports-aria-props": [
+        1
+      ],
+      "no-var": [
+        2
+      ],
+      "prefer-const": [
+        2,
+        {
+          "destructuring": "any",
+          "ignoreReadBeforeAssign": false
+        }
+      ],
+      "prefer-rest-params": [
+        2
+      ],
+      "prefer-spread": [
+        2
+      ],
+      "react-hooks/component-hook-factories": [
+        2
+      ],
+      "react-hooks/config": [
+        2
+      ],
+      "react-hooks/error-boundaries": [
+        2
+      ],
+      "react-hooks/exhaustive-deps": [
+        1
+      ],
+      "react-hooks/gating": [
+        2
+      ],
+      "react-hooks/globals": [
+        2
+      ],
+      "react-hooks/immutability": [
+        2
+      ],
+      "react-hooks/incompatible-library": [
+        1
+      ],
+      "react-hooks/preserve-manual-memoization": [
+        2
+      ],
+      "react-hooks/purity": [
+        2
+      ],
+      "react-hooks/refs": [
+        2
+      ],
+      "react-hooks/rules-of-hooks": [
+        2
+      ],
+      "react-hooks/set-state-in-effect": [
+        2
+      ],
+      "react-hooks/set-state-in-render": [
+        2
+      ],
+      "react-hooks/static-components": [
+        2
+      ],
+      "react-hooks/unsupported-syntax": [
+        1
+      ],
+      "react-hooks/use-memo": [
+        2
+      ],
+      "react/display-name": [
+        2
+      ],
+      "react/jsx-key": [
+        2
+      ],
+      "react/jsx-no-comment-textnodes": [
+        2
+      ],
+      "react/jsx-no-duplicate-props": [
+        2
+      ],
+      "react/jsx-no-undef": [
+        2
+      ],
+      "react/jsx-uses-react": [
+        2
+      ],
+      "react/jsx-uses-vars": [
+        2
+      ],
+      "react/no-children-prop": [
+        2
+      ],
+      "react/no-danger-with-children": [
+        2
+      ],
+      "react/no-deprecated": [
+        2
+      ],
+      "react/no-direct-mutation-state": [
+        2
+      ],
+      "react/no-find-dom-node": [
+        2
+      ],
+      "react/no-is-mounted": [
+        2
+      ],
+      "react/no-render-return-value": [
+        2
+      ],
+      "react/no-string-refs": [
+        2
+      ],
+      "react/no-unescaped-entities": [
+        2
+      ],
+      "react/require-render-return": [
+        2
+      ]
+    }
+  },
+  "diagnostics": {
+    "inline-script": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "@next/next/inline-script-id",
+          "severity": 2,
+          "message": "`next/script` components with inline content must specify an `id` attribute. See: https://nextjs.org/docs/messages/inline-script-id",
+          "line": 1,
+          "column": 74,
+          "endLine": 1,
+          "endColumn": 109
+        }
+      ]
+    },
+    "hooks": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "react-hooks/rules-of-hooks",
+          "severity": 2,
+          "message": "React Hook \"useState\" is called conditionally. React Hooks must be called in the exact same order in every component render.",
+          "line": 1,
+          "column": 76,
+          "endLine": 1,
+          "endColumn": 84
+        }
+      ]
+    },
+    "typescript": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "@typescript-eslint/no-explicit-any",
+          "severity": 2,
+          "message": "Unexpected any. Specify a different type.",
+          "line": 1,
+          "column": 21,
+          "endLine": 1,
+          "endColumn": 24
+        }
+      ]
+    },
+    "accessibility": {
+      "errors": 0,
+      "warnings": 2,
+      "messages": [
+        {
+          "ruleId": "@next/next/no-img-element",
+          "severity": 1,
+          "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+          "line": 1,
+          "column": 40,
+          "endLine": 1,
+          "endColumn": 59
+        },
+        {
+          "ruleId": "jsx-a11y/alt-text",
+          "severity": 1,
+          "message": "img elements must have an alt prop, either with meaningful text, or an empty string for decorative images.",
+          "line": 1,
+          "column": 40,
+          "endLine": 1,
+          "endColumn": 59
+        }
+      ]
+    },
+    "relative-location": {
+      "errors": 0,
+      "warnings": 1,
+      "messages": [
+        {
+          "ruleId": "@next/next/no-location-assign-relative-destination",
+          "severity": 1,
+          "message": "Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination",
+          "line": 1,
+          "column": 22,
+          "endLine": 1,
+          "endColumn": 54
+        }
+      ]
+    },
+    "valid-component": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "pages/about": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "@next/next/no-html-link-for-pages",
+          "severity": 2,
+          "message": "Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages",
+          "line": 1,
+          "column": 40,
+          "endLine": 1,
+          "endColumn": 57
+        }
+      ]
+    },
+    "pages/valid": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "pages/ghost": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "pages/missing": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "pageshttps://example.com/about": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "app/about": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "app/valid": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "app/ghost": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "app/missing": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "apphttps://example.com/about": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "multi/about": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "@next/next/no-html-link-for-pages",
+          "severity": 2,
+          "message": "Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages",
+          "line": 1,
+          "column": 40,
+          "endLine": 1,
+          "endColumn": 57
+        }
+      ]
+    },
+    "multi/valid": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "multi/ghost": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "multi/missing": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "multihttps://example.com/about": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "brace/about": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "@next/next/no-html-link-for-pages",
+          "severity": 2,
+          "message": "Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages",
+          "line": 1,
+          "column": 40,
+          "endLine": 1,
+          "endColumn": 57
+        }
+      ]
+    },
+    "brace/valid": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "brace/ghost": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "brace/missing": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "bracehttps://example.com/about": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "relative/about": {
+      "errors": 1,
+      "warnings": 0,
+      "messages": [
+        {
+          "ruleId": "@next/next/no-html-link-for-pages",
+          "severity": 2,
+          "message": "Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages",
+          "line": 1,
+          "column": 40,
+          "endLine": 1,
+          "endColumn": 57
+        }
+      ]
+    },
+    "relative/valid": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "relative/ghost": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "relative/missing": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    },
+    "relativehttps://example.com/about": {
+      "errors": 0,
+      "warnings": 0,
+      "messages": []
+    }
+  }
+}

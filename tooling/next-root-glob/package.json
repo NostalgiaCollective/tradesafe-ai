@@ -1,0 +1,17 @@
+{
+  "name": "@tradesafe/next-root-glob",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Scoped Next ESLint root-directory compatibility adapter; not the fast-glob package",
+  "main": "index.mjs",
+  "dependencies": {
+    "glob": "13.0.6",
+    "picomatch": "2.3.2"
+  },
+  "files": [
+    "index.mjs"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  }
+}
