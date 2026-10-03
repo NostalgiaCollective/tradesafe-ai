@@ -2,15 +2,15 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades|concerns|crew|sites|daily-brief|operations)\.spec|follow-up|concerns|crew|sites|daily-brief|site-signin|handover|operations)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|site-signin|handover|operations|device-drafts|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     const assertions=result.errors.flatMap(e=>{
       // Strip terminal formatting before extracting method names, never field values/URLs.
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
       return [...message.matchAll(/(?:expect\(locator\)\.(\w+)\(\)|(?:locator|page)\.(click|goto|waitForURL): Timeout)/g)].map(m=>m[1]||m[2]).concat(message.includes('strict mode violation')?['strict_locator']:[])
     })
-    const failureKinds=result.errors.map(e=>['interrupted by another navigation','cancelled','NSURLErrorDomain','ERR_CONNECTION','Target page, context or browser has been closed','Timeout'].find(k=>(e.message||'').includes(k))||'assertion or other error')
+    const failureKinds=result.errors.map(e=>['interrupted by another navigation','Navigation is interrupted','WebKit encountered an internal error','cancelled','NSURLErrorDomain','ERR_CONNECTION','Target page, context or browser has been closed','Timeout'].find(k=>(e.message||'').includes(k))||'assertion or other error')
     this.rows.push({ failureKinds, name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
-    console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):''))
+    console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):'')+(failureKinds.length?' failure classes: '+failureKinds.join(','):''))
   }
   onStdOut() {}
   onStdErr() {}
@@ -18,7 +18,7 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 15) && !skipped ? 'passed' : 'failed'
+    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 16) && !skipped ? 'passed' : 'failed'
     // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
     if(!recovery&&existsSync('test-results/device-drafts-stage.json'))console.log('DEVICE_DRAFTS_STAGE '+readFileSync('test-results/device-drafts-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/handover-stage.json'))console.log('HANDOVER_STAGE '+readFileSync('test-results/handover-stage.json','utf8'))
