@@ -1,0 +1,21 @@
+'use client'
+import {useRef,useState} from 'react'
+import {useRouter} from 'next/navigation'
+import {request} from '@/lib/client/request'
+import {useOperation} from '@/lib/client/useOperation'
+import {useUnsavedWarning} from '@/lib/client/useUnsavedWarning'
+import OperationFeedback from '@/app/components/OperationFeedback'
+export default function Feedback({company,actor,route}){
+ const router=useRouter(),op=useOperation(),attempt=useRef(null),[sent,setSent]=useState(null),[uncertain,setUncertain]=useState(false),[form,setForm]=useState({kind:'problem',task:'',description:'',expectation:''})
+ useUnsavedWarning(!sent&&!!(form.task||form.description||form.expectation))
+ function send(e){e.preventDefault();void op.run('Submitting feedback.',async()=>{
+  attempt.current||={command:'submit',payload:{...form,companyId:company,id:crypto.randomUUID(),requestId:crypto.randomUUID(),route}}
+  try{const r=await request('/api/pilot',{method:'POST',headers:{'Content-Type':'application/json','X-Expected-Actor':actor},body:JSON.stringify(attempt.current)});setSent(r);setUncertain(false);router.refresh();return 'Feedback received. No email or notification was sent.'}catch(e){if(e.code==='invalid_request'){attempt.current=null;setUncertain(false)}else setUncertain(true);throw e}
+ })}
+ return <section><h2>Report a problem or suggestion</h2><p>Visible to you and this company’s owners. Do not include passwords, private report text or personal information. This is not an urgent reporting channel.</p><p>We store your entries, application version, page path without query parameters, server submission time and support reference. No screen, photos or browser storage are captured.</p>{sent?<p role="status">Support reference: {sent.id} · Received {new Date(sent.created_at).toLocaleString()}. <button onClick={()=>{attempt.current=null;setSent(null);setForm({kind:'problem',task:'',description:'',expectation:''})}}>New feedback</button></p>:<form onSubmit={send}><fieldset className="work-fieldset" disabled={!op.ready||op.busy||uncertain}><label htmlFor="feedback-kind">Type</label><select id="feedback-kind" value={form.kind} onChange={e=>setForm({...form,kind:e.target.value})}><option value="problem">Problem</option><option value="suggestion">Suggestion</option></select>{[['task','What were you trying to do?',200,true],['description','Problem or suggestion',2000,true],['expectation','Expected versus actual behavior (optional)',2000,false]].map(([k,l,max,required])=><div key={k}><label htmlFor={'feedback-'+k}>{l}</label><textarea id={'feedback-'+k} required={required} maxLength={max} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></div>)}</fieldset><button className="primary" disabled={!op.ready||op.busy}>{op.busy?'Submitting…':uncertain?'Retry same feedback':'Submit feedback'}</button>{uncertain&&<p>Submission is not confirmed. Your text remains here. Retry uses the same support reference and cannot create another submission.</p>}</form>}<OperationFeedback operation={op}/></section>
+}
+export function FeedbackStatus({item,actor}){
+ const op=useOperation(),router=useRouter(),attempt=useRef(null),[status,setStatus]=useState(item.status),[uncertain,setUncertain]=useState(false)
+ function save(e){e.preventDefault();void op.run('Saving feedback status.',async()=>{attempt.current||={command:'status',payload:{companyId:item.company_id,id:item.id,revision:item.revision,status,requestId:crypto.randomUUID()}};try{await request('/api/pilot',{method:'POST',headers:{'Content-Type':'application/json','X-Expected-Actor':actor},body:JSON.stringify(attempt.current)});attempt.current=null;setUncertain(false);router.refresh();return 'Feedback status saved.'}catch(e){setUncertain(true);throw e}})}
+ return <form onSubmit={save}><label htmlFor={'status-'+item.id}>Feedback status</label><select id={'status-'+item.id} value={status} disabled={op.busy||uncertain} onChange={e=>setStatus(e.target.value)}>{['received','investigating','resolved'].map(s=><option key={s}>{s}</option>)}</select><button disabled={!op.ready||op.busy||(!uncertain&&status===item.status)}>{uncertain?'Retry status update':'Save feedback status'}</button><OperationFeedback operation={op}/>{uncertain&&<a href={'/help?company='+item.company_id} target="_blank" rel="noopener noreferrer">Open latest feedback in another tab</a>}</form>
+}

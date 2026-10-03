@@ -11,11 +11,11 @@ export function safeRedirect(value: unknown): string {
     const originalPath = value.split('?')[0]
     if (originalPath !== url.pathname) return fallback
     // Authentication and API endpoints are never post-login destinations.
-    if (!['/device-drafts','/concerns/new','/my-work','/dashboard','/reports','/actions','/settings','/join','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname) && !(/^\/sites\//.test(url.pathname)&&UUID.test(url.pathname.slice(7))) && !(/^\/concerns\//.test(url.pathname)&&UUID.test(url.pathname.slice(10))) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname) && !(/^\/briefs\//.test(url.pathname)&&UUID.test(url.pathname.slice(8)))) return fallback
+    if (!['/help','/device-drafts','/concerns/new','/my-work','/dashboard','/reports','/actions','/settings','/join','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname) && !(/^\/sites\//.test(url.pathname)&&UUID.test(url.pathname.slice(7))) && !(/^\/concerns\//.test(url.pathname)&&UUID.test(url.pathname.slice(10))) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname) && !(/^\/briefs\//.test(url.pathname)&&UUID.test(url.pathname.slice(8)))) return fallback
     const query = new URLSearchParams()
     const one = (key:string) => url.searchParams.getAll(key).length===1 ? url.searchParams.get(key) : null
     const company=one('company')
-    if(company&&UUID.test(company)&&['/device-drafts','/my-work','/dashboard','/reports','/actions','/settings','/report/new','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname))query.set('company',company)
+    if(company&&UUID.test(company)&&['/help','/device-drafts','/my-work','/dashboard','/reports','/actions','/settings','/report/new','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname))query.set('company',company)
     if(['/my-work','/actions'].includes(url.pathname)){for(const [key,allowed] of Object.entries({deadline:['overdue','today','upcoming','unscheduled'],priority:['low','normal','high','unspecified'],sort:['priority']})){const v=one(key);if(v&&allowed.includes(v))query.set(key,v)}}
     if(url.pathname==='/my-work'){if(one('view')==='crew')query.set('view','crew');const page=one('page');if(page&&/^\d{1,5}$/.test(page)&&Number(page)<=10000)query.set('page',String(Number(page)))}
     if(url.pathname==='/concerns/new'){const device=one('device');if(device&&UUID.test(device))query.set('device',device)}

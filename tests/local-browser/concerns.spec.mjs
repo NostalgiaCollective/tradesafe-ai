@@ -20,7 +20,7 @@ test('WebKit site concerns: private photo capture, reliable submission, ownershi
  await concernWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
 })
 test('WebKit complete workday: site brief, exact acknowledgement, concern ownership, verified closure and revision',async({browser})=>{
- await workdayWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
+ await workdayWorkflow({practice:true,browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
 })
 test('WebKit supervisor and worker site sign-in, account switching and lost-session feedback',async({browser})=>{
  const actors=await localActors(),site=await prepareConcerns(actors,'SYNTHETIC site sign-in')

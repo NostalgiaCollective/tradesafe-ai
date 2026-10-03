@@ -4,12 +4,13 @@ import {mkdirSync,writeFileSync} from 'node:fs'
 import sharp from 'sharp'
 import {expectSuccess,expectDatabaseError} from '../../scripts/staging/assertions.mjs'
 const expect=baseExpect.configure({timeout:30000})
-export async function prepareConcerns(actors,label='SYNTHETIC site concern'){
+export async function prepareConcerns(actors,label='SYNTHETIC site concern',practice=false){
  const company=randomUUID(),tag=label+' '+company.slice(0,6),rpc=(role,fn,command,p)=>actors[role].client.rpc(fn,{command,p:{companyId:company,requestId:randomUUID(),...p}}).then(expectSuccess)
  await rpc('OWNER','ts_command','create_company',{id:company,name:tag})
+ if(practice)await rpc('OWNER','ts_pilot_command','practice',{})
  for(const role of ['WORKER','SUPERVISOR']){const token=randomBytes(32).toString('hex');await rpc('OWNER','ts_command','invite',{email:actors[role].email,role:role.toLowerCase(),token});await rpc(role,'ts_command','accept_invitation',{token})}
  const site=await rpc('WORKER','ts_site_command','create',{id:randomUUID(),document:{name:tag,address:'SYNTHETIC loading bay',instructions:''}})
- return {company,tag,siteId:site.id}
+ return {company,tag:site.document.name,siteId:site.id}
 }
 export async function concernWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{}}){
  const f=await prepareConcerns(actors),{company,siteId}=f,contexts=[];let stage='setup',httpFailure=null
@@ -58,8 +59,8 @@ export async function concernWorkflow({browser,origin,actors,options={},capture=
 }
 
 // One continuous day, using the existing site, briefing, concern and Actions flows.
-export async function workdayWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{}}){
- const f=await prepareConcerns(actors,'SYNTHETIC complete workday'),{company,siteId,tag}=f,contexts=[],gaps=[]
+export async function workdayWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{},practice=false}){
+ const f=await prepareConcerns(actors,'SYNTHETIC complete workday',practice),{company,siteId,tag}=f,contexts=[],gaps=[]
  let stage='sign-in',returnDiagnostics
  // safeRedirect omits mine=1: the server interprets an absent mine as Assigned to me.
  const actionQuery=url=>{const params=new URLSearchParams(url.search);if(!params.has('mine'))params.set('mine','1');return JSON.stringify([...params].sort())}

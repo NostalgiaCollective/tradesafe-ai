@@ -1,0 +1,34 @@
+import {expect as baseExpect} from '@playwright/test'
+import {randomUUID,randomBytes} from 'node:crypto'
+import {expectSuccess} from '../../scripts/staging/assertions.mjs'
+const expect=baseExpect.configure({timeout:30000})
+export async function pilotWorkflow({browser,origin,actors,options={},record=()=>{},capture=async()=>{}}){
+ const company=randomUUID(),contexts=[],cmd=(role,fn,command,p={})=>actors[role].client.rpc(fn,{command,p:{companyId:company,requestId:randomUUID(),...p}}).then(expectSuccess)
+ await cmd('OWNER','ts_command','create_company',{id:company,name:'First workday '+company.slice(0,6)})
+ await cmd('OWNER','ts_pilot_command','practice')
+ for(const role of ['WORKER','SUPERVISOR']){const token=randomBytes(32).toString('hex');await cmd('OWNER','ts_command','invite',{email:actors[role].email,role:role.toLowerCase(),token});await cmd(role,'ts_command','accept_invitation',{token})}
+ async function login(role){const {localOnly,...settings}=options,c=await browser.newContext({viewport:{width:390,height:844},...settings});contexts.push(c);if(localOnly)await c.route('**/*',r=>[origin,actors[role].apiOrigin].includes(new URL(r.request().url()).origin)?r.continue():r.abort());const p=await c.newPage();p.setDefaultTimeout(30000);p.setDefaultNavigationTimeout(90000);await p.goto(origin+'/auth/login');await p.getByLabel('Email',{exact:true}).fill(actors[role].email);await p.getByLabel('Password',{exact:true}).fill(actors[role].password);await p.getByRole('button',{name:'Sign In',exact:true}).click();await p.waitForURL('**/dashboard');return p}
+ try{
+ const owner=await login('OWNER'),worker=await login('WORKER'),supervisor=await login('SUPERVISOR'),outside=await login('OUTSIDER'),url='/help?company='+company
+ await supervisor.goto(origin+'/dashboard?company='+company);await expect(supervisor.getByText('Create your first site to keep daily work together.',{exact:true})).toBeVisible()
+ await worker.goto(origin+url);await expect(worker.getByText('No recorded briefing includes you yet. Ask the responsible supervisor to include your account.',{exact:true})).toBeVisible();await expect(worker.getByText('Nothing outstanding is assigned to you. Assignment does not grant supervisor permissions.',{exact:true})).toBeVisible()
+ await worker.getByRole('button',{name:'Dismiss guide from Today',exact:true}).click();await expect(worker.getByRole('button',{name:'Show guide on Today',exact:true})).toBeVisible();await worker.goto(origin+'/dashboard?company='+company);await expect(worker.getByRole('heading',{name:'Your first workday',exact:true})).toHaveCount(0);await worker.reload();await expect(worker.getByRole('heading',{name:'Your first workday',exact:true})).toHaveCount(0)
+ const site=await cmd('SUPERVISOR','ts_site_command','create',{id:randomUUID(),document:{name:'Practice loading bay',address:'Synthetic training location',instructions:'Synthetic practice only'}})
+ expect(site.document.name).toMatch(/^PRACTICE/);await supervisor.reload();await expect(supervisor.getByText('Recorded activity: 1 active sites available.',{exact:true})).toBeVisible()
+ await worker.goto(origin+url+'&context=%2Fsites%2F'+site.id+'%3Fsecret%3Dnever-store');await worker.getByRole('button',{name:'Show guide on Today',exact:true}).click();await expect(worker.getByRole('button',{name:'Dismiss guide from Today',exact:true})).toBeVisible()
+ await worker.getByLabel('What were you trying to do?',{exact:true}).fill('SYNTHETIC find my briefing');await worker.getByLabel('Problem or suggestion',{exact:true}).fill('SYNTHETIC feedback retry');await worker.getByLabel('Expected versus actual behavior (optional)',{exact:true}).fill('SYNTHETIC expect context retained');let lost=false
+ await worker.context().route('**/api/pilot',async r=>{if(r.request().postDataJSON()?.command==='submit'&&!lost){lost=true;expect((await r.fetch()).status()).toBe(200);await r.abort()}else await r.continue()})
+ await worker.getByRole('button',{name:'Submit feedback',exact:true}).click();await expect(worker.getByRole('button',{name:'Retry same feedback',exact:true})).toBeVisible();await expect(worker.getByLabel('Problem or suggestion',{exact:true})).toHaveValue('SYNTHETIC feedback retry');await worker.getByRole('button',{name:'Retry same feedback',exact:true}).click();await expect(worker.getByRole('status').filter({hasText:'Feedback received.'})).toBeVisible();await worker.context().unroute('**/api/pilot')
+ const rows=()=>actors.WORKER.client.from('ts_pilot_feedback').select('*').eq('company_id',company).then(expectSuccess),f=(await rows())[0];expect(await rows()).toHaveLength(1);expect(f.route).toBe('/sites/'+site.id);expect(f.created_at).toBeTruthy();expect(f.app_version).toBeTruthy()
+ await worker.reload();await expect(worker.getByText('SYNTHETIC find my briefing',{exact:true})).toBeVisible();expect(await worker.getByRole('button',{name:'Save feedback status',exact:true}).count()).toBe(0)
+ await supervisor.goto(origin+url);await expect(supervisor.getByText('SYNTHETIC find my briefing',{exact:true})).toHaveCount(0)
+ await owner.goto(origin+url);await owner.getByLabel('Feedback status',{exact:true}).selectOption('investigating');await owner.getByRole('button',{name:'Save feedback status',exact:true}).click();await expect(owner.getByRole('status').filter({hasText:'Feedback status saved.'})).toBeVisible();await owner.reload();await expect(owner.getByLabel('Feedback status',{exact:true})).toHaveValue('investigating');expect((await rows())[0].status).toBe('investigating')
+ const bad={command:'status',payload:{companyId:company,id:f.id,revision:2,status:'resolved',requestId:randomUUID()}},post=(p,role,body)=>p.context().request.post(origin+'/api/pilot',{headers:{origin,'X-Expected-Actor':actors[role].id},data:body})
+ expect((await post(worker,'WORKER',bad)).status()).toBe(403);expect((await post(outside,'OUTSIDER',bad)).status()).toBe(403)
+ await worker.getByText('Where is my text saved?',{exact:true}).focus();await worker.keyboard.press('Enter');await expect(worker.getByText(/Saved to server means the server confirmed/)).toBeVisible();expect(await worker.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await capture(worker,'pilot-help-phone')
+ await cmd('OWNER','ts_command','member',{userId:actors.WORKER.id,role:'remove'});expect((await post(worker,'WORKER',bad)).status()).toBe(403);await worker.reload();await expect(worker).toHaveURL(/access-denied/)
+ // Restore only the task-owned synthetic membership through a new ordinary invitation.
+ const token=randomBytes(32).toString('hex');await cmd('OWNER','ts_command','invite',{email:actors.WORKER.email,role:'worker',token});await cmd('WORKER','ts_command','accept_invitation',{token})
+ record('PASS first-workday real counts, practice isolation, guide persistence, private feedback/retry/status, keyboard/mobile and revoked denial',{company,siteId:site.id,feedbackId:f.id})
+ }finally{for(const c of contexts)await c.close()}
+}

@@ -1,4 +1,5 @@
 'use client'
+import WorkHelp from '@/app/components/WorkHelp'
 import {useEffect,useRef,useState} from 'react'
 import {useOperation} from '@/lib/client/useOperation'
 import {useUnsavedWarning} from '@/lib/client/useUnsavedWarning'
@@ -21,7 +22,7 @@ export default function ConcernForm({initial,site,actor,deviceId}){
  })}
  const photoBlocked=photo&&(photo.loading||photo.failed||photo.busy||photo.selected||photo.pending>0)
  if(isSubmitted)return <><h1>Concern submitted</h1><p role="status">Saved by the server. No notification was sent.</p><p>{record.document.observation}</p><a className="button primary" href={'/concerns/'+record.id}>View concern and follow-up</a></>
- return <><h1>Report a concern</h1><p>{site.document.name} · {site.document.address}</p><p>Observation capture and follow-up only. Saving here does not contact anyone or authorize work.</p><DeviceText device={device} kind="concern" company={site.company_id}/><form onSubmit={e=>{e.preventDefault();run(record?'save':'create')}}><fieldset className="work-fieldset" disabled={!op.ready||op.busy||uncertain||blocked||device.hold}>
+ return <><h1>Report a concern</h1><p>{site.document.name} · {site.document.address}</p><p>Observation capture and follow-up only. Saving here does not contact anyone or authorize work.</p><WorkHelp kind="concern"/><DeviceText device={device} kind="concern" company={site.company_id}/><form onSubmit={e=>{e.preventDefault();run(record?'save':'create')}}><fieldset className="work-fieldset" disabled={!op.ready||op.busy||uncertain||blocked||device.hold}>
  <label htmlFor="concern-observation">What did you observe?</label><textarea id="concern-observation" maxLength={4000} value={document.observation} onChange={e=>change('observation',e.target.value)}/>
  <label htmlFor="concern-location">Where on this site?</label><input id="concern-location" maxLength={1000} value={document.location} onChange={e=>change('location',e.target.value)}/>
  <details><summary>Immediate steps and observation time (optional)</summary><label htmlFor="concern-immediate">Immediate steps taken</label><textarea id="concern-immediate" maxLength={4000} value={document.immediate} onChange={e=>change('immediate',e.target.value)}/><label htmlFor="concern-time">Observed at (your local time)</label><input id="concern-time" type="datetime-local" defaultValue={document.observedAt?new Date(new Date(document.observedAt).getTime()-new Date(document.observedAt).getTimezoneOffset()*60000).toISOString().slice(0,16):''} onChange={e=>change('observedAt',e.target.value?new Date(e.target.value).toISOString():'')}/><p>This is your entered observation time. The server records submission time separately.</p></details>
