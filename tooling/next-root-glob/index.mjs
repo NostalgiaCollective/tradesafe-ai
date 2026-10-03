@@ -12,12 +12,12 @@ export function globSync(pattern, options) {
   const leadingDot = pattern.startsWith('./');
   const trailingSlash = pattern.endsWith('/');
   const target = pattern.replace(/\/\*\*\/?$/, '/**/*');
-  const matches = picomatch(target, { dot: false, nonegate: true });
-  return match(target, { follow: true, absolute, dot: true, windowsPathsNoEscape: true })
-    .filter(entry => matches(entry.replaceAll('\\', '/') + (trailingSlash ? '/' : '')))
+  const matches = picomatch(path.resolve(target).replaceAll("\\", "/"), { dot: false, nonegate: true });
+  return match(target, { follow: true, absolute: true, dot: true, windowsPathsNoEscape: true })
+    .filter(entry => matches(entry.replaceAll('\\', '/')))
     .filter(entry => { try { return statSync(entry).isDirectory(); } catch (error) { if (['ENOENT','ENOTDIR'].includes(error.code)) return false; throw error; } })
     .map(entry => {
-      let result = entry.replaceAll('\\', '/').replace(/\/$/, '');
+      let result = (absolute ? entry : path.relative(process.cwd(), entry)).replaceAll('\\', '/').replace(/\/$/, '');
       if (leadingDot && !result.startsWith('./')) result = './' + result;
       return trailingSlash ? result + '/' : result;
     });

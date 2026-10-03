@@ -57,7 +57,7 @@
   },
   "overrides": {
     "@next/eslint-plugin-next": {
-      "fast-glob": "file:../../../tooling/next-root-glob/tradesafe-next-root-glob-0.5.0.tgz"
+      "fast-glob": "file:../../../tooling/next-root-glob/tradesafe-next-root-glob-0.5.2.tgz"
     }
   }
 }
