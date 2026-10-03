@@ -1,0 +1,2 @@
+# Keep the audited adapter source byte-identical to its npm archive on Windows.
+tooling/next-root-glob/index.mjs text eol=lf
