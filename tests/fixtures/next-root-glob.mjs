@@ -9,7 +9,7 @@ export async function rootGlobSnapshot(referenceRoot = process.cwd()) {
   const {ESLint} = load('eslint');
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'tradesafe-lint-'));
   const forward = value => value.replaceAll('\\', '/');
-  const normalize = value => forward(value).replace(forward(fixture), '<fixture>');
+  const normalize = value => { const p = forward(value); return p.startsWith(forward(fixture)) ? p.replace(forward(fixture), '<fixture>') : p; };
   const files = ['one/pages/about.jsx','one/embedded/pages/ghost.jsx','two/app/valid/page.jsx',
     'two/app/layout.jsx','space name/pages/index.jsx','unicode-é/pages/index.jsx',
     '.hidden/pages/index.jsx','number1/pages/index.jsx','number2/pages/index.jsx'];
