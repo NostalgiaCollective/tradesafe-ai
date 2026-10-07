@@ -2,6 +2,7 @@ import { mkdirSync, copyFileSync, cpSync, existsSync, readFileSync, writeFileSyn
 import { execFileSync, spawn } from 'node:child_process'
 import { parseEnv } from 'node:util'
 import assert from 'node:assert/strict'
+import {LOCAL_WORKFLOW_COUNT,RESTORED_WORKFLOW_COUNT} from './browser-contract.mjs'
 import { APP_ORIGIN, localEnvironment } from './local-environment.mjs'
 import { capture, negativeArchiveChecks, restore, identity, assertIdentity, TARGET } from '../operations/local-rehearsal.mjs'
 
@@ -48,8 +49,8 @@ try {
   // Safe reporter suppresses fill arguments, captured emails, tokens and provider errors.
   await browser('playwright.local.config.mjs', env)
   const result = JSON.parse(readFileSync('test-results/local-webkit.json', 'utf8'))
-  assert.equal(result.status, 'passed'); assert.equal(result.executed, 17); assert.equal(result.skipped, 0)
-  console.log('PASS: 17 executed WebKit local-integration tests; zero skipped. No hosted/email-delivery/physical-device claim.')
+  assert.equal(result.status, 'passed'); assert.equal(result.executed, LOCAL_WORKFLOW_COUNT); assert.equal(result.skipped, 0)
+  console.log(`PASS: ${LOCAL_WORKFLOW_COUNT} executed WebKit local-integration tests; zero skipped. No hosted/email-delivery/physical-device claim.`)
   stage = 'quiesced synthetic backup'
   await stopApp()
   const source = identity('tradesafe-ci')
@@ -78,7 +79,7 @@ try {
   await browser('playwright.recovery.config.mjs', restoredEnv)
   const validationMs = Math.round(performance.now() - validationStart)
   const restoredResult = JSON.parse(readFileSync('test-results/local-recovery-browser.json', 'utf8'))
-  assert.equal(restoredResult.status, 'passed'); assert.equal(restoredResult.executed, 1); assert.equal(restoredResult.skipped, 0)
+  assert.equal(restoredResult.status, 'passed'); assert.equal(restoredResult.executed, RESTORED_WORKFLOW_COUNT); assert.equal(restoredResult.skipped, 0)
   const receipt = { status: 'SYNTHETIC_LOCAL_REHEARSAL_PASSED', commit: process.env.GITHUB_SHA, at: new Date().toISOString(),
     source, target, backupMs, targetStartupMs, ...recovery, validationMs, negativeChecks,
     archiveBytes: manifest.artifacts.reduce((n,a) => n + a.bytes, 0), artifactCount: manifest.artifacts.length,

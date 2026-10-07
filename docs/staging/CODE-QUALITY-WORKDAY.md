@@ -19,6 +19,8 @@ Reviewed SiteStart/site command → BriefEditor/useDraft/brief command → Brief
 
 Existing complete-workday regression exercises separate supervisor/worker sign-ins, briefing recording/acknowledgement, captioned photo, lost responses, reassignment and stale edits, progress/verification, current site counts, revised acknowledgements, authorized exports, hash preservation and revoked denial. The new fixture is executed separately by the same local WebKit job, with its expected executed count raised from 16 to 17 and zero skips required.
 
+The first candidate's run `37617615386` passed quality and all 17 browser scenarios but failed the aggregate browser job because the reporter still held a duplicated count of 16. It was not deployed. `scripts/ci/browser-contract.mjs` now shares the explicit expected counts between orchestration and reporter; a focused gate regression rejects missing, extra, skipped, timed-out and failed executions. Required CI must pass again on the final commit, including the existing restored-target check.
+
 Maintainability concerns, not demonstrated data defects: `firstWorkday` issues eight parallel count/preference queries, including role-unused counts; `briefData` performs several bounded projections even for draft views; action/brief rendering remains dense. No measured latency failure or unbounded evidence load was established. Broad query/API/component rewrites are deferred to avoid disturbing the verified behavior. The touched recording-readiness logic now has a directly testable boundary rather than embedding another long validation expression in JSX.
 
 ## Dependency scope and sources

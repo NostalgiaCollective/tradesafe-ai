@@ -1,4 +1,5 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
+import {browserRunPassed} from './browser-contract.mjs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
@@ -18,7 +19,7 @@ export default class LocalReporter {
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
-    const status = result.status === 'passed' && this.rows.length === (recovery ? 1 : 16) && !skipped ? 'passed' : 'failed'
+    const status = browserRunPassed(result,this.rows,recovery) ? 'passed' : 'failed'
     // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
     if(!recovery&&existsSync('test-results/daily-brief-stage.json'))console.log('DAILY_BRIEF_STAGE '+readFileSync('test-results/daily-brief-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/device-drafts-stage.json'))console.log('DEVICE_DRAFTS_STAGE '+readFileSync('test-results/device-drafts-stage.json','utf8'))
