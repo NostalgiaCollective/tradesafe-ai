@@ -5,6 +5,7 @@ import {randomUUID} from 'node:crypto'
 import {PGlite} from '@electric-sql/pglite'
 import {briefExport} from '../lib/domain/brief-export.mjs'
 import {safeRedirect} from '../lib/domain/validation.ts'
+import {briefMissingFields} from '../lib/domain/brief-readiness.mjs'
 
 test('daily brief SQL: scoped durable drafts, immutable versions, authenticated acknowledgements and deduplicated Actions',async()=>{
  const db=new PGlite(),[owner,worker,supervisor,outsider]=Array.from({length:4},()=>randomUUID()),companyId=randomUUID(),id=randomUUID()
@@ -23,6 +24,23 @@ test('daily brief SQL: scoped durable drafts, immutable versions, authenticated 
   for(const [i,u,role] of [[1,worker,'worker'],[2,supervisor,'supervisor']]){await as(owner);const token=String(i).repeat(64);await cmd('invite',{email:`brief${i}@example.test`,role,token});await as(u);await cmd('accept_invitation',{token})}
   await as(worker);let b=await brief('create');assert.equal((await brief('create')).id,id)
   const doc={...b.document,site:'SYNTHETIC <site>',date:'2026-09-21',task:'Synthetic task',contact:'Site contact via local radio',jurisdiction:'CA-ON',workplace:'construction',confirmed:true,crew:[worker,supervisor],attendance:[worker],briefingNote:'Discussed access',steps:[{id:randomUUID(),task:'Move test material',hazard:'SYNTHETIC trip concern',control:'Clear the route',controlState:'proposed',responsible:supervisor,unresolved:true}]}
+  // UI guidance agrees with authoritative recording validation; it never replaces it.
+  const members=[worker,supervisor].map(user_id=>({user_id,active:true}))
+  assert.deepEqual(briefMissingFields(doc,members),[])
+  await db.exec('RESET ROLE')
+  for(const [key,value,target] of [['site','','brief-site'],['date','','brief-date'],['task','','brief-task'],['contact','','brief-contact'],['jurisdiction','','brief-jurisdiction'],['workplace','','brief-workplace'],['confirmed',false,'brief-confirmed'],['crew',[],'brief-crew'],['steps',[],'brief-add-step']]){
+   const incomplete={...doc,[key]:value,...(key==='crew'?{attendance:[]}:{})}
+   assert.ok(briefMissingFields(incomplete,members).some(i=>i.id===target))
+   await assert.rejects(db.query('SELECT ts_validate_brief($1::jsonb,$2,true)',[JSON.stringify(incomplete),companyId]),/TS_incomplete/)
+  }
+  for(const key of ['task','hazard','control','responsible']){
+   const incomplete={...doc,steps:[{...doc.steps[0],[key]:''}]}
+   assert.equal(briefMissingFields(incomplete,members)[0].id,key+'-'+doc.steps[0].id)
+   await assert.rejects(db.query('SELECT ts_validate_brief($1::jsonb,$2,true)',[JSON.stringify(incomplete),companyId]),/TS_incomplete/)
+  }
+  assert.deepEqual(briefMissingFields({...doc,paused:true,pauseReason:'',briefingNote:''},members).map(i=>i.id),['brief-pauseReason','briefing-note'])
+  assert.ok(briefMissingFields(doc,[{user_id:supervisor,active:true}]).some(i=>i.id==='brief-crew'))
+  await as(worker)
   await assert.rejects(brief('record',{revision:1}),/TS_incomplete/)
   const save={revision:1,document:doc,requestId:randomUUID()};b=await brief('save',save);assert.equal((await brief('save',save)).revision,2)
   assert.deepEqual((await rows('ts_briefs'))[0].document,doc)

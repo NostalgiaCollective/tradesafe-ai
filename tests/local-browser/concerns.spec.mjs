@@ -6,6 +6,7 @@ import {API_ORIGIN,APP_ORIGIN,localEnvironment} from '../../scripts/ci/local-env
 import {expectSuccess} from '../../scripts/staging/assertions.mjs'
 import {concernWorkflow,workdayWorkflow,prepareConcerns} from '../fixtures/concerns.mjs'
 import {siteSignInWorkflow} from '../fixtures/site-signin.mjs'
+import {briefRepairWorkflow} from '../fixtures/brief-repair.mjs'
 async function localActors(){
  localEnvironment({API_URL:process.env.NEXT_PUBLIC_SUPABASE_URL,ANON_KEY:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY})
  const config={auth:{persistSession:false,autoRefreshToken:false}},admin=createClient(API_ORIGIN,process.env.SUPABASE_SERVICE_ROLE_KEY,config),actors={}
@@ -21,6 +22,9 @@ test('WebKit site concerns: private photo capture, reliable submission, ownershi
 })
 test('WebKit complete workday: site brief, exact acknowledgement, concern ownership, verified closure and revision',async({browser})=>{
  await workdayWorkflow({practice:true,browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
+})
+test('WebKit brief repair: removed crew, missing-field focus and visible retry recovery',async({browser})=>{
+ await briefRepairWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
 })
 test('WebKit supervisor and worker site sign-in, account switching and lost-session feedback',async({browser})=>{
  const actors=await localActors(),site=await prepareConcerns(actors,'SYNTHETIC site sign-in')

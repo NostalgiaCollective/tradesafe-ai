@@ -93,3 +93,9 @@ On 2026-09-29 Daniel confirmed: “This has been tested and is working perfectly
 ## First workday / pilot feedback
 
 Implementation adds record-based guidance, an isolated practice designation and private company feedback. Execution receipts remain in the checkpoint; implementation is not staging delivery. [The first-workday record](FIRST-WORKDAY.md) documents newly observed CVE-2026-93687 in the Next lint dependency chain, with no compatible patched version found on 2026-10-03 UTC. The required full audit is not waived even though the affected dependency is used by lint tooling. Finish independent browser verification, retain the prepared unapplied migration, and wait for a justified compatible remediation before deployment. No external email, paid infrastructure, automatic content approval or physical acceptance is inferred.
+
+## First-workday delivery confirmed; focused quality repairs — 2026-10-07
+
+The preceding blocked state is historical. The authorized scoped dependency adapter passed validation, migration `20261002000500_first_workday.sql` was applied once, and first-workday features were delivered at `87a3886422dbe661cab9b0979f48eb54739abb77`. Both required CI jobs passed (delivery-branch run `37125965442`); served Render identity and hosted checks passed. Do not replay that migration. First-workday physical acceptance remains pending.
+
+The [independent quality review](CODE-QUALITY-WORKDAY.md) records three reproduced brief completion/recovery defects and compatible security patches. No actual Claude review was available. Final repair CI/deployment receipts are maintained under `codeQualityWorkday` in the durable checkpoint. No schema, role, content approval, domain/email or production-readiness decision changes.
