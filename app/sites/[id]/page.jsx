@@ -31,6 +31,7 @@ export default async function SitePage({params,searchParams}){
  const otherBriefs=briefs.filter(b=>!editable(b)),otherReports=reports.filter(r=>!editable(r)),submitted=concerns.data.filter(c=>c.lifecycle!=='draft')
  return <WorkspaceShell {...w}><div className="site-workspace"><SiteReturn id={id} company={company} actor={w.user.id} from={validBack?back:''}/><p className="eyebrow">{site.archived?'Archived site':'Site workspace'}</p><h1>{site.document.name}</h1><p>{site.document.address}</p>{site.document.instructions&&<details><summary>Current site instructions</summary><p className="preserve-lines">{site.document.instructions}</p><p>Company instructions, not professionally approved content. Recorded versions keep their own captured details.</p></details>}
  <div className="site-quick-actions">
+  <Link className="button" href={'/sites/'+id+'/electrical'}>Electrical job</Link>
   {!site.archived&&<Link className="button" href={'/concerns/new?site='+id}>Report a concern</Link>}
   <Link className="button" href={'/actions?'+query+'&mine=0'}>Site actions ({counts.outstanding} outstanding)</Link>
  </div>

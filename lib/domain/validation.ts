@@ -11,6 +11,8 @@ export function safeRedirect(value: unknown): string {
     const originalPath = value.split('?')[0]
     if (originalPath !== url.pathname) return fallback
     // Authentication and API endpoints are never post-login destinations.
+    const electricalSite = /^\/sites\/([a-f0-9-]{36})\/electrical$/.exec(url.pathname)
+    if (electricalSite && UUID.test(electricalSite[1])) return url.pathname
     if (!['/help','/device-drafts','/concerns/new','/my-work','/dashboard','/reports','/actions','/settings','/join','/briefs','/brief-content','/sites','/sites/new'].includes(url.pathname) && !(/^\/sites\//.test(url.pathname)&&UUID.test(url.pathname.slice(7))) && !(/^\/concerns\//.test(url.pathname)&&UUID.test(url.pathname.slice(10))) && !/^\/report\/[A-Za-z0-9_-]+$/.test(url.pathname) && !(/^\/briefs\//.test(url.pathname)&&UUID.test(url.pathname.slice(8)))) return fallback
     const query = new URLSearchParams()
     const one = (key:string) => url.searchParams.getAll(key).length===1 ? url.searchParams.get(key) : null

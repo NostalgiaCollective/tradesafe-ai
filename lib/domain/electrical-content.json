@@ -1,0 +1,243 @@
+{
+  "version": "on-residential-electrical-2026-10-07-v1",
+  "title": "Ontario residential electrical job documentation",
+  "taskId": "residential-electrical-recording",
+  "jurisdiction": "CA-ON",
+  "workplace": "construction",
+  "authoredBy": "TradeSafe draft-content engineering",
+  "authoredAt": "2026-10-07",
+  "reviewStatus": "draft",
+  "applicability": "Residential electrical contractor new installation, alteration, repair and service documentation. The actual workplace regulation must be confirmed, not inferred from residential use.",
+  "limits": "Not a complete electrical inspection or workplace risk assessment. Industrial maintenance, utilities and other settings use general documentation. All prompts pending qualified review.",
+  "sources": [
+    {
+      "id": "oesc-law",
+      "title": "O. Reg. 164/99: Electrical Safety Code",
+      "authority": "Ontario",
+      "url": "https://www.ontario.ca/laws/regulation/990164",
+      "section": "ss. 1–3; adoption of C22.1:24 with June 12, 2024 Ontario amendments",
+      "kind": "Legislation",
+      "jurisdiction": "Ontario electrical installations; code applicability and exclusions require assessment",
+      "published": null,
+      "effective": null,
+      "consolidationFrom": "2025-05-01",
+      "currencyThrough": "2026-10-02",
+      "lastAmendment": "449/24",
+      "retrieved": "2026-10-07",
+      "verification": "Full official browser-rendered text and displayed consolidation verified. Text-fetch access returned 403. Consolidation is not an individual provision commencement date. Exact job applicability requires qualified review."
+    },
+    {
+      "id": "licensing",
+      "title": "O. Reg. 570/05: Licensing of Electrical Contractors and Master Electricians",
+      "authority": "Ontario",
+      "url": "https://www.ontario.ca/laws/regulation/050570",
+      "section": "ss. 2–6; exemptions, contractor licence and designated master electrician",
+      "kind": "Legislation",
+      "jurisdiction": "Ontario contracting; s. 2 exemptions are specific to the person and work, not blanket notification exemptions",
+      "published": null,
+      "effective": null,
+      "consolidationFrom": "2025-01-01",
+      "currencyThrough": "2026-10-02",
+      "lastAmendment": "184/24",
+      "retrieved": "2026-10-07",
+      "verification": "Full official browser-rendered text and displayed consolidation verified. Text-fetch access returned 403. Consolidation is not an individual provision commencement date. Exact job applicability requires qualified review."
+    },
+    {
+      "id": "ohsa",
+      "title": "Occupational Health and Safety Act",
+      "authority": "Ontario",
+      "url": "https://www.ontario.ca/laws/statute/90o01",
+      "section": "s. 1 definitions and ss. 25, 27, 28 duties; statutory applicability must be established",
+      "kind": "Legislation",
+      "jurisdiction": "Ontario applicable workplaces; app roles do not establish legal roles",
+      "published": null,
+      "effective": null,
+      "consolidationFrom": "2025-11-27",
+      "currencyThrough": "2026-10-02",
+      "lastAmendment": "2025 c.13 Sched.4",
+      "retrieved": "2026-10-07",
+      "verification": "Full official browser-rendered text and displayed consolidation verified. Text-fetch access returned 403. Consolidation is not an individual provision commencement date. Exact job applicability requires qualified review."
+    },
+    {
+      "id": "construction",
+      "title": "O. Reg. 213/91: Construction Projects",
+      "authority": "Ontario",
+      "url": "https://www.ontario.ca/laws/regulation/910213",
+      "section": "ss. 181–191; specifically 182 qualifications, 183 hazards, 190 written procedures and 191 distinct applicability",
+      "kind": "Legislation",
+      "jurisdiction": "Construction projects only; utility exception s.181; do not infer that every service/maintenance job is a construction project",
+      "published": null,
+      "effective": null,
+      "consolidationFrom": "2026-04-20",
+      "currencyThrough": "2026-10-02",
+      "lastAmendment": "116/26",
+      "retrieved": "2026-10-07",
+      "verification": "Full official browser-rendered text and displayed consolidation verified. Text-fetch access returned 403. Consolidation is not an individual provision commencement date. Exact job applicability requires qualified review."
+    },
+    {
+      "id": "edition",
+      "title": "Ontario Electrical Safety Code (29th edition / 2024)",
+      "url": "https://esasafe.com/role/oesc/",
+      "section": "2024 OESC effective May 1, 2025; current director-order notice",
+      "authority": "Electrical Safety Authority",
+      "kind": "Official guidance, not legislation",
+      "jurisdiction": "Ontario; actual work and exemptions require assessment",
+      "published": null,
+      "effective": "2025-05-01",
+      "retrieved": "2026-10-07",
+      "verification": "Official public page read. No publication/revision date shown; retrieval date is not an effective date. ESA page also announces a July 6, 2026 plan-review threshold order. Linked PDF access unresolved; no threshold decision automated. Full licensed OESC/CEC text not obtained."
+    },
+    {
+      "id": "notification",
+      "title": "Notifications and Inspections",
+      "url": "https://esasafe.com/compliance/what-you-need-to-know/",
+      "section": "Notification of work; inspection stages; defect notices; Certificate of Acceptance",
+      "authority": "Electrical Safety Authority",
+      "kind": "Official guidance, not legislation",
+      "jurisdiction": "Ontario; actual work and exemptions require assessment",
+      "published": null,
+      "effective": null,
+      "retrieved": "2026-10-07",
+      "verification": "Official public page read. No publication/revision date shown; retrieval date is not an effective date."
+    },
+    {
+      "id": "lec",
+      "title": "Apply for an Electrical Contractor Licence",
+      "url": "https://esasafe.com/contractors/licensed-electrical-contractor/get-your-licence/",
+      "section": "Requirements and duties; separate contractor and master-electrician licensing",
+      "authority": "Electrical Safety Authority",
+      "kind": "Official guidance, not legislation",
+      "jurisdiction": "Ontario; actual work and exemptions require assessment",
+      "published": null,
+      "effective": null,
+      "retrieved": "2026-10-07",
+      "verification": "Official public page read. No publication/revision date shown; retrieval date is not an effective date."
+    },
+    {
+      "id": "sto",
+      "title": "Work in the compulsory trades",
+      "url": "https://www.skilledtradesontario.ca/about-trades/work-in-the-compulsory-trades/",
+      "section": "Valid C of Q, provisional C of Q or Registered Training Agreement; exemptions and Public Register",
+      "authority": "Skilled Trades Ontario",
+      "kind": "Official guidance, not legislation",
+      "jurisdiction": "Ontario; actual work and exemptions require assessment",
+      "published": null,
+      "effective": null,
+      "retrieved": "2026-10-07",
+      "verification": "Official public page read. No publication/revision date shown; retrieval date is not an effective date."
+    },
+    {
+      "id": "309a",
+      "title": "Electrician – Construction and Maintenance",
+      "url": "https://www.skilledtradesontario.ca/trade-information/electrician-construction-and-maintenance/",
+      "section": "309A scope and compulsory classification",
+      "authority": "Skilled Trades Ontario",
+      "kind": "Official guidance, not legislation",
+      "jurisdiction": "Ontario; actual work and exemptions require assessment",
+      "published": null,
+      "effective": null,
+      "retrieved": "2026-10-07",
+      "verification": "Official public page read. No publication/revision date shown; retrieval date is not an effective date."
+    },
+    {
+      "id": "standards",
+      "title": "Employer procedures and licensed electrical safety standards",
+      "authority": "Employer / applicable standards publisher",
+      "url": "https://www.ontario.ca/laws/regulation/910213",
+      "section": "Employer procedure reference; O. Reg. 213/91 s.190 where applicable",
+      "kind": "Company procedure / supporting technical standard, not automatically legislation",
+      "jurisdiction": "Specific employer, work and adopted edition",
+      "published": null,
+      "effective": null,
+      "retrieved": "2026-10-07",
+      "verification": "Employer procedures and licensed CSA Z462/CEC full text were not supplied. No standard clauses reproduced, edition inferred, PPE prescribed or live-work procedure generated."
+    }
+  ],
+  "prompts": [
+    {
+      "id": "electrical-job-scope",
+      "version": 1,
+      "title": "Confirm this job’s setting",
+      "wording": "Record the residential work type, scope, circuit identifiers and any unresolved workplace or code applicability question.",
+      "sourceIds": [
+        "oesc-law",
+        "ohsa",
+        "construction",
+        "edition"
+      ],
+      "applicability": "Before selecting requirements for this job.",
+      "rationale": "Separate installation rules from workplace rules.",
+      "limits": "No industrial, utility or live-work assessment.",
+      "task": "residential-electrical-recording",
+      "reviewStatus": "draft",
+      "reviewQuestions": "Confirm wording, current source mapping, setting/exemption boundaries and omissions within your qualification scope. No industrial, utility or live-work assessment."
+    },
+    {
+      "id": "electrical-job-credentials",
+      "version": 1,
+      "title": "Record people and credential evidence",
+      "wording": "Record the contractor business and LEC reference, designated master electrician and each relevant individual qualification reference. Record any actual external check separately.",
+      "sourceIds": [
+        "licensing",
+        "lec",
+        "sto",
+        "309a"
+      ],
+      "applicability": "Contractor jobs and participating personnel; consider specific statutory exemptions.",
+      "rationale": "An app administrator is not a professional credential.",
+      "limits": "No live registry verification; a user report of a check is not independent TradeSafe validation.",
+      "task": "residential-electrical-recording",
+      "reviewStatus": "draft",
+      "reviewQuestions": "Confirm wording, current source mapping, setting/exemption boundaries and omissions within your qualification scope. No live registry verification; a user report of a check is not independent TradeSafe validation."
+    },
+    {
+      "id": "electrical-job-notification",
+      "version": 1,
+      "title": "Keep ESA status separate",
+      "wording": "Record a notification reference or an unresolved applicability question with its proposed basis and source. Record inspection requests, outcomes and retained evidence separately.",
+      "sourceIds": [
+        "notification",
+        "oesc-law"
+      ],
+      "applicability": "Before relying on notification or acceptance status.",
+      "rationale": "Internal completion does not issue an ESA certificate.",
+      "limits": "No automated exemption, inspection or acceptance decision.",
+      "task": "residential-electrical-recording",
+      "reviewStatus": "draft",
+      "reviewQuestions": "Confirm wording, current source mapping, setting/exemption boundaries and omissions within your qualification scope. No automated exemption, inspection or acceptance decision."
+    },
+    {
+      "id": "electrical-job-hazards",
+      "version": 1,
+      "title": "Record the qualified assessment and procedures",
+      "wording": "Reference the responsible personnel’s hazard assessment, applicable employer procedure version and verification record. Put today’s hazards and controls in the daily brief; record new concerns at any time.",
+      "sourceIds": [
+        "construction",
+        "ohsa",
+        "standards"
+      ],
+      "applicability": "Only after establishing the actual workplace and task context.",
+      "rationale": "Keep assessment, implemented controls and review distinct.",
+      "limits": "No live-work instructions, PPE selection, voltage inference or energization authorization.",
+      "task": "residential-electrical-recording",
+      "reviewStatus": "draft",
+      "reviewQuestions": "Confirm wording, current source mapping, setting/exemption boundaries and omissions within your qualification scope. No live-work instructions, PPE selection, voltage inference or energization authorization."
+    },
+    {
+      "id": "electrical-job-handover",
+      "version": 1,
+      "title": "Show what remains unresolved",
+      "wording": "Identify missing documentation, link deficiencies to Actions, and retain the original finding and later correction separately.",
+      "sourceIds": [
+        "notification",
+        "licensing"
+      ],
+      "applicability": "Handover and subsequent follow-up.",
+      "rationale": "Keeps documentation, internal review, ESA status and attached evidence independent.",
+      "limits": "A closed action or acknowledgement is not legal approval.",
+      "task": "residential-electrical-recording",
+      "reviewStatus": "draft",
+      "reviewQuestions": "Confirm wording, current source mapping, setting/exemption boundaries and omissions within your qualification scope. A closed action or acknowledgement is not legal approval."
+    }
+  ]
+}

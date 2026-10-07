@@ -59,8 +59,8 @@ export async function concernWorkflow({browser,origin,actors,options={},capture=
 }
 
 // One continuous day, using the existing site, briefing, concern and Actions flows.
-export async function workdayWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{},practice=false}){
- const f=await prepareConcerns(actors,'SYNTHETIC complete workday',practice),{company,siteId,tag}=f,contexts=[],gaps=[]
+export async function workdayWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{},practice=false,fixture}){
+ const f=fixture||await prepareConcerns(actors,'SYNTHETIC complete workday',practice),{company,siteId,tag}=f,contexts=[],gaps=[]
  let stage='sign-in',returnDiagnostics
  // safeRedirect omits mine=1: the server interprets an absent mine as Assigned to me.
  const actionQuery=url=>{const params=new URLSearchParams(url.search);if(!params.has('mine'))params.set('mine','1');return JSON.stringify([...params].sort())}
