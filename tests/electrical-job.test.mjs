@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {readFile,readdir} from 'node:fs/promises'
 import {randomUUID} from 'node:crypto'
 import {PGlite} from '@electric-sql/pglite'
-import {emptyElectricalJob,electricalFields,electricalExport,electricalMissing} from '../lib/domain/electrical-job.mjs'
+import {emptyElectricalJob,electricalFields,electricalExport,electricalMissing,electricalRequired} from '../lib/domain/electrical-job.mjs'
 import {safeRedirect} from '../lib/domain/validation.ts'
 import content from '../lib/domain/electrical-content.json' with {type:'json'}
 
@@ -47,4 +47,12 @@ test('electrical job: atomic retained revisions, strict roles/evidence, unresolv
 test('electrical return destinations remain validated and source mappings remain draft',()=>{
  const id=randomUUID();assert.equal(safeRedirect('/sites/'+id+'/electrical'),'/sites/'+id+'/electrical');assert.equal(safeRedirect('/sites/not-a-site/electrical'),'/dashboard')
  assert.equal(content.reviewStatus,'draft');for(const p of content.prompts){assert.equal(p.reviewStatus,'draft');for(const id of p.sourceIds)assert.ok(content.sources.some(s=>s.id===id))}
+})
+
+test('electrical notification fields require the same explanation as the server without resolving unknowns',()=>{
+ for(const notification of electricalFields.find(f=>f.key==='notification').options){
+  assert.equal(electricalRequired('notificationRef',{notification}),notification==='notification reference recorded')
+  assert.equal(electricalRequired('notificationBasis',{notification}),['exemption basis proposed — review needed','disputed — review needed'].includes(notification))
+  assert.equal(electricalRequired('scope',{notification}),false)
+ }
 })
