@@ -28,4 +28,6 @@ To change: edit source, bump the private adapter version, run `npm pack ./toolin
 
 ## Removal
 
+Security patch revalidation, 2026-10-07: Next and its ESLint configuration are pinned to 16.3.8. The adapter, upstream-helper hash, reference paths, rule settings and expected diagnostics are unchanged. Clean `npm ci --ignore-scripts` and the same Windows/Linux regression contract remain required; this patch does not broaden the supported adapter API.
+
 When a supported upstream fix exists, remove the scoped override; update only the justified upstream version/lockfile. Re-run the reference behavior and lint diagnostics, full audit, clean install, and required CI. Remove this adapter/archive and its call-surface pin only with explicit upstream equivalence evidence; keep behavioral route tests. No automatic version upgrades.
