@@ -5,7 +5,7 @@ import { AppError, type ErrorCode } from '../domain/errors.ts'
 import { UUID } from '../domain/validation.ts'
 
 export function databaseError(error: { message?: string; code?: string }) {
-  const known: ErrorCode[] = ['site_archived','package_limit','summary_limit','unauthorized','denied','not_found','conflict','immutable','incomplete','invitation','last_owner','evidence_pending','evidence_limit','export_busy']
+  const known: ErrorCode[] = ['electrical_limit','site_archived','package_limit','summary_limit','unauthorized','denied','not_found','conflict','immutable','incomplete','invitation','last_owner','evidence_pending','evidence_limit','export_busy']
   const code = known.find(code => error.message === 'TS_' + code)
   if (code) return new AppError(code)
   if (error.message === 'TS_invalid' || error.code?.startsWith('22') || error.code?.startsWith('23')) return new AppError('invalid_request')

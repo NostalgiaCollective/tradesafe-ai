@@ -1,7 +1,7 @@
 import {contentStateLabel,safeSourceUrl} from '@/lib/domain/brief-content.mjs'
 export function SourceReference({source:s}){
  const url=safeSourceUrl(s.url)
- return <li><strong>{s.kind}</strong><p>{s.authority}. {url?<a href={url} target="_blank" rel="noopener noreferrer">{s.title} (opens new tab)</a>:s.title} — {s.section}</p><p>{s.jurisdiction}</p><p>{s.consolidationFrom?`Consolidation from ${s.consolidationFrom}; e-Laws currency through ${s.currencyThrough}. `:''}{s.published?`Published ${s.published}. `:''}{s.revised?`Revised ${s.revised}. `:''}{s.confirmedCurrent?`Publisher confirmed current ${s.confirmedCurrent}. `:''}Retrieved {s.retrieved}.</p><p>{s.verification}</p></li>
+ return <li><strong>{s.kind}</strong><p>{s.authority}. {url?<a href={url} target="_blank" rel="noopener noreferrer">{s.title} (opens new tab)</a>:s.title} — {s.section}</p><p>{s.jurisdiction}</p><p>{s.consolidationFrom?`Consolidation from ${s.consolidationFrom}; e-Laws currency through ${s.currencyThrough}. `:''}{s.published?`Published ${s.published}. `:''}{s.effective?`Effective ${s.effective}. `:''}{s.revised?`Revised ${s.revised}. `:''}{s.confirmedCurrent?`Publisher confirmed current ${s.confirmedCurrent}. `:''}Retrieved {s.retrieved}.</p><p>{s.verification}</p></li>
 }
 export default function ContentSources({content,prompts}){
  if(!content)return <p>Unknown content provenance. No historical source or review metadata has been inferred.</p>

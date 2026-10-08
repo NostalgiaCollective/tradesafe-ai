@@ -1,4 +1,5 @@
 export const ERROR_MESSAGES = {
+  electrical_limit: 'This electrical job has reached its limit of 1,000 retained revisions. Existing records remain available. Contact support before recording further revisions; do not overwrite historical records.',
   package_limit: 'This package exceeds its limits: 31 days, 200 activity records, 100 files or 64 MiB. Narrow the date range and try again. No partial package was issued.',
   package_changed: 'Site records or your access changed while the package was being prepared. No package was issued. Refresh the site and retry.',
   package_missing: 'A retained PDF or photo is missing or failed its integrity check. No partial package was issued. Open the original report to generate its PDF if none exists, then retry; contact support if retained evidence is unavailable.',
@@ -33,6 +34,7 @@ export const ERROR_MESSAGES = {
 } as const
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
+  electrical_limit: 422,
   package_limit: 422, package_changed: 409, package_missing: 503,
   summary_limit: 422,
   site_archived: 409,

@@ -1,6 +1,7 @@
 import {expect as baseExpect} from '@playwright/test'
 import {randomUUID,createHash} from 'node:crypto'
 import sharp from 'sharp'
+import {getTemplate} from '../../lib/domain/templates.ts'
 import {prepareConcerns,workdayWorkflow} from './concerns.mjs'
 import {expectSuccess,expectDatabaseError} from '../../scripts/staging/assertions.mjs'
 const expect=baseExpect.configure({timeout:30000}),hash=b=>createHash('sha256').update(b).digest('hex')
@@ -22,9 +23,9 @@ export async function electricalJobWorkflow(args){
  const before=await(await p.context().request.get(api+'?revision=3')).text();expect(before).toContain('SYNTHETIC internal review');expect(before).toContain('disputed');expect(before).toContain('PRACTICE');expect(before).toContain('on-residential-electrical-2026-10-07-v1')
  const worker=await login('WORKER');await expect(worker.getByRole('button',{name:'Save electrical job',exact:true})).toHaveCount(0);expectDatabaseError(await rpc('WORKER','ts_electrical_command','save',{siteId:f.siteId,revision:3,document:(await rows('SUPERVISOR','ts_electrical_jobs'))[0].document}),'TS_denied')
  const outsider=await login('OUTSIDER');await expect(outsider.getByRole('heading',{name:'Page or report not found',exact:true})).toBeVisible();expect((await outsider.context().request.get(api+'?revision=3')).status()).toBe(404)
- await workdayWorkflow({...args,practice:true,fixture:f})
+ await workdayWorkflow({...args,practice:true,fixture:{...f,electrical:true}})
  // Build a named synthetic installation report via supported commands, then a real browser photo upload.
- let report=await cmd('SUPERVISOR','ts_site_command','create_report',{id:randomUUID(),siteId:f.siteId,templateId:'electrical:1.0.0'})
+ let report=await cmd('SUPERVISOR','ts_site_command','create_report',{id:randomUUID(),siteId:f.siteId,templateId:getTemplate('electrical').id})
  const document={...report.document,job:{address:f.tag,client:'SYNTHETIC evidence only',date:'2026-10-07'},answers:Object.fromEntries(report.template_snapshot.items.map((x,i)=>[x.id,{state:i===0?'attention':'not_applicable',note:'SYNTHETIC test observation, not a real inspection',controls:i===0?'SYNTHETIC follow-up required':''}]))}
  report=await cmd('SUPERVISOR','ts_command','save_report',{id:report.id,revision:report.revision,document});await p.goto(origin+'/report/'+report.id+'?step=3')
  const image=await sharp({create:{width:360,height:240,channels:3,background:'#cc7700'}}).composite([{input:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="360" height="240"><text x="20" y="120" fill="white" font-size="24">SYNTHETIC NOT ESA</text></svg>')}]).jpeg().toBuffer()
