@@ -130,6 +130,15 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await review.getByRole('button',{name:'Verify and close',exact:true}).click()
   await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
   expect((await query('OWNER','ts_brief_versions',id)).find(v=>v.version===firstVersion)).toEqual(first)
+  // A native select must not accept an entry before React's change handler exists.
+  // Inspect the actual server-rendered form without executing browser scripts.
+  const {localOnly:reuseLocalOnly,...reuseSettings}=options
+  const unhydrated=await browser.newContext({...reuseSettings,storageState:await context.storageState(),javaScriptEnabled:false});contexts.push(unhydrated)
+  if(reuseLocalOnly)await unhydrated.route('**/*',r=>[origin,actors.WORKER.apiOrigin].includes(new URL(r.request().url()).origin)?r.continue():r.abort())
+  const initial=await unhydrated.newPage();await initial.goto(origin+'/briefs?company='+company)
+  await expect(initial.locator('#reuse-site')).toBeDisabled()
+  await expect(initial.locator('form:has(#reuse-site) button')).toBeDisabled()
+  await unhydrated.close();contexts.pop()
   await worker.goto(origin+'/briefs?company='+company);await worker.getByLabel('Reuse site details (optional)',{exact:true}).selectOption(id);await worker.getByRole('button',{name:'Start daily brief',exact:true}).click();await worker.waitForURL(u=>u.pathname.startsWith('/briefs/')&&u.pathname!=='/briefs/'+id)
   await expect(worker.getByLabel('Site name or address',{exact:true})).toBeEditable();await expect(worker.getByLabel('Site name or address',{exact:true})).toHaveValue(tag)
   const reused=(await query('OWNER','ts_briefs',new URL(worker.url()).pathname.split('/').at(-1),'id'))[0]

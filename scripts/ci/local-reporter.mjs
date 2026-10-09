@@ -3,7 +3,7 @@ import {browserRunPassed} from './browser-contract.mjs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|electrical-job|brief-repair|site-signin|handover|operations|device-drafts|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|electrical-job|electrical-recovery|brief-repair|site-signin|handover|operations|device-drafts|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     const assertions=result.errors.flatMap(e=>{
       // Strip terminal formatting before extracting method names, never field values/URLs.
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
