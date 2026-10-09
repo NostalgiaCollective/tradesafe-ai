@@ -8,6 +8,7 @@ import {concernWorkflow,workdayWorkflow,prepareConcerns} from '../fixtures/conce
 import {siteSignInWorkflow} from '../fixtures/site-signin.mjs'
 import {briefRepairWorkflow} from '../fixtures/brief-repair.mjs'
 import {electricalJobWorkflow} from '../fixtures/electrical-job.mjs'
+import {electricalRecoveryWorkflow} from '../fixtures/electrical-recovery.mjs'
 async function localActors(){
  localEnvironment({API_URL:process.env.NEXT_PUBLIC_SUPABASE_URL,ANON_KEY:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY})
  const config={auth:{persistSession:false,autoRefreshToken:false}},admin=createClient(API_ORIGIN,process.env.SUPABASE_SERVICE_ROLE_KEY,config),actors={}
@@ -20,6 +21,9 @@ async function localActors(){
 }
 test('WebKit residential electrical job: versioned context, independent review, retained evidence and connected crew workflow',async({browser})=>{
  await electricalJobWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
+})
+test('WebKit electrical recovery: superseded replay, explicit comparison, lazy details, failed refresh and access checks',async({browser})=>{
+ await electricalRecoveryWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
 })
 test('WebKit site concerns: private photo capture, reliable submission, ownership and verified follow-up',async({browser})=>{
  await concernWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})

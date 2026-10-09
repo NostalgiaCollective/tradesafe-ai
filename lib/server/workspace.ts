@@ -11,8 +11,9 @@ export function databaseError(error: { message?: string; code?: string }) {
   if (error.message === 'TS_invalid' || error.code?.startsWith('22') || error.code?.startsWith('23')) return new AppError('invalid_request')
   return new AppError('query_failed')
 }
-export async function workspace(returnTo: string, companyId?: string) {
-  const { supabase, user } = await pageClient(returnTo+(companyId&&!returnTo.includes('?')?'?company='+companyId:''))
+export async function workspace(returnTo: string, companyId?: string, authenticated?: Awaited<ReturnType<typeof pageClient>>) {
+  // Reuse only the caller's freshly authenticated request context; never cache access across requests.
+  const { supabase, user } = authenticated || await pageClient(returnTo+(companyId&&!returnTo.includes('?')?'?company='+companyId:''))
   const { data: memberships, error } = await supabase.from('ts_members').select('company_id,role').eq('user_id',user.id).eq('active',true).order('joined_at')
   if (error) throw databaseError(error)
   const membership = companyId ? memberships.find((m: {company_id:string})=>m.company_id===companyId) : memberships[0]

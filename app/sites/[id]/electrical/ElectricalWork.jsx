@@ -1,7 +1,17 @@
 import Link from 'next/link'
+import {useEffect,useRef,useState} from 'react'
+import {request} from '@/lib/client/request.mjs'
 
 // These are site-linked records, not a second job/report or safety status system.
-export default function ElectricalWork({site,work,focusField}){
+export default function ElectricalWork({site,work:initial,actor,focusField}){
+ const [work,setWork]=useState(initial),[stale,setStale]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),lock=useRef(false)
+ useEffect(()=>{const mark=()=>setStale(true);window.addEventListener('focus',mark);return()=>window.removeEventListener('focus',mark)},[])
+ async function refresh(){
+  if(lock.current)return
+  lock.current=true;setBusy(true);setError('')
+  try{setWork(await request('/api/sites/'+site.id+'/electrical?view=work',{headers:{'X-Expected-Actor':actor}}));setStale(false)}
+  catch(e){setStale(true);setError(e.message)}finally{lock.current=false;setBusy(false)}
+ }
  const {reports,briefs,counts,mine}=work
  const back='/sites/'+site.id+'/electrical',query=new URLSearchParams({company:site.company_id,site:site.id})
  const reportUrl=r=>'/report/'+r.id+'?'+new URLSearchParams({from:back})
@@ -11,6 +21,9 @@ export default function ElectricalWork({site,work,focusField}){
  const next=mine&&counts.outstanding?{href:actionUrl,label:'Open my assigned follow-up'}:brief?{href:briefUrl(brief),label:'Resume daily brief'}:draft?{href:reportUrl(draft),label:'Resume electrical report'}:null
  return <section aria-label="Continue this electrical job">
   <h2>Continue this job</h2>
+  <p role="status">{busy?'Refreshing saved work.':stale?'Saved work may have changed. Refresh before relying on these counts.':'Lists and counts reflect the last successful load, not live updates.'}</p>
+  <button type="button" disabled={busy} onClick={()=>void refresh()}>{error?'Retry saved work':'Refresh saved work'}</button>
+  {error&&<p role="alert">{error} Previous results below have not been refreshed; a failed request does not mean no work remains.</p>}
   {next&&<Link className="button primary" href={next.href}>{next.label}</Link>}
   <nav className="work-buttons" aria-label="Electrical job journey">
    <button type="button" onClick={()=>focusField('scope')}>Job details</button>
