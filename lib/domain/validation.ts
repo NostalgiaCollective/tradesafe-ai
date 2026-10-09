@@ -55,6 +55,7 @@ export function safeRedirect(value: unknown): string {
       if(new URL(list,'https://internal.invalid').searchParams.has('company'))query.set('from',list)
     }
     if(url.pathname.startsWith('/report/')&&from&&/^\/sites\/[a-f0-9-]{36}$/.test(from))query.set('from',from)
+    if((url.pathname.startsWith('/report/')||url.pathname.startsWith('/briefs/'))&&from&&/^\/sites\/([a-f0-9-]{36})\/electrical$/.test(from)&&UUID.test(from.split('/')[2]))query.set('from',from)
     return url.pathname + (query.size ? `?${query}` : '')
   } catch { return fallback }
 }

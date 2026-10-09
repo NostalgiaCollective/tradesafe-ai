@@ -7,7 +7,7 @@ export function reportListUrl(company:string,filters:ReturnType<typeof reportFil
 export function listReturn(value:unknown,company:string) {
  const fallback='/reports?company='+company
  if(typeof value!=='string'||value.length>2048||/[\\\r\n#]/.test(value))return fallback
- try{const url=new URL(value,'https://internal.invalid');if(url.origin==='https://internal.invalid'&&/^\/sites\//.test(url.pathname)&&UUID.test(url.pathname.slice(7)))return url.pathname
+ try{const url=new URL(value,'https://internal.invalid');if(url.origin==='https://internal.invalid'&&/^\/sites\//.test(url.pathname)&&UUID.test(url.pathname.slice(7).replace(/\/electrical$/,'')))return url.pathname
   if(url.origin!=='https://internal.invalid'||!['/dashboard','/reports','/actions'].includes(url.pathname)||url.searchParams.get('company')!==company||!UUID.test(company))return fallback
   if(url.pathname==='/reports')return reportListUrl(company,reportFilters(Object.fromEntries(url.searchParams)))
   if(url.pathname==='/dashboard')return '/dashboard?company='+company

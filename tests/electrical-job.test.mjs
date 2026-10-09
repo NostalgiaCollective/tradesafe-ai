@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import {readFile,readdir} from 'node:fs/promises'
 import {randomUUID} from 'node:crypto'
 import {PGlite} from '@electric-sql/pglite'
-import {emptyElectricalJob,electricalFields,electricalExport,electricalMissing,electricalRequired} from '../lib/domain/electrical-job.mjs'
+import {emptyElectricalJob,electricalFields,electricalExport,electricalMissing,electricalMissingFields,electricalRequired} from '../lib/domain/electrical-job.mjs'
+import {listReturn} from '../lib/domain/report-list.ts'
 import {safeRedirect} from '../lib/domain/validation.ts'
 import content from '../lib/domain/electrical-content.json' with {type:'json'}
 
@@ -55,4 +56,20 @@ test('electrical notification fields require the same explanation as the server 
   assert.equal(electricalRequired('notificationBasis',{notification}),['exemption basis proposed — review needed','disputed — review needed'].includes(notification))
   assert.equal(electricalRequired('scope',{notification}),false)
  }
+})
+
+
+test('electrical documentation reminders resolve to real fields without altering retained export wording',()=>{
+ const d=emptyElectricalJob(),missing=electricalMissingFields(d)
+ assert.deepEqual(missing.map(m=>m.label),['Job scope','Contractor business','LEC reference','Responsible personnel','Qualification references','OESC edition basis','Type of work','Workplace applicability remains for review; use general documentation for unsupported settings','ESA applicability remains for review'])
+ assert.deepEqual(electricalMissing(d),missing.map(m=>m.label))
+ assert.equal(new Set(missing.map(m=>m.key)).size,missing.length)
+ for(const {key} of missing)assert.ok(electricalFields.some(f=>f.key===key))
+ d.notification='notification reference recorded';assert.equal(electricalMissingFields(d).at(-1).key,'notificationRef');d.notificationRef='SYNTHETIC';assert.ok(!electricalMissingFields(d).some(m=>m.key==='notificationRef'))
+})
+test('electrical return context survives authentication with bounded local destinations',()=>{
+ const site=randomUUID(),company=randomUUID(),back='/sites/'+site+'/electrical'
+ assert.equal(listReturn(back,company),back)
+ for(const path of ['/report/'+randomUUID(),'/briefs/'+randomUUID(),'/report/new'])assert.equal(new URL(safeRedirect(path+'?'+new URLSearchParams({from:back})),'https://test.invalid').searchParams.get('from'),back)
+ for(const bad of ['https://other.invalid'+back,'//other.invalid'+back,back+'/other','/sites/not-a-uuid/electrical',back+'#fragment'])assert.equal(listReturn(bad,company),'/reports?company='+company)
 })
