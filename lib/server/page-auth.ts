@@ -1,6 +1,7 @@
 import 'server-only'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
+import {cookies} from 'next/headers'
 import { authenticatedClient } from './auth'
 import { AppError } from '../domain/errors.ts'
 import { safeRedirect } from '../domain/validation.ts'
@@ -11,6 +12,7 @@ export async function pageClient(returnTo: string) {
   try { return await authenticatedClient() }
   catch (error) {
     if (error instanceof AppError && error.code === 'unauthorized') {
+      if((await cookies()).has('ts_phone_demo'))redirect('/demo')
       redirect('/auth/login?' + new URLSearchParams({ redirect: safeRedirect(returnTo), error: 'session_missing' }))
     }
     throw error

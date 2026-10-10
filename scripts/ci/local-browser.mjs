@@ -5,6 +5,8 @@ import assert from 'node:assert/strict'
 import {LOCAL_WORKFLOW_COUNT,RESTORED_WORKFLOW_COUNT} from './browser-contract.mjs'
 import { APP_ORIGIN, localEnvironment } from './local-environment.mjs'
 import { capture, negativeArchiveChecks, restore, identity, assertIdentity, TARGET } from '../operations/local-rehearsal.mjs'
+import {createClient} from '@supabase/supabase-js'
+import {newDemoState,prepareDemoFixture} from '../staging/demo-fixture.mjs'
 
 let stage = 'runner guard', server
 const run = (file, args, env = process.env) => execFileSync(file, args, { env, stdio: 'pipe', timeout: 600000, maxBuffer: 20 * 1024 * 1024 })
@@ -41,6 +43,11 @@ try {
   stage = 'loopback identity guard'
   const status = parseEnv(run('supabase', ['status', '--workdir', '.ci-local', '-o', 'env']).toString())
   const env = { ...process.env, ...localEnvironment(status), RECOVERY_REHEARSAL: '1' }
+  stage='synthetic shared phone demo preparation'
+  const demo=newDemoState(),saveDemo=()=>writeFileSync('.ci-local/phone-demo.json',JSON.stringify(demo),{mode:0o600})
+  await prepareDemoFixture({env,admin:createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}}),state:demo,save:saveDemo})
+  const runtimeDemo={...demo};for(const key of ['coordinator','passphrase','invite'])delete runtimeDemo[key]
+  env.PHONE_DEMO_CONFIG=Buffer.from(JSON.stringify(runtimeDemo)).toString('base64')
   stage = 'configured application build'
   run(process.execPath, ['node_modules/next/dist/bin/next', 'build'], env)
   stage = 'local application startup'

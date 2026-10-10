@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {entries,removeAll} from '@/lib/client/device-store.mjs'
 
-export default function SignOutButton() {
+export default function SignOutButton({demo=false}) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -15,10 +15,10 @@ export default function SignOutButton() {
     setBusy(true)
     setError('')
     try {
-      const { error } = await createClient().auth.signOut()
-      if (error) throw error
+      if(demo){const r=await fetch('/api/demo',{method:'DELETE'});if(!r.ok)throw Error('Sign out failed')}
+      else{const { error } = await createClient().auth.signOut();if (error) throw error}
       try{removeAll(localStorage)}catch{}
-      router.replace('/')
+      router.replace(demo?'/demo':'/')
       router.refresh()
     } catch {
       setError('Sign out failed. Please try again.')
