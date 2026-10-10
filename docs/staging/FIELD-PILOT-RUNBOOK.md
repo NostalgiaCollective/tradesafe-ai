@@ -1,5 +1,7 @@
 # Four-week, three-business pilot proposal
 
+October 10 preparation update: [ready synthetic rehearsal](ELECTRICIAN-REHEARSAL.md), [actionable decisions and invitation-only entry clarification](PILOT-PREPARATION-DECISIONS.md), and [source-specific recovery operation](HOSTED-RECOVERY-OPERATION.md). Public self-service signup is a separate deferred scope item; invited participants still need verified individual access and tested recovery. No human rehearsal, hosted recovery, paid service or qualified approval is inferred. Prior evidence below is preserved.
+
 Prepared October 10, 2026. Not launched; no businesses contacted, invitations emailed, money spent or real customer records collected. Entry conditions are in the [readiness matrix](COMMERCIAL-PILOT-READINESS.md). Until they pass, use synthetic rehearsal only.
 
 ## Cohort and scope

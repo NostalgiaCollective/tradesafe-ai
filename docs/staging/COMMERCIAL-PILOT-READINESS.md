@@ -1,5 +1,7 @@
 # Commercial MVP field-pilot readiness
 
+October 10 preparation update: [ready synthetic rehearsal](ELECTRICIAN-REHEARSAL.md), [actionable decisions and invitation-only entry clarification](PILOT-PREPARATION-DECISIONS.md), and [source-specific recovery operation](HOSTED-RECOVERY-OPERATION.md). Public self-service signup is a separate deferred scope item; invited participants still need verified individual access and tested recovery. No human rehearsal, hosted recovery, paid service or qualified approval is inferred. Prior evidence below is preserved.
+
 Assessment: 2026-10-10. Target hypothesis: Ontario electrical contractors with 3–15 field workers doing residential service and renovation. The hypothesis has not been validated with three independent businesses.
 
 **Recommendation: ready for supervised rehearsal using synthetic data. Not ready for a controlled field pilot with real customer records or paid reliance.** Delivered engineering and release verification are different things. This assessment does not reopen completed features or approve safety content.

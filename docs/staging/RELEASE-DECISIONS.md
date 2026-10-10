@@ -1,5 +1,7 @@
 # Release decision register — 2026-09-16
 
+October 10 preparation update: [ready synthetic rehearsal](ELECTRICIAN-REHEARSAL.md), [actionable decisions and invitation-only entry clarification](PILOT-PREPARATION-DECISIONS.md), and [source-specific recovery operation](HOSTED-RECOVERY-OPERATION.md). Public self-service signup is a separate deferred scope item; invited participants still need verified individual access and tested recovery. No human rehearsal, hosted recovery, paid service or qualified approval is inferred. Prior evidence below is preserved.
+
 ## Current decision — 2026-10-10
 
 The [commercial pilot readiness matrix](COMMERCIAL-PILOT-READINESS.md) consolidates current evidence and supersedes old pending/completed wording below without erasing its history. Recommendation: **supervised synthetic rehearsal only**. Real customer data remains blocked by independent signup delivery, hosted recovery/configuration coverage and archive custody, qualified content/data-handling review, named operations/support and suitable hosting/capacity acceptance. Paid reliance additionally needs commercial/billing and service commitments. [Four-week proposal](FIELD-PILOT-RUNBOOK.md); no recruitment, messages, purchases or pilot activation performed.

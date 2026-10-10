@@ -1,0 +1,11 @@
+trial,role,task,evidence_status,completion,elapsed_seconds,assistance_none_hint_takeover,confusing_interface_label,failure_stage_or_safe_code,export_matches_yes_no_not_checked,observer_ui_notes
+1,supervisor,sign_in,NOT_OBSERVED,,,,,,,
+2,supervisor,concern_text_save,NOT_OBSERVED,,,,,,,
+3,supervisor,photo_caption_reload_and_submit,NOT_OBSERVED,,,,,,,
+4,supervisor,assign_follow_up_and_deadline,NOT_OBSERVED,,,,,,,
+5,worker,sign_in_and_find_assigned_work,NOT_OBSERVED,,,,,,,
+6,worker,progress_save_reload,NOT_OBSERVED,,,,,,,
+7,worker,request_verification,NOT_OBSERVED,,,,,,,
+8,supervisor,review_and_verify,NOT_OBSERVED,,,,,,,
+9,supervisor,retrieve_evidence_package,NOT_OBSERVED,,,,,,,
+10,supervisor,compare_electrical_job_export,NOT_OBSERVED,,,,,,,
