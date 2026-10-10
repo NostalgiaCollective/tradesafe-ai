@@ -1,5 +1,7 @@
 # TradeSafe limited-pilot operations
 
+Current assessment (2026-10-10): [supervised synthetic rehearsal only](COMMERCIAL-PILOT-READINESS.md). The [four-week pilot/support proposal](FIELD-PILOT-RUNBOOK.md) specifies entry and stop conditions; owners, hours and commitments remain unapproved. Passing local WebKit/restore and delivered first-workday/electrical workflows supersede older pending engineering descriptions below. Hosted recovery, qualified review, data handling, domain/email and operational decisions remain open. The offline [measurement tool](PILOT-MEASUREMENT.md) adds no collector, recurring probe or notification.
+
 This runbook applies to the isolated staging service only. It is an operational aid for a limited pilot; it is not a production-readiness approval.
 
 ## Identify the service

@@ -1,5 +1,13 @@
 # Database and stored-byte restore drill plan
 
+## Migration completeness repair — 2026-10-10
+
+The archive validator now requires each unique migration version to resolve to an actual archived migration artifact with the same SHA-256, and rejects unlisted sources. A repeated seven-entry list could pass the earlier validator; a synthetic reproducer demonstrates rejection now. Local captures also record the actual source migration ledger, compare it to the archive and compare the restored ledger before browser acceptance. No migration is replayed.
+
+The old fixed minimum of seven is no longer a current schema inventory. Use the source capture's full migration list, not that historical number or the latest repository inventory applied to an older backup. Legacy hosted manifests lacking a declared ledger are explicitly labelled `NOT_SUPPLIED`; archive-only success does not establish schema/restore completeness. Earlier synthetic manifests need a newly captured ledger to pass current local validation; never invent one for an old archive. Declared metadata is checked against actual source/target databases by the local adapter, not by offline validation alone.
+
+This repairs tooling; it does not provide hosted export authority, an isolated hosted recovery target, independent archive custody, full Auth/configuration coverage or an operational backup service. [Current readiness decision](COMMERCIAL-PILOT-READINESS.md).
+
 ## Synthetic local rehearsal (2026-09-20)
 
 Daniel has authorized task-owned disposable local recovery environments. The existing Ubuntu `local-webkit` job now runs `node scripts/ci/local-browser.mjs`: source WebKit fixtures, quiet capture, negative archive checks, separate empty target, restoration, and restored WebKit acceptance. Execution results and measured times belong in the exact-commit CI receipt and `.staging/reliability-workflow-checkpoint.json`; implementation or browser discovery alone is not a passed rehearsal.

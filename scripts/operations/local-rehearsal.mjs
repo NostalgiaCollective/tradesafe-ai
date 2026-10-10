@@ -86,6 +86,7 @@ export async function capture(source, status) {
     const bytes = readFileSync('supabase/migrations/' + name)
     add(name, 'migration', bytes); manifest.migrations.push({ name, sha256: sha(bytes) })
   }
+  manifest.sourceMigrationVersions = json(source.container, "select coalesce(json_agg(version order by version),'[]') from supabase_migrations.schema_migrations")
   manifest.bucketConfiguration = good(await storage.storage.listBuckets()).map(b => ({ id: b.id, public: b.public, fileSizeLimit: b.file_size_limit, allowedMimeTypes: b.allowed_mime_types })).sort((a,b) => a.id.localeCompare(b.id))
   assert.deepEqual(manifest.bucketConfiguration.map(b => b.id), manifest.buckets)
   assert.ok(manifest.bucketConfiguration.every(b => b.public === false))
@@ -121,11 +122,13 @@ export async function negativeArchiveChecks(manifest) {
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(path, bytes) }
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== object.path) }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== 'auth.dump') }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== manifest.migrations[0].name) }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, sourceMigrationVersions: manifest.sourceMigrationVersions.slice(1) }))
   const databasePath = ARCHIVE + '/public.dump', database = readFileSync(databasePath), damaged = Buffer.from(database)
   damaged[0] ^= 255; writeFileSync(databasePath, damaged)
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(databasePath, database) }
   await verifyRecoverySet(ARCHIVE, manifest)
-  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing manifest object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected']
+  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing manifest object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected', 'omitted migration source rejected', 'migration ledger mismatch rejected']
 }
 export async function restore(target, source, status, manifest) {
   const started = performance.now()
@@ -192,6 +195,7 @@ export async function restore(target, source, status, manifest) {
     if (JSON.stringify(t) !== JSON.stringify(restored)) console.error('Recovery inventory mismatch: ' + t.table + '; rows=' + t.rows + '/' + restored?.rows)
   }
   assert.deepEqual(restoredInventory, manifest.beforeInventory)
+  assert.deepEqual(json(target.container, "select coalesce(json_agg(version order by version),'[]') from supabase_migrations.schema_migrations"),manifest.sourceMigrationVersions,'Restored migration ledger differs')
   console.log('Recovery: database records verified')
   const restoredProtections = protections(target.container)
   for (const section of ['policies', 'tables', 'functions', 'defaults']) if (JSON.stringify(restoredProtections[section]) !== JSON.stringify(manifest.protections[section])) console.error('Recovery protection mismatch: ' + section)

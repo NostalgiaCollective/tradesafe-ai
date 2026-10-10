@@ -1,5 +1,11 @@
 # Release decision register — 2026-09-16
 
+## Current decision — 2026-10-10
+
+The [commercial pilot readiness matrix](COMMERCIAL-PILOT-READINESS.md) consolidates current evidence and supersedes old pending/completed wording below without erasing its history. Recommendation: **supervised synthetic rehearsal only**. Real customer data remains blocked by independent signup delivery, hosted recovery/configuration coverage and archive custody, qualified content/data-handling review, named operations/support and suitable hosting/capacity acceptance. Paid reliance additionally needs commercial/billing and service commitments. [Four-week proposal](FIELD-PILOT-RUNBOOK.md); no recruitment, messages, purchases or pilot activation performed.
+
+Local WebKit is executed and passing, not pending or merely discovered. First-workday and electrical features are delivered; the older audit blocker was repaired. Assessed application `a477855` has exact passing CI and live staging identity. This milestone changes offline measurement/recovery tools and documents only; no application redeploy or migration. Daniel's confirmation remains limited to return position and matching electrical download entries. Current physical acceptance is not expanded.
+
 Proposals for review, not approvals. Staging remains the only deployment target. No retention job, checklist publication, paid entitlement, plan or spending change is authorized here. [Verification details and exact signup procedure](RELEASE-GAP-VERIFICATION.md); current commit/CI/deployment receipts are in `.staging/reliability-workflow-checkpoint.json`.
 
 | Gate / missing evidence | Agent can finish | Daniel / qualified reviewer needed | Proposed decision and implications |

@@ -15,11 +15,21 @@ test('archive checks fail for changed inventories, missing/corrupt objects or pa
  try{
   await writeFile(join(root,'db.dump'),bytes)
   const manifest={version:1,sourceProject:'yqkiizimbtlygovkscoh',quietCaptureVerified:true,beforeInventory:{sha256},afterInventory:{sha256},schemaCoverage:['auth','public'],grantsAndPoliciesIncluded:true,buckets:['tradesafe-evidence','tradesafe-exports'],artifacts:[{kind:'database',path:'db.dump',bytes:bytes.length,sha256}],readyReferences:[],migrations:Array.from({length:7},(_,i)=>({name:'2026091600010'+i+'_synthetic.sql',sha256}))}
+  for(const m of manifest.migrations){await writeFile(join(root,m.name),bytes);manifest.artifacts.push({path:m.name,kind:'migration',bytes:bytes.length,sha256})}
   assert.equal((await verifyRecoverySet(root,manifest)).restoreProven,false)
   const databasePaths=['public.dump','auth.dump','storage-policy.dump','migrations.dump']
   for(const path of databasePaths)await writeFile(join(root,path),bytes)
-  const local={...manifest,sourceKind:'synthetic-local',sourceProject:'tradesafe-ci',sourceUrl:'http://127.0.0.1:54321',artifacts:databasePaths.map(path=>({kind:'database',path,bytes:bytes.length,sha256}))}
+  const local={...manifest,sourceKind:'synthetic-local',sourceProject:'tradesafe-ci',sourceUrl:'http://127.0.0.1:54321',sourceMigrationVersions:manifest.migrations.map(m=>m.name.slice(0,14)),artifacts:[...manifest.artifacts.filter(a=>a.kind==='migration'),...databasePaths.map(path=>({kind:'database',path,bytes:bytes.length,sha256}))]}
   assert.equal((await verifyRecoverySet(root,local)).status,'ARCHIVE_VALIDATED_ONLY')
+  assert.equal((await verifyRecoverySet(root,local)).migrationLedger,'MATCHED_DECLARED_LEDGER')
+  for(const change of [
+   {migrations:[...local.migrations,local.migrations[0]]},
+   {migrations:local.migrations.map((m,i)=>i===0?{...m,sha256:'0'.repeat(64)}:m)},
+   {artifacts:local.artifacts.filter(a=>a.path!==local.migrations[0].name)},
+   {migrations:local.migrations.slice(1)},
+   {sourceMigrationVersions:local.sourceMigrationVersions.slice(1)},
+   {sourceMigrationVersions:undefined},
+  ])await assert.rejects(verifyRecoverySet(root,{...local,...change}))
   for(const path of databasePaths)await assert.rejects(verifyRecoverySet(root,{...local,artifacts:local.artifacts.filter(a=>a.path!==path)}))
   for(const change of [{sourceProject:'production'},{sourceUrl:'https://example.com'},{sourceKind:'unknown'}])await assert.rejects(verifyRecoverySet(root,{...local,...change}))
   await assert.rejects(verifyRecoverySet(root,{...manifest,afterInventory:{sha256:'0'.repeat(64)}}))
