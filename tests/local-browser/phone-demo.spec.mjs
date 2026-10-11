@@ -21,6 +21,13 @@ test('WebKit phone demo: fresh entry, saved edits, stale visitors, private sampl
   await second.getByRole('button',{name:'Save electrical job',exact:true}).click();await expect(second.getByRole('status').filter({hasText:'Server changes require review'})).toBeVisible();await expect(second.getByLabel('Job scope and location within the site',{exact:true})).toHaveValue('DEMO second visitor unsaved scope')
   await first.reload();await expect(first.getByLabel('Job scope and location within the site',{exact:true})).toHaveValue('DEMO first visitor saved scope')
   const saved=await raw.from('ts_electrical_jobs').select('document,revision').eq('site_id',f.site).single();expect(saved.data.document.scope).toBe('DEMO first visitor saved scope');expect(saved.data.revision).toBe(2)
+  // Simulated session expiry: recovery stays in the demo and preserves visible input.
+  await first.getByLabel('Job scope and location within the site',{exact:true}).fill('DEMO expiry recovery text')
+  await first.route('**'+api,route=>route.request().method()==='POST'?route.fulfill({status:401,contentType:'application/json',body:'{"code":"unauthorized"}'}):route.continue())
+  await first.getByRole('button',{name:'Save electrical job',exact:true}).click()
+  await expect(first.getByRole('link',{name:'Sign in in another tab',exact:true})).toHaveAttribute('href','/demo')
+  await expect(first.getByLabel('Job scope and location within the site',{exact:true})).toHaveValue('DEMO expiry recovery text')
+  await first.unroute('**'+api);await first.reload()
   for(const path of ['/settings','/api/auth/recovery/request','/api/checkout'])expect((await first.request.get(path)).status()).toBe(403)
   const denied=await first.request.post('/api/workspace',{headers,data:{command:'create_company',payload:{id:randomUUID(),name:'must not create'}}});expect(denied.status()).toBe(403)
   const ack=await first.request.post('/api/briefs',{headers,data:{command:'acknowledge',payload:{companyId:f.company,id:randomUUID(),version:1}}});expect(ack.status()).toBe(403)
