@@ -17,7 +17,7 @@ test('WebKit phone demo: fresh entry, saved edits, stale visitors, private sampl
   const first=await visitor(),second=await visitor(),api='/api/sites/'+f.site+'/electrical',headers={origin:APP_ORIGIN,'X-Expected-Actor':f.user}
   await first.getByLabel('Job scope and location within the site',{exact:true}).fill('DEMO first visitor saved scope')
   await second.getByLabel('Job scope and location within the site',{exact:true}).fill('DEMO second visitor unsaved scope')
-  await first.getByRole('button',{name:'Save electrical job',exact:true}).click();await expect(first.getByRole('status').filter({hasText:'Saved to server. Revision 2.'})).toBeVisible()
+  await first.getByRole('button',{name:'Save electrical job',exact:true}).click();await expect(first.locator('form > p[role="status"]').filter({hasText:'Saved to server. Revision 2.'})).toBeVisible()
   await second.getByRole('button',{name:'Save electrical job',exact:true}).click();await expect(second.getByRole('status').filter({hasText:'Server changes require review'})).toBeVisible();await expect(second.getByLabel('Job scope and location within the site',{exact:true})).toHaveValue('DEMO second visitor unsaved scope')
   await first.reload();await expect(first.getByLabel('Job scope and location within the site',{exact:true})).toHaveValue('DEMO first visitor saved scope')
   const saved=await raw.from('ts_electrical_jobs').select('document,revision').eq('site_id',f.site).single();expect(saved.data.document.scope).toBe('DEMO first visitor saved scope');expect(saved.data.revision).toBe(2)
