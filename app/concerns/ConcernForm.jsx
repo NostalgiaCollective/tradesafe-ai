@@ -1,4 +1,6 @@
 'use client'
+import {useContext} from 'react'
+import {DemoSessionContext} from '@/app/components/DeviceAccount'
 import WorkHelp from '@/app/components/WorkHelp'
 import {useEffect,useRef,useState} from 'react'
 import {useOperation} from '@/lib/client/useOperation'
@@ -9,6 +11,7 @@ import OperationFeedback from '@/app/components/OperationFeedback'
 import {useDeviceText} from '@/lib/client/useDeviceText'
 import DeviceText from '@/app/components/DeviceText'
 export default function ConcernForm({initial,site,actor,deviceId}){
+ const demo=useContext(DemoSessionContext)
  const [record,setRecord]=useState(initial),[document,setDocument]=useState(initial?.document||{observation:'',location:'',immediate:'',observedAt:''}),[dirty,setDirty]=useState(!initial),[photo,setPhoto]=useState(null),[uncertain,setUncertain]=useState(false),[blocked,setBlocked]=useState(false)
  const op=useOperation(),attempt=useRef(null),target=useRef(initial?.id||deviceId),isSubmitted=record?.lifecycle==='submitted'
  const device=useDeviceText({kind:'concern',id:target.current,company:site.company_id,siteId:site.id,actor,document,serverDocument:record?.document||{observation:'',location:'',immediate:'',observedAt:''},revision:record?.revision||0,onRestore:(server,next)=>{setRecord(server);setDocument(next);setDirty(true);setUncertain(false);setBlocked(false);attempt.current=null}})
@@ -29,6 +32,6 @@ export default function ConcernForm({initial,site,actor,deviceId}){
  </fieldset><p role="status">{device.recovery?'Server changes require review':device.checking?'Checking server':op.busy?'Saving…':uncertain?'Save failed or unconfirmed — entries remain on this page.':dirty?'Unsaved changes':record?'Saved concern draft — saved to server':'Not saved'}</p><button className={!record||dirty?'primary':''} disabled={!op.ready||op.busy||uncertain||blocked||device.hold||(!dirty&&Boolean(record))}>Save concern draft</button></form>
  {record?<EvidencePanel concernId={record.id} actor={actor} editable disabled={op.busy||uncertain||blocked} onStateChange={setPhoto}/>:<p>Save the draft to add an optional captioned photo. Device recovery covers only opted-in text. File selections must be selected again after closing or reloading.</p>}
  {record&&<><p>Submitting preserves this observation and its photos. Follow-up starts assigned to you; a supervisor or owner can reassign it. Later corrections are separate notes.</p>{dirty&&<p>Save your changes before submitting.</p>}{photoBlocked&&<p>Upload or clear the selected photo, resolve incomplete uploads, and refresh any failed photo list before submitting.</p>}<button className="primary" disabled={!op.ready||op.busy||uncertain||blocked||device.hold||dirty||!photo||photoBlocked} onClick={()=>run('submit')}>Submit concern</button></>}
- <OperationFeedback operation={op}/>{uncertain&&!blocked&&<button disabled={op.busy} onClick={()=>run(attempt.current.command)}>Retry same concern operation</button>}{blocked&&<a href={'/concerns/'+target.current} target="_blank" rel="noopener noreferrer">Open latest concern in another tab</a>}{(uncertain||blocked)&&<button type="button" disabled={op.busy||device.checking} onClick={device.inspect}>Check server and recover text</button>}{uncertain&&<p>Keep this page open to retain your entries. Retry the same operation; do not create a second concern. <a href={'/auth/login?'+new URLSearchParams({redirect:record?'/concerns/'+record.id:'/concerns/new?site='+site.id})} target="_blank" rel="noopener noreferrer">Sign in in another tab</a> if needed.</p>}
+ <OperationFeedback operation={op}/>{uncertain&&!blocked&&<button disabled={op.busy} onClick={()=>run(attempt.current.command)}>Retry same concern operation</button>}{blocked&&<a href={'/concerns/'+target.current} target="_blank" rel="noopener noreferrer">Open latest concern in another tab</a>}{(uncertain||blocked)&&<button type="button" disabled={op.busy||device.checking} onClick={device.inspect}>Check server and recover text</button>}{uncertain&&<p>Keep this page open to retain your entries. Retry the same operation; do not create a second concern. <a href={demo?'/demo':'/auth/login?'+new URLSearchParams({redirect:record?'/concerns/'+record.id:'/concerns/new?site='+site.id})} target="_blank" rel="noopener noreferrer">Sign in in another tab</a> if needed.</p>}
  </>
 }

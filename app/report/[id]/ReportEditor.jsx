@@ -1,4 +1,6 @@
 'use client'
+import {useContext} from 'react'
+import {DemoSessionContext} from '@/app/components/DeviceAccount'
 import { useEffect,useRef,useState,useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { useDraft } from '@/lib/client/useDraft'
@@ -11,6 +13,7 @@ const subscribe=()=>()=>{},clientReady=()=>true,serverReady=()=>false
 const stages=[[2,'Job'],[3,'Observations'],[5,'Review'],[4,'Finalize']]
 
 export default function ReportEditor({report,actor,editable,initialStep=2,stagingBuild=null,returnTo}) {
+ const demo=useContext(DemoSessionContext)
  const ready=useSyncExternalStore(subscribe,clientReady,serverReady)
  const draft=useDraft(report,actor),[navigation,setNavigation]=useState({step:initialStep,target:null}),[ack,setAck]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [photos,setPhotos]=useState({loading:true,failed:false,busy:false,selected:false,ready:0,pending:0})
@@ -43,7 +46,7 @@ export default function ReportEditor({report,actor,editable,initialStep=2,stagin
  <p className="work-notice">Questions pending qualified review. This report records observations; it does not certify compliance or authorize work.</p>
  {report.amendment_of&&<p className="work-notice">Correction draft (separate amendment) to <Link href={'/report/'+report.amendment_of}>the original report</Link>: {report.amendment_reason}. Review each answer. Photos are separate from the original.</p>}
  {!editable&&<p role="alert">You can read this draft. Its author, a supervisor or an owner can edit it.</p>}
- {draft.error&&<div id="save-recovery" tabIndex={-1} className="work-alert" role="alert"><p>{draft.error}</p><div className="work-buttons"><a href={'/auth/login?'+new URLSearchParams({redirect:'/report/'+report.id+'?step='+step})} target="_blank" rel="noopener noreferrer">Sign in in another tab</a></div><details><summary>More recovery options</summary><a href={'/report/'+report.id} target="_blank" rel="noopener noreferrer">Open latest saved version</a><button onClick={()=>{if(confirm('Discard unsaved changes and load the latest saved version?'))window.location.reload()}}>Discard changes and reload</button></details></div>}
+ {draft.error&&<div id="save-recovery" tabIndex={-1} className="work-alert" role="alert"><p>{draft.error}</p><div className="work-buttons"><a href={demo?'/demo':'/auth/login?'+new URLSearchParams({redirect:'/report/'+report.id+'?step='+step})} target="_blank" rel="noopener noreferrer">Sign in in another tab</a></div><details><summary>More recovery options</summary><a href={'/report/'+report.id} target="_blank" rel="noopener noreferrer">Open latest saved version</a><button onClick={()=>{if(confirm('Discard unsaved changes and load the latest saved version?'))window.location.reload()}}>Discard changes and reload</button></details></div>}
  <nav className="work-steps journey-steps" aria-label="Report steps">{stages.map(([n,label],i)=><button type="button" key={n} disabled={busy} aria-current={step===n?'step':undefined} onClick={()=>setStep(n)}>{i+1}. {label}</button>)}</nav>
  <h2 id="stage-heading" tabIndex={-1}>Step {index+1} of 4: {stages[index][1]}</h2>
  <fieldset disabled={!ready||!editable||busy||uncertain} className="work-fieldset">
@@ -63,7 +66,7 @@ export default function ReportEditor({report,actor,editable,initialStep=2,stagin
  {step===5&&<ul className="review-list">{template.items.map((i,n)=><li key={i.id}><strong>{n+1}. {i.question}</strong><span>{ANSWERS[answerState(doc.answers[i.id]?.state)]}</span>{doc.answers[i.id]?.note&&<p>{doc.answers[i.id].note}</p>}{doc.answers[i.id]?.controls&&<p>Action taken: {doc.answers[i.id].controls}</p>}<a href={'?step=3#answer-'+i.id} onClick={e=>{e.preventDefault();setStep(3,'answer-'+i.id)}}>Edit observation {n+1}</a></li>)}</ul>}
  {step===4&&<><div className="work-notice"><h3>What happens when you finalize?</h3><p>This locks the saved observations and photos. You can then open a PDF. Corrections need a separate amendment; the original report and evidence remain unchanged.</p></div>
  <label className="work-check"><input type="checkbox" checked={ack} disabled={!editable||busy} onChange={e=>setAck(e.target.checked)}/>I confirm these observations and explanations accurately reflect what I recorded. This does not certify compliance, authorize work, or mean unresolved concerns are safe.</label>
- {busy&&<p role="status">Saving and finalizing your report. Keep this page open.</p>}{error&&<div role="alert"><p>{error}</p><a href={'/auth/login?'+new URLSearchParams({redirect:'/report/'+report.id+'?step=4'})} target="_blank" rel="noopener noreferrer">Sign in in another tab, then retry here</a><p><a href={'/report/'+report.id} target="_blank" rel="noopener noreferrer">Open latest saved version</a></p></div>}</>}</section>}
+ {busy&&<p role="status">Saving and finalizing your report. Keep this page open.</p>}{error&&<div role="alert"><p>{error}</p><a href={demo?'/demo':'/auth/login?'+new URLSearchParams({redirect:'/report/'+report.id+'?step=4'})} target="_blank" rel="noopener noreferrer">Sign in in another tab, then retry here</a><p><a href={'/report/'+report.id} target="_blank" rel="noopener noreferrer">Open latest saved version</a></p></div>}</>}</section>}
  <details className="draft-help"><summary>Saving and leaving this draft</summary><p>Changes save automatically. Wait for Saved before leaving. Find the saved draft in Reports.</p><p>Unsaved changes and selected files stay only on this open page. Upload selected photos before leaving; they do not survive reload. Offline persistence is not provided.</p></details>
  <div className="report-action-bar no-print" aria-label="Save status and next step">
  <div className="report-save-feedback"><span className="save-state" role="status" aria-live="polite">{ready?draft.status:'Loading save controls'}</span>{draft.error?<><button type="button" onClick={draft.save} disabled={draft.blocked.current}>Retry saving</button><a href="#save-recovery" onClick={()=>document.getElementById('save-recovery')?.focus()}>Recovery options</a></>:<span className="work-footnote">{photos.selected?'Selected photo or caption not uploaded.':'Wait for Saved before leaving.'}</span>}</div>
