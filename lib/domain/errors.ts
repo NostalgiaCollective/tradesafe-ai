@@ -2,6 +2,7 @@ export const ERROR_MESSAGES = {
   content_retired: 'These task prompts have been retired. Your draft text is retained. In Task prompts and sources, choose current content or Continue without task prompts before recording a new briefing version.',
   analysis_deferred: 'AI photo analysis is not available in this pilot. Record your own observation and attach evidence through the report or concern workflow.',
   electrical_limit: 'This electrical job has reached its limit of 1,000 retained revisions. Existing records remain available. Contact support before recording further revisions; do not overwrite historical records.',
+  package_retention_limit: 'A retained handover must fit the existing 50 MiB storage limit. Narrow the date range and prepare a new generation. No partial package was issued.',
   package_generation_limit: 'This site has reached 20 retained package preparations in the last 24 hours. Download an existing generation or wait before preparing another. No existing package was changed.',
   package_pending: 'This package has not completed. Retry its preparation; if source records changed, start a new generation.',
   package_limit: 'This package exceeds its limits: 31 days, 200 activity records, 100 files or 64 MiB. Narrow the date range and try again. No partial package was issued.',
@@ -40,7 +41,7 @@ export type ErrorCode = keyof typeof ERROR_MESSAGES
 const statuses: Record<ErrorCode, number> = {
   content_retired: 409, analysis_deferred: 503,
   electrical_limit: 422,
-  package_generation_limit: 429, package_pending: 409, package_limit: 422, package_changed: 409, package_missing: 503,
+  package_retention_limit: 422, package_generation_limit: 429, package_pending: 409, package_limit: 422, package_changed: 409, package_missing: 503,
   summary_limit: 422,
   site_archived: 409,
   account_changed: 409,

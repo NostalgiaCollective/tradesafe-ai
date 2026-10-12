@@ -27,7 +27,7 @@ CREATE TABLE public.ts_site_packages (
  cutoff timestamptz NOT NULL DEFAULT statement_timestamp(),snapshot jsonb NOT NULL,
  state text NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','ready')),
  object_path text NOT NULL UNIQUE,sha256 text CHECK(sha256 ~ '^[a-f0-9]{64}$'),
- byte_size integer CHECK(byte_size BETWEEN 1 AND 67108864),completed_at timestamptz,
+ byte_size integer CHECK(byte_size BETWEEN 1 AND 52428800),completed_at timestamptz,
  FOREIGN KEY(company_id,site_id) REFERENCES public.ts_sites(company_id,id),
  CHECK(state<>'ready' OR (sha256 IS NOT NULL AND byte_size IS NOT NULL AND completed_at IS NOT NULL))
 );
@@ -92,6 +92,7 @@ BEGIN
  PERFORM 1 FROM public.ts_companies WHERE id=receipt.company_id FOR UPDATE;
  SELECT * INTO receipt FROM public.ts_site_packages WHERE id=package_id FOR UPDATE;
  IF receipt.actor_id<>actor_id OR NOT EXISTS(SELECT 1 FROM public.ts_members WHERE company_id=receipt.company_id AND user_id=actor_id AND active AND role IN ('owner','supervisor')) THEN RAISE EXCEPTION 'TS_denied'; END IF;
+ IF byte_size>52428800 THEN RAISE EXCEPTION 'TS_package_retention_limit'; END IF;
  IF receipt.state='ready' THEN
   IF receipt.sha256 IS DISTINCT FROM sha256 OR receipt.byte_size IS DISTINCT FROM byte_size THEN RAISE EXCEPTION 'TS_conflict'; END IF;
   RETURN to_jsonb(receipt);
@@ -119,7 +120,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM jsonb_array_elements(receipt.snapshot->'actionUpdates') x WHERE NOT EXISTS(SELECT 1 FROM public.ts_action_updates WHERE id=(x->>'id')::uuid)) THEN RAISE EXCEPTION 'TS_denied'; END IF;
  RETURN to_jsonb(receipt);
 END $$;
-INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types) VALUES('tradesafe-packages','tradesafe-packages',false,67108864,ARRAY['application/zip']);
+INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types) VALUES('tradesafe-packages','tradesafe-packages',false,52428800,ARRAY['application/zip']);
 -- Explicit restrictive denial also survives any unrelated permissive storage policy.
 CREATE POLICY ts_private_packages ON storage.objects AS RESTRICTIVE FOR ALL TO anon,authenticated USING(bucket_id<>'tradesafe-packages') WITH CHECK(bucket_id<>'tradesafe-packages');
 REVOKE ALL ON FUNCTION public.ts_site_package_prepare(jsonb),public.ts_site_package_insert(jsonb,jsonb,timestamptz),public.ts_site_package_read(uuid) FROM PUBLIC,anon;

@@ -24,7 +24,7 @@ test('retained package streaming checks bytes before release and recovers a lost
   await assert.rejects(checkedPackageFile(storage(bytes),{...row,byte_size:bytes.length-1}),/integrity/)
   await assert.rejects(checkedPackageFile(storage(bytes),{...row,sha256:'0'.repeat(64)}),/integrity/)
   await assert.rejects(checkedPackageFile({from:()=>({download:()=>({asStream:async()=>({error:new Error('Missing')})})})},row),/integrity/)
-  await assert.rejects(checkedPackageFile(storage(bytes),{...row,byte_size:67108865}),/integrity/)
+  await assert.rejects(checkedPackageFile(storage(bytes),{...row,byte_size:52428801}),/integrity/)
  }finally{await zip.cleanup();await local?.cleanup()}
  await assert.rejects(access(local.path))
 })
