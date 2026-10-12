@@ -5,6 +5,7 @@ import {readFile,access} from 'node:fs/promises'
 import {createHash} from 'node:crypto'
 import {checkedPackageFile,retainPackageFile,PACKAGE_BUCKET} from '../lib/evidence/package-storage.mjs'
 import {packageZip} from '../lib/evidence/package-zip.mjs'
+import {RETAINED_PACKAGE_BYTES} from '../lib/domain/site-package.mjs'
 const hash=b=>createHash('sha256').update(b).digest('hex')
 function storage(bytes,uploadError=false){
  return {from(bucket){
@@ -27,4 +28,16 @@ test('retained package streaming checks bytes before release and recovers a lost
   await assert.rejects(checkedPackageFile(storage(bytes),{...row,byte_size:52428801}),/integrity/)
  }finally{await zip.cleanup();await local?.cleanup()}
  await assert.rejects(access(local.path))
+})
+
+test('retained archive accepts 48 MiB of attachments when the complete ZIP fits 50 MiB',async()=>{
+ const zip=await packageZip();let local
+ try{
+  const attachment=Buffer.alloc(16*1024*1024,1)
+  for(let i=0;i<3;i++)await zip.add('reports/synthetic-'+i+'.pdf',attachment)
+  const size=await zip.finish();assert.ok(size>48*1024*1024);assert.ok(size<RETAINED_PACKAGE_BYTES)
+  const bytes=await readFile(zip.path),row={object_path:'synthetic/capacity.zip',byte_size:size,sha256:hash(bytes)}
+  await retainPackageFile(storage(bytes),row,zip.path)
+  local=await checkedPackageFile(storage(bytes),row);assert.equal(hash(await readFile(local.path)),row.sha256)
+ }finally{await zip.cleanup();await local?.cleanup()}
 })
