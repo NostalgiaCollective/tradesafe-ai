@@ -17,4 +17,3 @@ test('completion request parser bounds actual streamed bytes rather than trustin
  await assert.rejects(readCompletionBody(req({...valid,extra:'x'.repeat(20001)})),{code:'invalid_request'})
  await assert.rejects(readCompletionBody(new Request('http://localhost',{method:'POST',body:'{}'})),{code:'invalid_request'})
 })
-

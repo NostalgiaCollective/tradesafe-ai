@@ -43,7 +43,7 @@ try {
   run('supabase', ['start', '--workdir', '.ci-local'])
   stage = 'loopback identity guard'
   const status = parseEnv(run('supabase', ['status', '--workdir', '.ci-local', '-o', 'env']).toString())
-  const env = { ...process.env, ...localEnvironment(status), RECOVERY_REHEARSAL: '1' }
+  const env = { ...process.env, GITHUB_SHA: run('git', ['rev-parse','HEAD']).toString().trim(), ...localEnvironment(status), RECOVERY_REHEARSAL: '1' }
   stage='actual concurrent action transactions'
   await completionConcurrency(env)
   stage='synthetic shared phone demo preparation'
