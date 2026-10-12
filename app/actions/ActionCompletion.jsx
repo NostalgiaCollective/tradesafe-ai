@@ -7,7 +7,7 @@ import {request} from '@/lib/client/request.mjs'
 import {useUnsavedWarning} from '@/lib/client/useUnsavedWarning'
 import {MAX_IMAGE_BYTES} from '@/lib/evidence/limits.mjs'
 const blockedCodes=['conflict','denied','immutable','not_found','account_changed']
-export default function ActionCompletion({action,actor,members,editable,disabled,returnTo,onSaved,onDirty,active=false}){
+export default function ActionCompletion({action,actor,members,editable,disabled,returnTo,onSaved,onDirty,onStatus,active=false}){
  const demo=useContext(DemoSessionContext)
  const [notes,setNotes]=useState(''),[state,setState]=useState('in_progress'),[photos,setPhotos]=useState([]),[file,setFile]=useState(null),[caption,setCaption]=useState(''),[busy,setBusy]=useState(''),[message,setMessage]=useState(''),[error,setError]=useState(null),[uncertain,setUncertain]=useState(false),[history,setHistory]=useState(null),[historyError,setHistoryError]=useState(''),[historyBusy,setHistoryBusy]=useState(false),[page,setPage]=useState(0),[pendingPhotos,setPendingPhotos]=useState(null),[pendingError,setPendingError]=useState(''),[pendingBusy,setPendingBusy]=useState(false)
  const batch=useRef(null),upload=useRef(null),submission=useRef(null),lock=useRef(false),fileInput=useRef(null),historySequence=useRef(0)
@@ -29,6 +29,8 @@ export default function ActionCompletion({action,actor,members,editable,disabled
  }
  useUnsavedWarning(dirty)
  useEffect(()=>{onDirty(dirty||Boolean(busy)||(active&&device.hold));return()=>onDirty(false)},[dirty,busy,onDirty,active,device.hold])
+ const holdMessage=active&&(!device.ready||device.checking)?'Checking current access and device work before action changes.':active&&device.recovery?'Review device work under Completion evidence before changing this action.':active&&device.hold?'Check the recovery message under Completion evidence before changing this action.':dirty||busy?'Finish or recover the Completion evidence update below before changing action status.':''
+ useEffect(()=>{onStatus?.(holdMessage);return()=>onStatus?.('')},[holdMessage,onStatus])
  const headers=()=>({'X-Expected-Actor':actor}),base='/api/actions/'+action.id
  const ensureBatch=()=>batch.current||=( {id:crypto.randomUUID(),revision:action.revision} )
  async function loadHistory(nextPage=0){
