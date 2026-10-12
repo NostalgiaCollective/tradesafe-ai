@@ -69,10 +69,10 @@ export async function capture(source, status) {
   assertIdentity(source); assert.equal(source.project, 'tradesafe-ci')
   const started = performance.now(), storage = client(status)
   mkdirSync(ARCHIVE, { mode: 0o700 })
-  const manifest = { version: 2, sourceKind: 'synthetic-local', sourceProject: source.project, sourceUrl: API_ORIGIN,
+  const manifest = { version: 3, sourceKind: 'synthetic-local', sourceProject: source.project, sourceUrl: API_ORIGIN,
     schemaCoverage: ['public', 'auth'], grantsAndPoliciesIncluded: true, quietCaptureVerified: true,
     buckets: ['tradesafe-evidence', 'tradesafe-exports', 'tradesafe-packages'], artifacts: [], readyReferences: [], migrations: [],
-    beforeInventory: inventory(source.container), protections: protections(source.container) }
+    beforeInventory: inventory(source.container), beforeStorageInventory: storageInventory(source.container), protections: protections(source.container) }
   const add = (path, kind, bytes, extra = {}) => {
     writeFileSync(ARCHIVE + '/' + path, bytes, { mode: 0o600 })
     const a = { path, kind, bytes: bytes.length, sha256: sha(bytes), ...extra }; manifest.artifacts.push(a); return a
@@ -90,7 +90,7 @@ export async function capture(source, status) {
   manifest.bucketConfiguration = good(await storage.storage.listBuckets()).map(b => ({ id: b.id, public: b.public, fileSizeLimit: b.file_size_limit, allowedMimeTypes: b.allowed_mime_types })).sort((a,b) => a.id.localeCompare(b.id))
   assert.deepEqual(manifest.bucketConfiguration.map(b => b.id), manifest.buckets)
   assert.ok(manifest.bucketConfiguration.every(b => b.public === false))
-  const objects = storageInventory(source.container)
+  const objects = manifest.beforeStorageInventory
   for (const [index, object] of objects.entries()) {
     assert.ok(manifest.buckets.includes(object.bucket))
     const blob = good(await storage.storage.from(object.bucket).download(object.name))
@@ -109,13 +109,16 @@ export async function capture(source, status) {
     manifest.readyReferences.push({ artifact: a.path, sha256: r.sha256, bytes: r.byte_size })
   }
   manifest.afterInventory = inventory(source.container)
-  assert.deepEqual(storageInventory(source.container), objects)
+  manifest.afterStorageInventory = storageInventory(source.container)
+  assert.deepEqual(manifest.afterStorageInventory, objects)
   await verifyRecoverySet(ARCHIVE, manifest)
   writeFileSync(ARCHIVE + '/manifest.json', JSON.stringify(manifest), { mode: 0o600 })
   return { manifest, backupMs: Math.round(performance.now() - started) }
 }
 export async function negativeArchiveChecks(manifest) {
-  const object = manifest.artifacts.find(a => a.kind === 'object'), path = ARCHIVE + '/' + object.path
+  const object = manifest.artifacts.find(a => a.kind === 'object' && !manifest.readyReferences.some(r => r.artifact === a.path))
+  assert.ok(object, 'Synthetic interruption fixture must supply unreferenced storage bytes')
+  const path = ARCHIVE + '/' + object.path
   const bytes = readFileSync(path)
   renameSync(path, path + '.missing')
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { renameSync(path + '.missing', path) }
@@ -123,6 +126,8 @@ export async function negativeArchiveChecks(manifest) {
   writeFileSync(path, corrupt)
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(path, bytes) }
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== object.path) }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, beforeStorageInventory: manifest.beforeStorageInventory.filter(a => a.bucket !== object.bucket || a.name !== object.name), afterStorageInventory: manifest.afterStorageInventory.filter(a => a.bucket !== object.bucket || a.name !== object.name) }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, beforeStorageInventory: [...manifest.beforeStorageInventory, {bucket:object.bucket,name:object.name}], afterStorageInventory: [...manifest.afterStorageInventory, {bucket:object.bucket,name:object.name}] }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== 'auth.dump') }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== manifest.migrations[0].name) }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, sourceMigrationVersions: manifest.sourceMigrationVersions.slice(1) }))
@@ -130,7 +135,7 @@ export async function negativeArchiveChecks(manifest) {
   damaged[0] ^= 255; writeFileSync(databasePath, damaged)
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(databasePath, database) }
   await verifyRecoverySet(ARCHIVE, manifest)
-  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing manifest object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected', 'omitted migration source rejected', 'migration ledger mismatch rejected']
+  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing unreferenced manifest object rejected', 'unlisted storage object rejected', 'duplicate storage inventory object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected', 'omitted migration source rejected', 'migration ledger mismatch rejected']
 }
 export async function restore(target, source, status, manifest) {
   const started = performance.now()

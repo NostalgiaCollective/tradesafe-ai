@@ -17,6 +17,7 @@ test('archive checks fail for changed inventories, missing/corrupt objects or pa
   const manifest={version:1,sourceProject:'yqkiizimbtlygovkscoh',quietCaptureVerified:true,beforeInventory:{sha256},afterInventory:{sha256},schemaCoverage:['auth','public'],grantsAndPoliciesIncluded:true,buckets:['tradesafe-evidence','tradesafe-exports'],artifacts:[{kind:'database',path:'db.dump',bytes:bytes.length,sha256}],readyReferences:[],migrations:Array.from({length:7},(_,i)=>({name:'2026091600010'+i+'_synthetic.sql',sha256}))}
   for(const m of manifest.migrations){await writeFile(join(root,m.name),bytes);manifest.artifacts.push({path:m.name,kind:'migration',bytes:bytes.length,sha256})}
   assert.equal((await verifyRecoverySet(root,manifest)).restoreProven,false)
+  assert.equal((await verifyRecoverySet(root,manifest)).storageInventory,'LEGACY_REFERENCE_ONLY')
   const databasePaths=['public.dump','auth.dump','storage-policy.dump','migrations.dump']
   for(const path of databasePaths)await writeFile(join(root,path),bytes)
   const local={...manifest,sourceKind:'synthetic-local',sourceProject:'tradesafe-ci',sourceUrl:'http://127.0.0.1:54321',sourceMigrationVersions:manifest.migrations.map(m=>m.name.slice(0,14)),artifacts:[...manifest.artifacts.filter(a=>a.kind==='migration'),...databasePaths.map(path=>({kind:'database',path,bytes:bytes.length,sha256}))]}
@@ -28,6 +29,29 @@ test('archive checks fail for changed inventories, missing/corrupt objects or pa
   const packageArtifact={kind:'object',bucket:'tradesafe-packages',name:'synthetic/package.zip',path:'retained-package.bin',bytes:bytes.length,sha256}
   const extended={...local,version:2,buckets:[...local.buckets,'tradesafe-packages'],artifacts:[...local.artifacts,packageArtifact],readyReferences:[{artifact:packageArtifact.path,bytes:bytes.length,sha256}]}
   assert.equal((await verifyRecoverySet(root,extended)).readyReferences,1)
+  assert.equal((await verifyRecoverySet(root,extended)).storageInventory,'LEGACY_REFERENCE_ONLY')
+  // Complete storage coverage includes objects with no retained-ready reference.
+  await writeFile(join(root,'unreferenced.bin'),bytes)
+  await writeFile(join(root,'duplicate-object.bin'),bytes)
+  const unreferenced={kind:'object',bucket:'tradesafe-evidence',name:'synthetic/pending.jpg',path:'unreferenced.bin',bytes:bytes.length,sha256}
+  const inventory=[packageArtifact,unreferenced].map(({bucket,name})=>({bucket,name}))
+  const complete={...extended,version:3,beforeStorageInventory:inventory,afterStorageInventory:inventory,artifacts:[...extended.artifacts,unreferenced]}
+  assert.equal((await verifyRecoverySet(root,complete)).storageInventory,'COMPLETE_DECLARED_INVENTORY')
+  assert.equal((await verifyRecoverySet(root,complete)).readyReferences,1)
+  for(const change of [
+   {beforeStorageInventory:undefined},
+   {afterStorageInventory:undefined},
+   {afterStorageInventory:inventory.slice(1)},
+   {beforeStorageInventory:[...inventory,inventory[0]],afterStorageInventory:[...inventory,inventory[0]]},
+   {beforeStorageInventory:inventory.slice(0,1),afterStorageInventory:inventory.slice(0,1)},
+   {artifacts:complete.artifacts.filter(a=>a.path!==unreferenced.path)},
+   {artifacts:[...complete.artifacts,{...unreferenced,path:'duplicate-object.bin'}]},
+   {artifacts:complete.artifacts.map(a=>a.path===unreferenced.path?{...a,name:'synthetic/unlisted.jpg'}:a)},
+   {readyReferences:[{artifact:'public.dump',bytes:bytes.length,sha256}]},
+  ])await assert.rejects(verifyRecoverySet(root,{...complete,...change}))
+  // An empty but explicitly captured storage inventory is valid; omission is not.
+  const empty={...complete,beforeStorageInventory:[],afterStorageInventory:[],artifacts:local.artifacts,readyReferences:[]}
+  assert.equal((await verifyRecoverySet(root,empty)).storageInventory,'COMPLETE_DECLARED_INVENTORY')
   await assert.rejects(verifyRecoverySet(root,{...extended,buckets:local.buckets}))
   await assert.rejects(verifyRecoverySet(root,{...extended,artifacts:local.artifacts}))
   await assert.rejects(verifyRecoverySet(root,{...extended,artifacts:[...local.artifacts,{...packageArtifact,bucket:'unrelated'}]}))

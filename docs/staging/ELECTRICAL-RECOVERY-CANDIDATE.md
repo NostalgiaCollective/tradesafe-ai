@@ -36,6 +36,10 @@ Pending/unsubmitted photos and pending packages qualify after seven days without
 
 Default 30-second work budget, maximum 60 seconds, bounded calls and separate five-second receipt budget. Logs contain IDs/kinds/reasons/outcomes only. A failed or incomplete run is never reported successful. Ambiguous deletes reconcile by guarded repeat removal.
 
+## Archive integrity repair found during verification
+
+The new unreferenced upload fixtures exposed an existing gap: archive validation checked ready references but could miss an omitted unreferenced object. New local captures use format 3, recording complete before/after bucket/name inventories and requiring an exact one-to-one match with hashed object artifacts. Missing, duplicate, unlisted or changed inventories fail. Formats 1/2 remain readable with explicitly limited reference-only coverage; no historical archive is relabelled complete. This changes local recovery tooling, not hosted backup configuration.
+
 ## Verification and evidence distinctions
 
 Tests cover fresh/populated upgrades, actual HTTP/storage interruptions, actual concurrent PostgreSQL transactions, local WebKit recovery and existing report/other-trade regressions. Browser response-loss simulation is separate from real midstream transport faults. Final execution results and CI receipts are recorded after running them; test listing is not execution. No hosted or physical result is implied. The first Linux run passed all seven concurrent database cases and six real transport cases, then caught a mobile checkbox overflow regression. The electrical full-width-input rule was narrowed; the existing layout assertion remains required. Simulated authentication loss removes cookies while retaining device storage; it is not a natural-expiry test.
