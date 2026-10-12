@@ -6,6 +6,7 @@ import {LOCAL_WORKFLOW_COUNT,RESTORED_WORKFLOW_COUNT} from './browser-contract.m
 import { APP_ORIGIN, localEnvironment } from './local-environment.mjs'
 import { capture, negativeArchiveChecks, restore, identity, assertIdentity, TARGET } from '../operations/local-rehearsal.mjs'
 import {createClient} from '@supabase/supabase-js'
+import {completionConcurrency} from './action-completion-concurrency.mjs'
 import {newDemoState,prepareDemoFixture} from '../staging/demo-fixture.mjs'
 
 let stage = 'runner guard', server
@@ -43,6 +44,8 @@ try {
   stage = 'loopback identity guard'
   const status = parseEnv(run('supabase', ['status', '--workdir', '.ci-local', '-o', 'env']).toString())
   const env = { ...process.env, ...localEnvironment(status), RECOVERY_REHEARSAL: '1' }
+  stage='actual concurrent action transactions'
+  await completionConcurrency(env)
   stage='synthetic shared phone demo preparation'
   const demo=newDemoState(),saveDemo=()=>writeFileSync('.ci-local/phone-demo.json',JSON.stringify(demo),{mode:0o600})
   await prepareDemoFixture({env,admin:createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}}),state:demo,save:saveDemo})

@@ -1,7 +1,7 @@
 import { AppError } from './errors.ts'
 
 export function isProtectedPath(path: string) {
-  return ['/dashboard', '/report', '/reports', '/settings', '/actions'].some(root => path === root || path.startsWith(`${root}/`))
+  return ['/dashboard', '/report', '/reports', '/settings', '/actions', '/sites', '/briefs', '/brief-content', '/concerns', '/my-work', '/device-drafts', '/help'].some(root => path === root || path.startsWith(`${root}/`))
 }
 export function ownsRecord(userId: string | undefined, ownerId: string | undefined) {
   return Boolean(userId && ownerId && userId === ownerId)

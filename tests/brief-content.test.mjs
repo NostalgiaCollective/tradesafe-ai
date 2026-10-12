@@ -11,7 +11,7 @@ test('pilot source mappings, applicability, draft labels and unknown provenance 
  const c={version:pilot.version,payload:pilot,state:'draft'},d={jurisdiction:'CA-ON',workplace:'construction',promptTask:pilot.taskId}
  assert.equal(pilot.prompts.length,4);assert.equal(new Set(pilot.prompts.map(p=>p.id)).size,4)
  for(const p of pilot.prompts){assert.equal(p.reviewStatus,'draft');assert.ok(p.applicability&&p.rationale&&p.limits&&p.reviewQuestions);for(const id of p.sourceIds)assert.ok(pilot.sources.some(s=>s.id===id&&safeSourceUrl(s.url)&&s.section&&s.authority&&s.verification))}
- assert.equal(applicablePrompts(c,d).length,4)
+ assert.equal(applicablePrompts(c,d).length,4);assert.deepEqual(applicablePrompts({...c,state:'superseded'},d),[])
  for(const doc of [{...d,jurisdiction:'other'},{...d,workplace:'other'},{...d,promptTask:''},{}])assert.deepEqual(applicablePrompts(c,doc),[])
  assert.match(contentStateLabel(c),/Draft/);assert.match(contentStateLabel(null),/Unknown/)
  assert.match(contentExport({document:d}),/provenance unknown/)
@@ -70,7 +70,23 @@ test('content SQL denies app-role publication/review; explicit scoped appointmen
   assert.equal(newContentVersion.snapshot.content.version,nextPayload.version);assert.equal(newContentVersion.snapshot.content.state,'draft');assert.ok(contentExport(newContentVersion.snapshot).includes('SYNTHETIC revised source-linked wording'))
   assert.deepEqual((await db.query('SELECT * FROM ts_brief_versions WHERE brief_id=$1 AND version=$2',[freshId,first.version])).rows[0],first);assert.equal(contentExport(first.snapshot),originalHtml)
   assert.equal((await db.query('SELECT * FROM ts_brief_acknowledgements WHERE brief_id=$1',[freshId])).rows[0].version,first.version)
-  await review({expectedState:'reviewed',state:'superseded'});assert.equal((await catalog()).state,'superseded');await assert.rejects(review({expectedState:'superseded'}),/TS_conflict/)
+  const recoverId=randomUUID();let recover=await brief('create',{id:recoverId,contentVersion:pilot.version});recover=await brief('save',{id:recoverId,revision:recover.revision,document:freshDoc});
+  const retainedBefore=(await db.query('SELECT * FROM ts_brief_versions ORDER BY brief_id,version')).rows;
+  const acksBefore=(await db.query('SELECT * FROM ts_brief_acknowledgements ORDER BY brief_id,version')).rows;
+  await db.exec('RESET ROLE');await db.exec(await readFile(new URL('../supabase/migrations/20261012000100_retired_brief_content.sql',import.meta.url),'utf8'));await as(worker);
+  await review({expectedState:'reviewed',state:'superseded'});assert.equal((await catalog()).state,'superseded');
+  await assert.rejects(brief('create',{id:randomUUID(),contentVersion:pilot.version}),/TS_content_retired/);
+  recover=await brief('save',{id:recoverId,revision:recover.revision,document:{...freshDoc,task:'Recovered text after retirement'}});
+  assert.equal(recover.document.task,'Recovered text after retirement');
+  await assert.rejects(brief('record',{id:recoverId,revision:recover.revision}),/TS_content_retired/);
+  const currentId=randomUUID();const current=await brief('create',{id:currentId,contentVersion:nextPayload.version});
+  await assert.rejects(brief('save',{id:currentId,revision:current.revision,document:freshDoc}),/TS_content_retired/);
+  assert.deepEqual((await db.query('SELECT * FROM ts_brief_versions ORDER BY brief_id,version')).rows,retainedBefore);
+  assert.deepEqual((await db.query('SELECT * FROM ts_brief_acknowledgements ORDER BY brief_id,version')).rows,acksBefore);
+  const generic={...recover.document};delete generic.contentVersion;delete generic.promptTask;
+  recover=await brief('save',{id:recoverId,revision:recover.revision,document:generic});await brief('record',{id:recoverId,revision:recover.revision});
+  const genericVersion=(await db.query('SELECT snapshot FROM ts_brief_versions WHERE brief_id=$1',[recoverId])).rows[0].snapshot;assert.equal(genericVersion.sourceVersion,'unknown');assert.equal(genericVersion.document.task,'Recovered text after retirement');
+await assert.rejects(review({expectedState:'superseded'}),/TS_conflict/)
   await db.exec('RESET ROLE');await db.query('UPDATE ts_brief_content_reviewers SET revoked_at=now() WHERE user_id=$1',[worker]);await as(worker);await assert.rejects(review({}),/TS_denied/)
   await db.exec('RESET ROLE');await db.query("UPDATE ts_brief_content_reviewers SET revoked_at=NULL,expires_at=now()-interval '1 second' WHERE user_id=$1",[worker]);await as(worker);await assert.rejects(review({}),/TS_denied/)
   await as(owner);await cmd('member',{userId:worker,role:'remove'});await as(worker);assert.deepEqual((await db.query('SELECT * FROM ts_brief_content_catalog')).rows,[]);await assert.rejects(review({}),/TS_denied/)
