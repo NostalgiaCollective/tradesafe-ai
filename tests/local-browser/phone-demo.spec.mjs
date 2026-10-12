@@ -9,7 +9,7 @@ test('WebKit phone demo: fresh entry, saved edits, stale visitors, private sampl
   if(contexts.length===1){
    const field=p.getByLabel('Demo login',{exact:true});await field.fill('wrong');await p.getByLabel('Demo passphrase',{exact:true}).fill('synthetic wrong passphrase');
    await field.focus();await expect(field).toBeFocused();expect(await field.evaluate(e=>parseFloat(getComputedStyle(e).minHeight))).toBeGreaterThanOrEqual(48);
-   await p.getByRole('button',{name:'Open demo job'}).click();await expect(p.getByRole('alert')).toContainText('Check the demo login');await expect(field).toHaveValue('wrong');
+   await p.getByRole('button',{name:'Open demo job'}).click();await expect(p.locator('#demo-error')).toHaveAttribute('role','alert');await expect(p.locator('#demo-error')).toContainText('Check the demo login');await expect(field).toHaveValue('wrong');
    expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   }
   await p.getByLabel('Demo login',{exact:true}).fill(f.login);await p.getByLabel('Demo passphrase',{exact:true}).fill(f.passphrase);await p.getByRole('button',{name:'Open demo job'}).click();await p.waitForURL('**/sites/'+f.site+'/electrical');await expect(p.getByRole('heading',{name:'Electrical job',exact:true})).toBeVisible();return p}

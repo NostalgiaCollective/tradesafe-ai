@@ -26,6 +26,7 @@ export default class LocalReporter {
     if(!recovery&&existsSync('test-results/handover-stage.json'))console.log('HANDOVER_STAGE '+readFileSync('test-results/handover-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/operations-stage.json'))console.log('OPERATIONS_STAGE '+readFileSync('test-results/operations-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/concern-stage.json'))console.log('CONCERN_STAGE '+readFileSync('test-results/concern-stage.json','utf8'))
+    if(!recovery&&existsSync('test-results/electrical-workday-stage.json'))console.log('ELECTRICAL_WORKDAY_STAGE '+readFileSync('test-results/electrical-workday-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/workday-stage.json'))console.log('WORKDAY_STAGE '+readFileSync('test-results/workday-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/crew-stage.json'))console.log('CREW_STAGE '+readFileSync('test-results/crew-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/site-stage.json'))console.log('SITE_STAGE '+readFileSync('test-results/site-stage.json','utf8'))

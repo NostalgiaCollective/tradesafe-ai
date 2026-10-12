@@ -45,7 +45,7 @@ try {
   const status = parseEnv(run('supabase', ['status', '--workdir', '.ci-local', '-o', 'env']).toString())
   const env = { ...process.env, GITHUB_SHA: run('git', ['rev-parse','HEAD']).toString().trim(), ...localEnvironment(status), RECOVERY_REHEARSAL: '1' }
   stage='actual concurrent action transactions'
-  await completionConcurrency(env)
+  console.log('ACTION_COMPLETION_CONCURRENCY '+JSON.stringify(await completionConcurrency(env)))
   stage='synthetic shared phone demo preparation'
   const demo=newDemoState(),saveDemo=()=>writeFileSync('.ci-local/phone-demo.json',JSON.stringify(demo),{mode:0o600})
   await prepareDemoFixture({env,admin:createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}}),state:demo,save:saveDemo})
@@ -82,7 +82,7 @@ try {
   stage = 'restore records, protections and private bytes'
   const recovery = await restore(target, source, targetStatus, manifest)
   stage = 'restored application WebKit acceptance'
-  const restoredEnv = { ...process.env, ...localEnvironment(targetStatus), RECOVERY_VALIDATION: '1' }
+  const restoredEnv = { ...process.env, GITHUB_SHA: env.GITHUB_SHA, ...localEnvironment(targetStatus), RECOVERY_VALIDATION: '1' }
   if (status.ANON_KEY !== targetStatus.ANON_KEY) run(process.execPath, ['node_modules/next/dist/bin/next', 'build'], restoredEnv)
   await startApp(restoredEnv)
   const validationStart = performance.now()
@@ -90,7 +90,7 @@ try {
   const validationMs = Math.round(performance.now() - validationStart)
   const restoredResult = JSON.parse(readFileSync('test-results/local-recovery-browser.json', 'utf8'))
   assert.equal(restoredResult.status, 'passed'); assert.equal(restoredResult.executed, RESTORED_WORKFLOW_COUNT); assert.equal(restoredResult.skipped, 0)
-  const receipt = { status: 'SYNTHETIC_LOCAL_REHEARSAL_PASSED', commit: process.env.GITHUB_SHA, at: new Date().toISOString(),
+  const receipt = { status: 'SYNTHETIC_LOCAL_REHEARSAL_PASSED', commit: env.GITHUB_SHA, at: new Date().toISOString(),
     source, target, backupMs, targetStartupMs, ...recovery, validationMs, negativeChecks,
     archiveBytes: manifest.artifacts.reduce((n,a) => n + a.bytes, 0), artifactCount: manifest.artifacts.length,
     tableRows: manifest.beforeInventory.tables.map(({table,rows}) => ({table,rows})),
