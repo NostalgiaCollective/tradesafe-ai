@@ -3,10 +3,10 @@ import {mutation,rpc,storageServer,PHOTO_BUCKET,objectBytes,privateHeaders} from
 import {UUID} from '@/lib/domain/validation'
 import {AppError,errorResponse} from '@/lib/domain/errors'
 export const runtime='nodejs'
-export async function GET(_request,{params}){try{
+export async function GET(request,{params}){try{
  const {id,evidenceId}=await params,row=await actionPhoto(await actionAccess(id),evidenceId)
  if(row.state!=='ready')throw new AppError('not_found')
- const bytes=await objectBytes(storageServer(),PHOTO_BUCKET,row.object_path,row.sha256,row.byte_size)
+ const bytes=await objectBytes(storageServer(request.signal),PHOTO_BUCKET,row.object_path,row.sha256,row.byte_size)
  const current=await actionPhoto(await actionAccess(id),evidenceId);if(current.state!=='ready')throw new AppError('not_found')
  return new Response(bytes,{headers:{...privateHeaders,'Content-Type':'image/jpeg'}})
 }catch(e){return errorResponse(e)}}

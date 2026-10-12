@@ -35,7 +35,7 @@ export async function completionConcurrency(env){
   assert.ok(output.includes('LOCK_READY'),'Actual transaction must hold company lock')
   return {async release(statement=''){child.stdin.end(statement+'; COMMIT;\n\\q\n');await finished},abort(){if(child.exitCode===null)child.stdin.end('ROLLBACK;\n\\q\n')}}
  }
- async function waiting(count){for(let i=0;i<100;i++){const n=Number(sql("SELECT count(*) FROM pg_stat_activity WHERE datname='postgres' AND wait_event_type='Lock' AND (query LIKE '%ts_action_completion%' OR query LIKE '%ts_complete_action_photo%')"));if(n>=count)return;await delay(50)}throw Error('Expected concurrent PostgreSQL lock wait was not observed')}
+ async function waiting(count){for(let i=0;i<100;i++){const n=Number(sql("SELECT count(*) FROM pg_stat_activity WHERE datname='postgres' AND wait_event_type='Lock' AND (query LIKE '%ts_action_completion%' OR query LIKE '%ts_complete_action_photo%' OR query LIKE '%ts_storage_lease%' OR query LIKE '%ts_storage_maintenance%')"));if(n>=count)return;await delay(50)}throw Error('Expected concurrent PostgreSQL lock wait was not observed')}
  const payload=(a,id=randomUUID())=>({id,actionId:a.id,revision:a.revision,notes:'SYNTHETIC completion progress',state:'in_progress',evidenceIds:[]})
  const receipts=[]
  // Both RPCs demonstrably wait on the same held PostgreSQL row lock.
@@ -44,6 +44,31 @@ export async function completionConcurrency(env){
   try{const one=worker.client.rpc('ts_action_completion',{p}).then(r=>r),two=worker.client.rpc('ts_action_completion',{p:second}).then(r=>r);await waiting(2);await hold.release();const results=await Promise.all([one,two]);assert.equal(results.filter(r=>!r.error).length,sameId?2:1);if(sameId)assert.equal(results[0].data.update.id,results[1].data.update.id);else assert.equal(results.find(r=>r.error).error.message,'TS_conflict');assert.equal(ok(await owner.client.from('ts_action_updates').select('id').eq('action_id',a.id)).length,1);receipts.push({case:sameId?'concurrent identical retry':'concurrent stale revisions',blockedTransactions:2,retainedUpdates:1})}finally{hold.abort()}
  }
  const bytes=await sharp({create:{width:24,height:24,channels:3,background:'#dd8822'}}).jpeg().toBuffer()
+ // Actual lock races between maintenance, storage operation leases and publication.
+ for(const race of ['operation_lease','complete_upload','cleanup_claim']){
+  const a=await action(),id=randomUUID(),updateId=randomUUID(),photo=await command(worker,'ts_action_photo','reserve',{id,updateId,actionId:a.id,revision:a.revision,caption:'SYNTHETIC aged maintenance race',sha256:createHash('sha256').update(bytes).digest('hex'),byteSize:bytes.length,width:24,height:24})
+  ok(await admin.storage.from('tradesafe-evidence').upload(photo.object_path,bytes,{contentType:'image/jpeg',upsert:false}))
+  assertIdentity(target)
+  // Clock aging is confined to this named synthetic row in the positively identified disposable database.
+  sql("BEGIN; ALTER TABLE public.ts_action_photos DISABLE TRIGGER action_photo_immutable; UPDATE public.ts_action_photos SET reserved_at=now()-interval '8 days' WHERE id="+literal(id)+'; ALTER TABLE public.ts_action_photos ENABLE TRIGGER action_photo_immutable; COMMIT;')
+  const cleanupToken=randomUUID(),secondToken=randomUUID(),hold=await blocker()
+  try{
+   const cleanup=admin.rpc('ts_storage_maintenance',{command:'claim',kind:'action_photo',object_id:id,token:cleanupToken}).then(r=>r)
+   const competitor=race==='operation_lease'?admin.rpc('ts_storage_lease',{command:'begin',kind:'action_photo',object_id:id,actor_id:worker.id,token:secondToken}).then(r=>r):race==='complete_upload'?admin.rpc('ts_complete_action_photo',{evidence_id:id,actor_id:worker.id}).then(r=>r):admin.rpc('ts_storage_maintenance',{command:'claim',kind:'action_photo',object_id:id,token:secondToken}).then(r=>r)
+   await waiting(2);await hold.release();const [first,second]=await Promise.all([cleanup,competitor]);assert.equal([first,second].filter(r=>!r.error).length,1,'Exactly one incompatible operation may win')
+   const state=ok(await admin.from('ts_action_photos').select('state').eq('id',id).single()).state
+   if(!first.error||race==='cleanup_claim'){
+    assert.equal(state,'removed');const winner=first.error?secondToken:cleanupToken
+    const selected=ok(await admin.rpc('ts_storage_maintenance',{command:'recheck',kind:'action_photo',object_id:id,token:winner}));assert.equal(selected.object_path,photo.object_path);assert.equal(selected.bucket,'tradesafe-evidence')
+    ok(await admin.storage.from(selected.bucket).remove([selected.object_path]));ok(await admin.rpc('ts_storage_maintenance',{command:'finish',kind:'action_photo',object_id:id,token:winner,outcome:'removed'}))
+    assert.equal((await admin.rpc('ts_complete_action_photo',{evidence_id:id,actor_id:worker.id})).error?.message,'TS_immutable')
+   }else if(race==='operation_lease'){
+    assert.equal(state,'pending');assert.equal(first.error.message,'TS_storage_busy');ok(await admin.rpc('ts_storage_lease',{command:'end',kind:'action_photo',object_id:id,actor_id:worker.id,token:secondToken}))
+   }else{assert.equal(state,'ready');assert.equal(first.error.message,'TS_maintenance_ineligible')}
+   assert.equal(ok(await owner.client.from('ts_action_updates').select('id').eq('id',updateId)).length,0)
+   receipts.push({case:'maintenance claim races '+race,blockedTransactions:2,successfulOperations:1,photoState:state,publishedUpdates:0})
+  }finally{hold.abort()}
+ }
  for(const revoke of [false,true]){
   const a=await action(),updateId=randomUUID(),id=randomUUID(),photo=await command(worker,'ts_action_photo','reserve',{id,updateId,actionId:a.id,revision:a.revision,caption:'SYNTHETIC completion evidence',sha256:createHash('sha256').update(bytes).digest('hex'),byteSize:bytes.length,width:24,height:24})
   ok(await admin.storage.from('tradesafe-evidence').upload(photo.object_path,bytes,{contentType:'image/jpeg',upsert:false}))

@@ -5,6 +5,7 @@ import {completionUploadHeaders} from '@/lib/domain/action-completion.mjs'
 import {UUID} from '@/lib/domain/validation'
 import {AppError,errorResponse} from '@/lib/domain/errors'
 import {admitResource} from '@/lib/server/resource-admission'
+import {beginStorageOperation,endStorageOperation} from '@/lib/server/storage-operation'
 export const runtime='nodejs'
 export async function GET(request,{params}){try{
  const {id}=await params,a=await actionAccess(id),updateId=new URL(request.url).searchParams.get('update')
@@ -14,12 +15,15 @@ export async function GET(request,{params}){try{
  if(rows.error)throw new AppError('query_failed');await actionAccess(id)
  return Response.json(rows.data,{headers:privateHeaders})
 }catch(e){return errorResponse(e)}}
-export async function POST(request,{params}){let finish,outcome='failed';try{
+export async function POST(request,{params}){let finish,lease,outcome='failed';try{
  mutation(request);const {id}=await params,a=await actionAccess(id,true,request),p=completionUploadHeaders(request.headers)
  finish=await admitResource('upload',a)
- const image=await validateImage(await readImageBody(request)),server=storageServer()
+ const image=await validateImage(await readImageBody(request)),control=storageServer()
  const row=await rpc(a.supabase,'ts_action_photo',{command:'reserve',p:{...p,actionId:id,sha256:image.sha256,byteSize:image.byteSize,width:image.width,height:image.height}})
- if(row.state!=='ready'){await retainObject(server,PHOTO_BUCKET,row.object_path,image.bytes,image.sha256,'image/jpeg');await rpc(server,'ts_complete_action_photo',{evidence_id:row.id,actor_id:a.user.id})}else await objectBytes(server,PHOTO_BUCKET,row.object_path,row.sha256,row.byte_size)
+ request.signal.throwIfAborted()
+ lease=await beginStorageOperation(control,'action_photo',row.id,a.user.id,request.signal)
+ const server=storageServer(lease.signal)
+ if(row.state!=='ready'){await retainObject(server,PHOTO_BUCKET,row.object_path,image.bytes,image.sha256,'image/jpeg');lease.check();await rpc(server,'ts_complete_action_photo',{evidence_id:row.id,actor_id:a.user.id})}else await objectBytes(server,PHOTO_BUCKET,row.object_path,row.sha256,row.byte_size)
  const current=await actionAccess(id,true,request);if(current.action.revision!==p.revision)throw new AppError('conflict')
  outcome='complete';return Response.json({id:row.id,state:'ready',caption:row.caption},{headers:privateHeaders})
-}catch(e){outcome=e instanceof AppError?e.code:'unavailable';return errorResponse(e)}finally{finish?.(outcome)}}
+}catch(e){outcome=e instanceof AppError?e.code:'unavailable';return errorResponse(e)}finally{await endStorageOperation(lease);finish?.(outcome)}}

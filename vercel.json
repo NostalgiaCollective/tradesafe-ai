@@ -4,7 +4,8 @@
     "deploymentEnabled": {
       "astra/production-mvp": false,
       "astra/audit-repair": false,
-      "astra/electrical-completion-evidence": false
+      "astra/electrical-completion-evidence": false,
+      "astra/electrical-field-recovery": false
     }
   }
 }
