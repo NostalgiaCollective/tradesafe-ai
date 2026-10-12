@@ -60,11 +60,38 @@ export async function followUpWorkflow({browser,origin,actors,options={},capture
   await card.getByLabel('Status after saving',{exact:true}).selectOption('in_progress');await card.getByLabel('Progress or resolution notes',{exact:true}).fill('SYNTHETIC cover isolated; replacement underway')
   await contexts.WORKER.route(url,route=>route.request().postDataJSON()?.command==='update_action'?route.abort():route.continue())
   await card.getByRole('button',{name:'Save progress',exact:true}).click();await expect(card.getByRole('button',{name:'Retry action update',exact:true})).toBeEnabled();await expect(card.getByLabel('Progress or resolution notes',{exact:true})).toHaveValue('SYNTHETIC cover isolated; replacement underway');expect((await events(id)).length).toBe(countBefore)
-  await contexts.WORKER.unroute(url);await card.getByRole('button',{name:'Retry action update',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible();await worker.reload();await expect(card.locator('.action-progress')).toContainText('replacement underway');expect((await events(id)).length).toBe(countBefore+1)
+  await contexts.WORKER.unroute(url);await card.getByRole('button',{name:'Retry action update',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  // Hold the real authorization response: no action control may become usable
+  // during hydration before completion-device recovery has been checked.
+  let releaseAccess,accessRequested=false
+  const accessBarrier=new Promise(resolve=>{releaseAccess=resolve}),deviceEndpoint=origin+'/api/device-drafts?*'
+  await worker.addInitScript(actionId=>{window.__followUpRecoveryGate={released:false,earlyEnablement:0};const observe=()=>{const state=window.__followUpRecoveryGate,control=document.getElementById('state-'+actionId);if(!state.released&&control&&!control.matches(':disabled'))state.earlyEnablement++};new MutationObserver(observe).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']})},id)
+  await contexts.WORKER.route(deviceEndpoint,async route=>{const query=new URL(route.request().url()).searchParams;if(query.get('kind')!=='action'||query.get('id')!==id)return route.continue();accessRequested=true;const response=await route.fetch();expect(response.status()).toBe(200);await accessBarrier;await route.fulfill({response})})
+  try{
+   await worker.reload();await expect(card.locator('.action-progress')).toContainText('replacement underway')
+   await expect.poll(()=>accessRequested).toBe(true)
+   await expect(card.getByLabel('Status after saving',{exact:true})).toBeDisabled()
+   await expect(card.getByRole('button',{name:'Save progress',exact:true})).toBeDisabled()
+   await expect(card.locator('[id="action-hold-'+id+'"]')).toContainText('Checking')
+   expect(await worker.evaluate(()=>window.__followUpRecoveryGate.earlyEnablement)).toBe(0)
+  }finally{await worker.evaluate(()=>{window.__followUpRecoveryGate.released=true}).catch(()=>{});releaseAccess();await contexts.WORKER.unroute(deviceEndpoint)}
+  await expect(card.getByLabel('Status after saving',{exact:true})).toBeEnabled()
+  expect((await events(id)).length).toBe(countBefore+1)
   const requestIds=[];let lost=false
   await contexts.WORKER.route(url,async route=>{const d=route.request().postDataJSON();if(d.command==='update_action'){requestIds.push(d.payload.requestId);if(!lost){lost=true;expect((await route.fetch()).status()).toBe(200);return route.abort()}}return route.continue()})
   await card.getByLabel('Status after saving',{exact:true}).selectOption('awaiting_verification');await card.getByLabel('Progress or resolution notes',{exact:true}).fill('SYNTHETIC cover replaced; ready for supervisor')
-  await card.getByRole('button',{name:'Request verification',exact:true}).evaluate(b=>{b.click();b.click()});await expect(card.getByRole('button',{name:'Retry action update',exact:true})).toBeEnabled();expect(requestIds).toHaveLength(1);await card.getByRole('button',{name:'Retry action update',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible();expect(requestIds).toHaveLength(2);expect(requestIds[0]).toBe(requestIds[1]);await contexts.WORKER.unroute(url);expect((await events(id)).length).toBe(countBefore+2)
+  // Programmatic click deliberately tests two immediate taps, but has none of
+  // Playwright click's actionability waits. Prove the control is ready first.
+  const requestButton=card.getByRole('button',{name:'Request verification',exact:true})
+  await expect(requestButton).toBeEnabled()
+  const stateAtDoubleTap=await requestButton.evaluate(b=>{const state={enabled:!b.disabled,valid:b.form.checkValidity()};b.click();b.click();return state})
+  expect(stateAtDoubleTap).toEqual({enabled:true,valid:true})
+  await expect.poll(()=>requestIds.length,{message:'One request must reach the transport before testing its lost response'}).toBe(1)
+  await expect(card.getByRole('button',{name:'Retry action update',exact:true})).toBeEnabled()
+  expect(requestIds).toHaveLength(1)
+  await card.getByRole('button',{name:'Retry action update',exact:true}).click()
+  await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  expect(requestIds).toHaveLength(2);expect(requestIds[0]).toBe(requestIds[1]);await contexts.WORKER.unroute(url);expect((await events(id)).length).toBe(countBefore+2)
   await worker.reload();await expect(card).toContainText('outside the current filter');await expect(card.locator('.action-progress')).toContainText('ready for supervisor');await expect(worker.getByRole('link',{name:'2 Awaiting verification',exact:true})).toBeVisible();await capture(worker,'progress-worker')
   let latest=await current(id)
   const payload={companyId:company,id,revision:latest.revision,requestId:randomUUID(),responsibleId:actors.WORKER.id,controls:latest.controls,targetDate:latest.target_date||'',resolution:latest.resolution,state:'closed'}
