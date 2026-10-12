@@ -30,20 +30,20 @@ No new secrets/services are required. Existing service authority stays server-on
 
 ## Maintenance
 
-`node scripts/operations/maintain-local-storage.mjs --dry-run` inventories at most 10 candidates by default (hard maximum25). `--apply` is deliberately restricted to the existing GitHub Ubuntu disposable Supabase target. Fixed loopback API, Docker container/volume and PostgreSQL system identity are checked before inventory/claims/deletion. Hosted targets are rejected; nothing is scheduled.
+`node scripts/operations/maintain-local-storage.mjs --dry-run` inventories at most 10 candidates by default (hard maximum 25). `--apply` is deliberately restricted to the existing GitHub Ubuntu disposable Supabase target. Fixed loopback API, Docker container/volume and PostgreSQL system identity are checked before inventory/claims/deletion. Hosted targets are rejected; nothing is scheduled.
 
-Pending/unsubmitted photos and pending packages qualify after seven days without recent activity. Explicitly removed photos require15minutes. Abandoned packages remain retryable. Submitted completion references and ready packages are protected. Exclusive120second leases (30second renewals) prevent cleanup during active work. Claims terminally tombstone before deletion, so late uploads cannot publish. Later inventory reclaims late-written bytes. Failed removals leave immutable receipts and remain retryable; touched-candidate ordering avoids starvation.
+Pending/unsubmitted photos and pending packages qualify after seven days without recent activity. Explicitly removed photos require 15 minutes. Abandoned packages remain retryable. Submitted completion references and ready packages are protected. Exclusive 120-second leases (30-second renewals) prevent cleanup during active work. Claims terminally tombstone before deletion, so late uploads cannot publish. Later inventory reclaims late-written bytes. Failed removals leave immutable receipts and remain retryable; touched-candidate ordering avoids starvation.
 
-Default30second work budget, maximum60seconds, bounded calls and separate5second receipt budget. Logs contain IDs/kinds/reasons/outcomes only. A failed or incomplete run is never reported successful. Ambiguous deletes reconcile by guarded repeat removal.
+Default 30-second work budget, maximum 60 seconds, bounded calls and separate five-second receipt budget. Logs contain IDs/kinds/reasons/outcomes only. A failed or incomplete run is never reported successful. Ambiguous deletes reconcile by guarded repeat removal.
 
 ## Verification and evidence distinctions
 
-Tests cover fresh/populated upgrades, actual HTTP/storage interruptions, actual concurrent PostgreSQL transactions, local WebKit recovery and existing report/other-trade regressions. Browser response-loss simulation is separate from real midstream transport faults. Final execution results and CI receipts are recorded after running them; test listing is not execution. No hosted or physical result is implied.
+Tests cover fresh/populated upgrades, actual HTTP/storage interruptions, actual concurrent PostgreSQL transactions, local WebKit recovery and existing report/other-trade regressions. Browser response-loss simulation is separate from real midstream transport faults. Final execution results and CI receipts are recorded after running them; test listing is not execution. No hosted or physical result is implied. The first Linux run passed all seven concurrent database cases and six real transport cases, then caught a mobile checkbox overflow regression. The electrical full-width-input rule was narrowed; the existing layout assertion remains required. Simulated authentication loss removes cookies while retaining device storage; it is not a natural-expiry test.
 
 ## Deployment order ? requires separate approval
 
 1. Review PR #1 and this dependent candidate; both exact-commit jobs must pass.
-2. Verify staging project and migration ledger. Apply only missing parent migrations then004/005 once.
+2. Verify staging project and migration ledger. Apply only missing parent migrations then 004/005 once.
 3. Deploy approved candidate through existing Render staging, preserving Vercel suppression and disabled optional services.
 4. Verify served SHA/project and affected workflows with synthetic accounts. Keep destructive maintenance disabled.
 5. Roll back application only after checking prior code compatibility with abandoned state. Preserve additive schema/tombstones/receipts/evidence. Reconcile pending IDs; never reset them.
