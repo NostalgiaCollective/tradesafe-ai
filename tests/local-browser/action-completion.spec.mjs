@@ -2,7 +2,7 @@ import {test,expect as baseExpect,devices} from '@playwright/test'
 import {createClient} from '@supabase/supabase-js'
 import {randomBytes,randomUUID,createHash} from 'node:crypto'
 import sharp from 'sharp'
-import {mkdirSync} from 'node:fs'
+import {mkdirSync,writeFileSync} from 'node:fs'
 import {API_ORIGIN,APP_ORIGIN,localEnvironment} from '../../scripts/ci/local-environment.mjs'
 import {expectSuccess} from '../../scripts/staging/assertions.mjs'
 import {prepareConcerns} from '../fixtures/concerns.mjs'
@@ -11,10 +11,12 @@ import {emptyElectricalJob} from '../../lib/domain/electrical-job.mjs'
 import {todayInZone} from '../../lib/domain/handover.mjs'
 import {readPackage} from '../fixtures/operations.mjs'
 import {holdClientScripts} from '../fixtures/hold-client-scripts.mjs'
+import {browserFailure} from '../../scripts/ci/browser-failure.mjs'
 const expect=baseExpect.configure({timeout:30000}),hash=b=>createHash('sha256').update(b).digest('hex')
 test('WebKit concern completion: capture, assignment, nonauthor photo retry, supervisor review and retained electrical handover',async({browser})=>{
  localEnvironment({API_URL:process.env.NEXT_PUBLIC_SUPABASE_URL,ANON_KEY:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY})
  const config={auth:{persistSession:false,autoRefreshToken:false}},admin=createClient(API_ORIGIN,process.env.SUPABASE_SERVICE_ROLE_KEY,config),actors={},contexts=[]
+ let phase='setup',failure=null,diagnostic=null,inspectionPage=null,hydrationState=null
  for(const role of ['OWNER','WORKER','SUPERVISOR','OUTSIDER']){
   const credentials={email:'completion-'+role.toLowerCase()+'-'+randomUUID()+'@example.test',password:randomBytes(24).toString('base64url')}
   const {user}=expectSuccess(await admin.auth.admin.createUser({...credentials,email_confirm:true})),client=createClient(API_ORIGIN,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,config)
@@ -31,6 +33,7 @@ test('WebKit concern completion: capture, assignment, nonauthor photo retry, sup
   report=await rpc('OWNER','ts_command','save_report',{id:report.id,revision:report.revision,document:{job:{address:'SYNTHETIC electrical kitchen',client:'SYNTHETIC customer',date},answers}})
   report=await rpc('OWNER','ts_command','finalize',{id:report.id,revision:report.revision,acknowledged:true})
   const original=JSON.stringify((await rows('ts_reports','id',report.id))[0]),worker=await login('WORKER'),supervisor=await login('SUPERVISOR'),owner=await login('OWNER'),outsider=await login('OUTSIDER')
+  phase='concern-capture';inspectionPage=owner
   // The owner records the original concern; the separately assigned worker must
   // evidence the correction without amending or changing that original record.
   await owner.goto(origin+'/sites/'+f.siteId)
@@ -55,6 +58,7 @@ test('WebKit concern completion: capture, assignment, nonauthor photo retry, sup
   mkdirSync('test-results/electrical-release-review',{recursive:true})
   await owner.screenshot({path:'test-results/electrical-release-review/connected-original-concern.png',fullPage:true})
   let action=(await rows('ts_actions','concern_id',concernId))[0]
+  phase='supervisor-assignment';inspectionPage=supervisor
   expect(action.responsible_id).toBe(actors.OWNER.id)
   await supervisor.goto(origin+'/concerns/'+concernId)
   await supervisor.getByRole('link',{name:'Open follow-up action',exact:true}).click()
@@ -68,6 +72,7 @@ test('WebKit concern completion: capture, assignment, nonauthor photo retry, sup
   expect(action.responsible_id).toBe(actors.WORKER.id);expect(action.concern_id).toBe(concernId)
   await supervisor.screenshot({path:'test-results/electrical-release-review/connected-supervisor-assignment.png',fullPage:true})
   const actionUrl=origin+'/actions?'+new URLSearchParams({company:f.company,focus:action.id,status:'all',site:f.siteId}),api=origin+'/api/actions/'+action.id
+  phase='worker-completion';inspectionPage=worker
   await worker.goto(actionUrl);const card=worker.locator('#action-'+action.id)
   await expect(card.getByRole('heading',{name:'Original finding',exact:true})).toBeVisible()
   await expect(card).toContainText('SYNTHETIC kitchen panel label missing at service visit')
@@ -87,24 +92,31 @@ test('WebKit concern completion: capture, assignment, nonauthor photo retry, sup
   const updates=await rows('ts_action_updates','action_id',action.id),photos=await rows('ts_action_photos','action_id',action.id);expect(updates).toHaveLength(1);expect(photos).toHaveLength(1);expect(updates[0].actor_id).toBe(actors.WORKER.id);expect(updates[0].evidence_snapshot[0].id).toBe(photos[0].id);expect((await rows('ts_actions','id',action.id))[0].state).toBe('awaiting_verification')
   const photoUrl=api+'/evidence/'+photos[0].id,retainedPhoto=await(await worker.context().request.get(photoUrl)).body();expect(hash(retainedPhoto)).toBe(photos[0].sha256);expect((await sharp(retainedPhoto).metadata()).exif).toBeUndefined()
   expect((await outsider.context().request.get(photoUrl)).status()).toBe(404)
-  const hydration=await holdClientScripts(worker,origin),reads={history:0,pending:0}
+  phase='hydration-barrier'
+  const hydration=await holdClientScripts(worker,origin),reads={history:0,pending:0};hydrationState={reads,scriptsHeld:0,released:false}
   const countRead=req=>{const url=new URL(req.url());if(req.method()==='GET'&&url.pathname==='/api/actions/'+action.id+'/completion-updates')reads.history++;if(req.method()==='GET'&&url.pathname==='/api/actions/'+action.id+'/evidence'&&url.searchParams.has('pending'))reads.pending++}
   worker.on('request',countRead)
   try{
-   await worker.reload({waitUntil:'commit'});await expect.poll(hydration.count).toBeGreaterThan(0)
+   phase='hydration-reload';await worker.reload({waitUntil:'commit'});await expect.poll(hydration.count).toBeGreaterThan(0);hydrationState.scriptsHeld=hydration.count()
    const history=card.getByText('Recorded completion updates',{exact:true}),pending=card.getByText('Unsubmitted uploads',{exact:true})
-   await history.click();await expect(history.locator('..')).toHaveAttribute('open','')
-   await pending.click();await expect(pending.locator('..')).toHaveAttribute('open','')
+   phase='native-history-open';await history.click();await expect(history.locator('..')).toHaveAttribute('open','')
+   phase='native-pending-open';await pending.click();await expect(pending.locator('..')).toHaveAttribute('open','')
    expect(reads).toEqual({history:0,pending:0})
-   await hydration.release()
+   phase='hydration-release';await hydration.release();hydrationState.released=true
+   phase='hydration-history-result'
    await expect(card.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible()
+   phase='hydration-pending-result'
    await expect(card.getByText('No unsubmitted uploads.',{exact:true})).toBeVisible()
    expect(reads).toEqual({history:1,pending:1})
-  }finally{await hydration.release();worker.off('request',countRead)}
+  }catch(error){failure=error;throw error}finally{
+   try{await hydration.release()}catch(error){if(!failure)throw error}finally{worker.off('request',countRead)}
+  }
   expect(await worker.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  phase='supervisor-verification';inspectionPage=supervisor
   await supervisor.goto(actionUrl);const review=supervisor.locator('#action-'+action.id);await review.getByText('Recorded completion updates',{exact:true}).click();await expect(review.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible();await review.getByLabel('Status after saving',{exact:true}).selectOption('closed');await review.getByRole('button',{name:'Verify and close',exact:true}).click();await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
   expect((await rows('ts_actions','id',action.id))[0].verified_by).toBe(actors.SUPERVISOR.id)
   // Bounded PDF preparation remains separate from package generation.
+  phase='owner-handover';inspectionPage=owner
   const packageUrl=origin+'/api/sites/'+f.siteId+'/package',range=new URLSearchParams({start:date,end:date,timezone:'America/Toronto'})
   const preparation=await owner.context().request.get(packageUrl+'?'+range);expect(preparation.status()).toBe(200);expect(JSON.stringify(await preparation.json())).toContain(report.id)
   const pdfResponse=await owner.context().request.post(origin+'/api/reports/'+report.id+'/exports',{headers:{origin,'X-Expected-Actor':actors.OWNER.id},timeout:90000});expect(pdfResponse.status()).toBe(200);const pdf=await pdfResponse.json(),pdfBytes=await(await owner.context().request.get(origin+pdf.download)).body()
@@ -115,6 +127,15 @@ test('WebKit concern completion: capture, assignment, nonauthor photo retry, sup
   expect(JSON.stringify(parsed.records)).toContain(concernId);expect(JSON.stringify(parsed.records)).toContain(originalPhotos[0].id);expect(Object.values(parsed.files).some(b=>b.equals(originalPhotoBytes))).toBe(true)
   expect(parsed.files['reports/'+report.id+'.pdf']).toEqual(pdfBytes);expect(JSON.stringify(parsed.records)).toContain(updates[0].id);expect(JSON.stringify(parsed.records)).toContain('SYNTHETIC label corrected');expect(Object.values(parsed.files).some(b=>b.equals(retainedPhoto))).toBe(true);expect(Object.values(parsed.files).some(b=>b.toString().includes('SYNTHETIC kitchen circuit completion'))).toBe(true)
   action=(await rows('ts_actions','id',action.id))[0];await rpc('SUPERVISOR','ts_command','update_action',{id:action.id,revision:action.revision,state:'open',responsibleId:action.responsible_id,targetDate:'',priority:action.priority,controls:action.controls,resolution:'SYNTHETIC new review question'})
+  phase='retained-integrity'
   const again=await owner.context().request.get(packageUrl+'?generation='+generation);expect(again.status()).toBe(200);expect(await again.body()).toEqual(archive);expect(JSON.stringify((await rows('ts_reports','id',report.id))[0])).toBe(original);expect(await rows('ts_action_updates','action_id',action.id)).toEqual(updates);expect(hash(await(await owner.context().request.get(photoUrl)).body())).toBe(photos[0].sha256);expect((await rows('ts_concerns','id',concernId))[0]).toEqual(originalConcern);expect(await rows('ts_concern_photos','concern_id',concernId)).toEqual(originalPhotos);expect(hash(await(await owner.context().request.get(originalPhotoUrl)).body())).toBe(originalPhotos[0].sha256);expect(await(await owner.context().request.get(origin+pdf.download)).body()).toEqual(pdfBytes)
- }finally{for(const c of contexts)await c.close()}
+ }catch(error){
+  failure=error;diagnostic={phase,failure:browserFailure(error),operation:(error.message||'').match(/^(?:page|locator|route|browserContext)\.[A-Za-z]+/)?.[0]||'assertion',hydration:hydrationState}
+  try{diagnostic.render=await inspectionPage?.evaluate(()=>({ready:document.readyState,panels:Array.from(document.querySelectorAll('.action-evidence details')).filter(e=>['Recorded completion updates','Unsubmitted uploads'].includes(e.querySelector('summary')?.textContent)).map(e=>({history:e.querySelector('summary')?.textContent==='Recorded completion updates',open:e.open,links:e.querySelectorAll('a').length,alerts:e.querySelectorAll('[role=alert]').length,loading:!!e.querySelector('[role=status]')}))}))}catch{diagnostic.render={unavailable:true}}
+  throw error
+ }finally{
+  const cleanup=await Promise.allSettled(contexts.map(c=>c.close())),failed=cleanup.filter(r=>r.status==='rejected')
+  if(diagnostic||failed.length){mkdirSync('test-results',{recursive:true});writeFileSync('test-results/action-completion-stage.json',JSON.stringify({...diagnostic,phase,cleanup:failed.map(r=>browserFailure(r.reason))}))}
+  if(!failure&&failed.length)throw failed[0].reason
+ }
 })
