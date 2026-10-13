@@ -14,6 +14,7 @@ const expect=baseExpect.configure({timeout:30000}),hash=b=>createHash('sha256').
 test('WebKit device recovery: electrical text, missing photo selection, exact completion receipt and retained package after reopening',async({browser})=>{
  localEnvironment({API_URL:process.env.NEXT_PUBLIC_SUPABASE_URL,ANON_KEY:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY})
  const config={auth:{persistSession:false,autoRefreshToken:false}},admin=createClient(API_ORIGIN,process.env.SUPABASE_SERVICE_ROLE_KEY,config),actors={},contexts=[]
+ let releaseReceiptRefresh=()=>{},receiptRefreshTask=null,receiptRefreshFailure=null,primaryFailure=null
  for(const role of ['OWNER','WORKER','SUPERVISOR','OUTSIDER']){
   const credentials={email:'completion-'+role.toLowerCase()+'-'+randomUUID()+'@example.test',password:randomBytes(24).toString('base64url')}
   const {user}=expectSuccess(await admin.auth.admin.createUser({...credentials,email_confirm:true})),client=createClient(API_ORIGIN,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,config)
@@ -70,12 +71,42 @@ test('WebKit device recovery: electrical text, missing photo selection, exact co
   const packageUrl=origin+'/api/sites/'+f.siteId+'/package',range=new URLSearchParams({start:date,end:date,timezone:'America/Toronto'})
   const preparation=await owner.context().request.get(packageUrl+'?'+range);expect(preparation.status()).toBe(200);expect(JSON.stringify(await preparation.json())).toContain(report.id)
   const pdfResponse=await owner.context().request.post(origin+'/api/reports/'+report.id+'/exports',{headers:{origin,'X-Expected-Actor':actors.OWNER.id},timeout:90000});expect(pdfResponse.status()).toBe(200);const pdf=await pdfResponse.json(),pdfBytes=await(await owner.context().request.get(origin+pdf.download)).body()
-  let generation=null,packageLost=false;const generations=[]
-  await owner.context().route(packageUrl+'?*',async r=>{if(r.request().method()==='POST'){const id=new URL(r.request().url()).searchParams.get('generation');generations.push(id);if(!packageLost){packageLost=true;generation=id;const committed=await r.fetch({timeout:120000});expect(committed.status()).toBe(200);expect(committed.headers()['x-package-id']).toBe(id);return r.abort()}}return r.continue()})
+  let generation=null,packageLost=false,receiptRefreshHeld=false;const generations=[]
+  const receiptRefreshReleased=new Promise(resolve=>{releaseReceiptRefresh=resolve})
+  await owner.context().route(packageUrl+'?*',async r=>{
+   if(r.request().method()==='POST'){const id=new URL(r.request().url()).searchParams.get('generation');generations.push(id);if(!packageLost){packageLost=true;generation=id;const committed=await r.fetch({timeout:120000});expect(committed.status()).toBe(200);expect(committed.headers()['x-package-id']).toBe(id);return r.abort()}}
+   // The package has already downloaded. Hold its real receipt-list response,
+   // then lose that response to prove receipt refresh is a separate operation.
+   if(r.request().method()==='GET'&&generations.length===2&&!new URL(r.request().url()).searchParams.has('generation')&&!receiptRefreshTask){
+    receiptRefreshTask=(async()=>{const response=await r.fetch();expect(response.status()).toBe(200);receiptRefreshHeld=true;await receiptRefreshReleased;await r.abort()})().catch(error=>{receiptRefreshFailure=error})
+    await receiptRefreshTask;return
+   }
+   return r.continue()
+  })
   await owner.goto(origin+'/sites/'+f.siteId);const panel=owner.getByRole('region',{name:'Evidence package',exact:true});await panel.getByLabel('Package from',{exact:true}).fill(date);await panel.getByLabel('Package through',{exact:true}).fill(date);await panel.getByLabel('Keep unfinished text on this device',{exact:true}).check();await panel.getByRole('button',{name:'Download evidence package',exact:true}).click();await expect(panel.getByRole('button',{name:'Retry evidence package',exact:true})).toBeEnabled()
-  await owner.reload();await expect(panel.getByRole('heading',{name:'Review device work',exact:true})).toBeVisible();await panel.getByRole('button',{name:'Resume device work',exact:true}).click();const downloadPromise=owner.waitForEvent('download');await panel.getByRole('button',{name:'Retry evidence package',exact:true}).click();const download=await downloadPromise,stream=await download.createReadStream(),chunks=[];for await(const chunk of stream)chunks.push(chunk);const archive=Buffer.concat(chunks),parsed=readPackage(archive);expect(generations).toEqual([generation,generation]);await owner.context().unroute(packageUrl+'?*');await capture(owner,'owner-retained-evidence-package')
+  await owner.reload();await expect(panel.getByRole('heading',{name:'Review device work',exact:true})).toBeVisible();await panel.getByRole('button',{name:'Resume device work',exact:true}).click();const downloadPromise=owner.waitForEvent('download');await panel.getByRole('button',{name:'Retry evidence package',exact:true}).click();const download=await downloadPromise,stream=await download.createReadStream(),chunks=[];for await(const chunk of stream)chunks.push(chunk);const archive=Buffer.concat(chunks),parsed=readPackage(archive);expect(generations).toEqual([generation,generation])
+  await expect.poll(()=>receiptRefreshHeld).toBe(true)
+  const received=panel.getByRole('status').filter({hasText:'Complete package received; download requested.'})
+  await expect(received).toBeVisible()
+  await expect(panel.getByRole('button',{name:'Refreshing retained packages…',exact:true})).toBeDisabled()
+  await expect(panel.getByRole('status').filter({hasText:'Refreshing the retained package list.'})).toBeVisible()
+  await expect(panel.getByRole('button',{name:'Preparing evidence package…',exact:true})).toHaveCount(0)
+  await expect(panel.getByRole('status').filter({hasText:'Preparing and checking the requested files.'})).toHaveCount(0)
+  await capture(owner,'owner-package-receipt-refresh')
+  releaseReceiptRefresh();await receiptRefreshTask;if(receiptRefreshFailure)throw receiptRefreshFailure
+  await expect(panel.getByRole('alert')).toContainText('The package was received, but the retained list could not refresh.')
+  await expect(received).toBeVisible()
+  await panel.getByText('Retained packages',{exact:true}).click()
+  await panel.getByRole('button',{name:'Find retained packages',exact:true}).click()
+  await expect(panel.getByRole('link',{name:'Download generation '+generation,exact:true})).toBeVisible()
+  await expect(received).toBeVisible();expect(generations).toEqual([generation,generation])
+  await owner.context().unroute(packageUrl+'?*');await capture(owner,'owner-retained-evidence-package')
   expect(parsed.files['reports/'+report.id+'.pdf']).toEqual(pdfBytes);expect(JSON.stringify(parsed.records)).toContain(updates[0].id);expect(JSON.stringify(parsed.records)).toContain('SYNTHETIC label corrected');expect(Object.values(parsed.files).some(b=>b.equals(retainedPhoto))).toBe(true);expect(Object.values(parsed.files).some(b=>b.toString().includes('SYNTHETIC unsent electrical recovery'))).toBe(true)
   action=(await rows('ts_actions','id',action.id))[0];await rpc('SUPERVISOR','ts_command','update_action',{id:action.id,revision:action.revision,state:'open',responsibleId:action.responsible_id,targetDate:'',priority:action.priority,controls:action.controls,resolution:'SYNTHETIC new review question'})
   const again=await owner.context().request.get(packageUrl+'?generation='+generation);expect(again.status()).toBe(200);expect(await again.body()).toEqual(archive);expect(JSON.stringify((await rows('ts_reports','id',report.id))[0])).toBe(original);expect(await rows('ts_action_updates','action_id',action.id)).toEqual(updates);expect(hash(await(await owner.context().request.get(photoUrl)).body())).toBe(photos[0].sha256)
- }finally{for(const c of contexts)await c.close()}
+ }catch(error){primaryFailure=error;throw error}finally{
+  releaseReceiptRefresh();await receiptRefreshTask
+  const cleanup=await Promise.allSettled(contexts.map(c=>c.close())),failed=cleanup.find(result=>result.status==='rejected')
+  if(!primaryFailure){if(receiptRefreshFailure)throw receiptRefreshFailure;if(failed)throw failed.reason}
+ }
 })
