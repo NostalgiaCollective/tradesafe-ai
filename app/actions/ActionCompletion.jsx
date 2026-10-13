@@ -1,5 +1,5 @@
 'use client'
-import {useContext,useEffect,useRef,useState} from 'react'
+import {useCallback,useContext,useEffect,useRef,useState} from 'react'
 import {DemoSessionContext} from '@/app/components/DeviceAccount'
 import {useDeviceOperation} from '@/lib/client/useDeviceOperation'
 import DeviceOperation from '@/app/components/DeviceOperation'
@@ -11,6 +11,7 @@ export default function ActionCompletion({action,actor,members,editable,disabled
  const demo=useContext(DemoSessionContext)
  const [notes,setNotes]=useState(''),[state,setState]=useState('in_progress'),[photos,setPhotos]=useState([]),[file,setFile]=useState(null),[caption,setCaption]=useState(''),[busy,setBusy]=useState(''),[message,setMessage]=useState(''),[error,setError]=useState(null),[uncertain,setUncertain]=useState(false),[history,setHistory]=useState(null),[historyError,setHistoryError]=useState(''),[historyBusy,setHistoryBusy]=useState(false),[page,setPage]=useState(0),[pendingPhotos,setPendingPhotos]=useState(null),[pendingError,setPendingError]=useState(''),[pendingBusy,setPendingBusy]=useState(false)
  const batch=useRef(null),upload=useRef(null),submission=useRef(null),lock=useRef(false),fileInput=useRef(null),historySequence=useRef(0)
+ const historyDetails=useRef(null),pendingDetails=useRef(null),historyStarted=useRef(false),pendingStarted=useRef(false)
  const recoveryValue=()=>({notes,state,caption,photos,batch:batch.current,upload:upload.current?{id:upload.current.id,caption:upload.current.caption}:null,submission:submission.current})
  const device=useDeviceOperation({kind:'action',id:action.id,company:action.company_id,siteId:action.site_id,actor,value:recoveryValue(),revision:batch.current?.revision||action.revision,dirty:Boolean(notes||caption||file||photos.length||submission.current),engaged:active,onRestore:restoreDevice})
  const dirty=Boolean(notes||caption||file||photos.length||uncertain),blocked=blockedCodes.includes(error?.code)
@@ -34,10 +35,11 @@ export default function ActionCompletion({action,actor,members,editable,disabled
  useEffect(()=>{onStatus?.(holdMessage);return()=>onStatus?.('')},[holdMessage,onStatus])
  const headers=()=>({'X-Expected-Actor':actor}),base='/api/actions/'+action.id
  const ensureBatch=()=>batch.current||=( {id:crypto.randomUUID(),revision:action.revision} )
- async function loadHistory(nextPage=0){
+ const loadHistory=useCallback(async(nextPage=0)=>{
+  historyStarted.current=true
   const sequence=++historySequence.current;setHistoryBusy(true);setHistoryError('')
   try{const value=await request(base+'/completion-updates?page='+nextPage);if(sequence===historySequence.current){setHistory(value);setPage(nextPage)}}catch(e){if(sequence===historySequence.current)setHistoryError(e.message)}finally{if(sequence===historySequence.current)setHistoryBusy(false)}
- }
+ },[base])
  async function uploadPhoto(){
   if(lock.current||device.hold||disabled||!file||!caption.trim()||blocked||uncertain)return
   lock.current=true;setBusy('upload');setError(null);setMessage('')
@@ -54,9 +56,13 @@ export default function ActionCompletion({action,actor,members,editable,disabled
   try{const value=await request(base+'/evidence/reconcile',{method:'POST',headers:{...headers(),'X-Update-Id':batch.current.id}});setPhotos(value.results.filter(p=>p.state==='ready'));const recovered=value.results.some(p=>p.id===upload.current?.id&&p.state==='ready');if(recovered){upload.current=null;setFile(null);setCaption('');if(fileInput.current)fileInput.current.value=''}setMessage(value.results.some(p=>p.state==='pending')?'An upload is incomplete. Retry the same selected photo, or remove it before submitting.':'Uploaded photos checked with the server. They are not a saved completion update until you submit below.')
   }catch(e){setError(e)}finally{lock.current=false;setBusy('')}
  }
- async function loadPending(){
+ const loadPending=useCallback(async()=>{
+  pendingStarted.current=true
   setPendingBusy(true);setPendingError('');try{setPendingPhotos(await request(base+'/evidence?pending=1'))}catch(e){setPendingError(e.message)}finally{setPendingBusy(false)}
- }
+ },[base])
+ // Native details can open before React attaches onToggle. Reconcile that DOM
+ // state once handlers mount; otherwise the visible panel stays empty forever.
+ useEffect(()=>{if(historyDetails.current?.open&&!historyStarted.current)void loadHistory();if(pendingDetails.current?.open&&!pendingStarted.current)void loadPending()},[loadHistory,loadPending])
  async function removePhoto(id,updateId=batch.current?.id){
   if(lock.current||uncertain)return;lock.current=true;setBusy('remove');setError(null)
   try{await request(base+'/evidence/'+id,{method:'DELETE',headers:{...headers(),'X-Update-Id':updateId}});setPhotos(rows=>rows.filter(p=>p.id!==id));if(upload.current?.id===id){upload.current=null;setFile(null);setCaption('');if(fileInput.current)fileInput.current.value=''}setMessage('Unsubmitted photo removed. Retained completion updates are unchanged.');if(pendingPhotos)void loadPending()}catch(e){setError(e)}finally{lock.current=false;setBusy('')}
@@ -96,8 +102,8 @@ export default function ActionCompletion({action,actor,members,editable,disabled
  </form>}
  {busy&&<p role="status">{busy==='upload'?'Uploading completion photo - ':busy==='save'?'Saving completion update - ':'Checking with the server - '}</p>}
  {message&&<p role="status">{message}</p>}{error&&<div role="alert"><p>{error.code==='evidence_pending'?'A completion photo is still incomplete. Retry or remove that upload before saving this update.':error.code==='evidence_missing'?'A completion photo is missing or failed its integrity check. Your notes remain here. Retry the photo or ask your supervisor to review the evidence.':error.code==='evidence_limit'?'This update has reached 10 photos or the action has reached its retained-photo limit. Remove an unsubmitted photo, or ask your supervisor to review the record.':error.code==='immutable'?'The action or completion record is no longer editable. Your current notes remain here.':error.message}</p>{blocked?<><p>Your current notes remain here. Compare the latest action before reconciling your changes. A stale update cannot overwrite it.</p><a href={returnTo} target="_blank" rel="noopener noreferrer">Open latest saved action</a></>:['unauthorized','account_changed'].includes(error.code)&&<a href={demo?'/demo':'/auth/login?'+new URLSearchParams({redirect:returnTo})} target="_blank" rel="noopener noreferrer">Sign in in another tab</a>}</div>}
- <details onToggle={e=>{if(e.currentTarget.open&&pendingPhotos===null&&!pendingBusy)void loadPending()}}><summary>Unsubmitted uploads</summary><p>These photos are not part of a retained completion update. Do not remove an upload another visitor is still using. Removal is permanent; it does not change submitted evidence.</p>{pendingBusy&&<p role="status">Loading unsubmitted uploads...</p>}{pendingError&&<div role="alert"><p>{pendingError}</p><button type="button" onClick={loadPending}>Retry unsubmitted uploads</button></div>}{pendingPhotos&&!pendingBusy&&!pendingError&&(pendingPhotos.length?<ul>{pendingPhotos.map(p=><li key={p.id}><p>{p.caption} - {p.state==='ready'?'Uploaded, not submitted':'Incomplete upload'} - {p.uploader_label||name(p.uploader_id)} - {new Date(p.reserved_at).toLocaleString('en-CA')}</p><button type="button" disabled={Boolean(busy)||uncertain} onClick={()=>{if(window.confirm('Remove this unsubmitted photo? It cannot be restored.'))void removePhoto(p.id,p.update_id)}}>Remove unsubmitted upload</button></li>)}</ul>:<p>No unsubmitted uploads.</p>)}</details>
- <details onToggle={e=>{if(e.currentTarget.open&&history===null&&!historyBusy)void loadHistory()}}><summary>Recorded completion updates</summary>
+ <details ref={pendingDetails} onToggle={e=>{if(e.currentTarget.open&&!pendingStarted.current)void loadPending()}}><summary>Unsubmitted uploads</summary><p>These photos are not part of a retained completion update. Do not remove an upload another visitor is still using. Removal is permanent; it does not change submitted evidence.</p>{pendingBusy&&<p role="status">Loading unsubmitted uploads...</p>}{pendingError&&<div role="alert"><p>{pendingError}</p><button type="button" onClick={loadPending}>Retry unsubmitted uploads</button></div>}{pendingPhotos&&!pendingBusy&&!pendingError&&(pendingPhotos.length?<ul>{pendingPhotos.map(p=><li key={p.id}><p>{p.caption} - {p.state==='ready'?'Uploaded, not submitted':'Incomplete upload'} - {p.uploader_label||name(p.uploader_id)} - {new Date(p.reserved_at).toLocaleString('en-CA')}</p><button type="button" disabled={Boolean(busy)||uncertain} onClick={()=>{if(window.confirm('Remove this unsubmitted photo? It cannot be restored.'))void removePhoto(p.id,p.update_id)}}>Remove unsubmitted upload</button></li>)}</ul>:<p>No unsubmitted uploads.</p>)}</details>
+ <details ref={historyDetails} onToggle={e=>{if(e.currentTarget.open&&!historyStarted.current)void loadHistory()}}><summary>Recorded completion updates</summary>
  {historyBusy&&<p role="status">Loading completion updates - </p>}{historyError&&<div role="alert"><p>{historyError}</p><button type="button" onClick={()=>loadHistory(page)}>Retry completion history</button></div>}
  {history&&!historyBusy&&!historyError&&<>{history.updates.length?<ol>{history.updates.map(u=><li key={u.id}><strong>{u.state==='awaiting_verification'?'Submitted for supervisor review':'Progress recorded'}</strong><p>{u.actor_label||name(u.actor_id)}  -  {new Date(u.recorded_at).toLocaleString('en-CA')}  -  action revision {u.submitted_revision}</p><p>{u.notes}</p>{u.evidence_snapshot.length>0&&<ul>{u.evidence_snapshot.map(p=><li key={p.id}><a href={base+'/evidence/'+p.id} target="_blank" rel="noopener noreferrer">Completion photo: {p.caption}</a></li>)}</ul>}<p>This records the update at submission. Current verification and reopening decisions are in Action history.</p></li>)}</ol>:<p>No retained completion updates recorded.</p>}<nav aria-label="Completion history pages">{page>0&&<button type="button" onClick={()=>loadHistory(page-1)}>Newer completion updates</button>}{history.hasMore&&<button type="button" onClick={()=>loadHistory(page+1)}>Older completion updates</button>}</nav></>}
  </details></section>

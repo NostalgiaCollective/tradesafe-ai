@@ -10,6 +10,7 @@ import {getTemplate,buildChecklistState} from '../../lib/domain/templates.ts'
 import {emptyElectricalJob} from '../../lib/domain/electrical-job.mjs'
 import {todayInZone} from '../../lib/domain/handover.mjs'
 import {readPackage} from '../fixtures/operations.mjs'
+import {holdClientScripts} from '../fixtures/hold-client-scripts.mjs'
 const expect=baseExpect.configure({timeout:30000}),hash=b=>createHash('sha256').update(b).digest('hex')
 test('WebKit concern completion: capture, assignment, nonauthor photo retry, supervisor review and retained electrical handover',async({browser})=>{
  localEnvironment({API_URL:process.env.NEXT_PUBLIC_SUPABASE_URL,ANON_KEY:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY})
@@ -86,7 +87,21 @@ test('WebKit concern completion: capture, assignment, nonauthor photo retry, sup
   const updates=await rows('ts_action_updates','action_id',action.id),photos=await rows('ts_action_photos','action_id',action.id);expect(updates).toHaveLength(1);expect(photos).toHaveLength(1);expect(updates[0].actor_id).toBe(actors.WORKER.id);expect(updates[0].evidence_snapshot[0].id).toBe(photos[0].id);expect((await rows('ts_actions','id',action.id))[0].state).toBe('awaiting_verification')
   const photoUrl=api+'/evidence/'+photos[0].id,retainedPhoto=await(await worker.context().request.get(photoUrl)).body();expect(hash(retainedPhoto)).toBe(photos[0].sha256);expect((await sharp(retainedPhoto).metadata()).exif).toBeUndefined()
   expect((await outsider.context().request.get(photoUrl)).status()).toBe(404)
-  await worker.reload();await card.getByText('Recorded completion updates',{exact:true}).click();await expect(card.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible();expect(await worker.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  const hydration=await holdClientScripts(worker,origin),reads={history:0,pending:0}
+  const countRead=req=>{const url=new URL(req.url());if(req.method()==='GET'&&url.pathname==='/api/actions/'+action.id+'/completion-updates')reads.history++;if(req.method()==='GET'&&url.pathname==='/api/actions/'+action.id+'/evidence'&&url.searchParams.has('pending'))reads.pending++}
+  worker.on('request',countRead)
+  try{
+   await worker.reload({waitUntil:'commit'});await expect.poll(hydration.count).toBeGreaterThan(0)
+   const history=card.getByText('Recorded completion updates',{exact:true}),pending=card.getByText('Unsubmitted uploads',{exact:true})
+   await history.click();await expect(history.locator('..')).toHaveAttribute('open','')
+   await pending.click();await expect(pending.locator('..')).toHaveAttribute('open','')
+   expect(reads).toEqual({history:0,pending:0})
+   await hydration.release()
+   await expect(card.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible()
+   await expect(card.getByText('No unsubmitted uploads.',{exact:true})).toBeVisible()
+   expect(reads).toEqual({history:1,pending:1})
+  }finally{await hydration.release();worker.off('request',countRead)}
+  expect(await worker.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
   await supervisor.goto(actionUrl);const review=supervisor.locator('#action-'+action.id);await review.getByText('Recorded completion updates',{exact:true}).click();await expect(review.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible();await review.getByLabel('Status after saving',{exact:true}).selectOption('closed');await review.getByRole('button',{name:'Verify and close',exact:true}).click();await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
   expect((await rows('ts_actions','id',action.id))[0].verified_by).toBe(actors.SUPERVISOR.id)
   // Bounded PDF preparation remains separate from package generation.

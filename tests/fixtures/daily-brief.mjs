@@ -1,4 +1,5 @@
 import {navigationDiagnostic} from './navigation-diagnostic.mjs'
+import {holdClientScripts} from './hold-client-scripts.mjs'
 import {mkdirSync,writeFileSync} from 'node:fs'
 import {expect as baseExpect} from '@playwright/test'
 import {randomUUID,randomBytes} from 'node:crypto'
@@ -36,6 +37,19 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await worker.keyboard.press('Tab');await expect(worker.getByLabel('Work date',{exact:true})).toBeFocused()
   expect(await worker.getByLabel('Work date',{exact:true}).evaluate(e=>getComputedStyle(e).outlineStyle)).toBe('solid')
   await worker.getByRole('button',{name:'Continue',exact:true}).click();await expect(worker.locator('#brief-step')).toBeFocused()
+  // Crew controls must remain disabled until the actual client handlers attach.
+  // Opening a slow-loading page must not accept selections and then erase them.
+  stage='crew-hydration'
+  const hydration=await holdClientScripts(worker,origin)
+  try{
+   await worker.reload({waitUntil:'commit'});await expect.poll(hydration.count).toBeGreaterThan(0)
+   await expect(worker.getByLabel('Today’s work',{exact:true})).toBeVisible()
+   await expect(worker.getByLabel('Today’s work',{exact:true})).toBeDisabled()
+   const serverCrew=worker.locator('.brief-journey .work-fieldset input[type=checkbox]')
+   expect(await serverCrew.count()).toBeGreaterThan(0)
+   for(const checkbox of await serverCrew.all())await expect(checkbox).toBeDisabled()
+   await hydration.release();await expect(worker.getByLabel('Today’s work',{exact:true})).toBeEditable()
+  }finally{await hydration.release()}
   // Keep the first real save response in flight while selecting crew. Inputs must
   // remain usable, and that older response must not erase the later selections.
   stage='crew-save-barrier';crewPage=worker
