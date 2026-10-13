@@ -1,3 +1,4 @@
+import {signInDemo} from '../lib/client/demo-login.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {randomBytes} from 'node:crypto'
@@ -27,4 +28,14 @@ test('demo login caps parallel/global attempts and streamed body size',async()=>
  const take=demoLimiter(),one=take(),two=take();assert.equal(take(),null);one();one();two();for(let i=0;i<17;i++){const r=take();assert.ok(r);r()}assert.equal(take(),null)
  const req=value=>new Request('http://localhost/api/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)})
  assert.equal((await demoBody(req({login:'demo'}))).login,'demo');await assert.rejects(()=>demoBody(req({value:'x'.repeat(1025)})));await assert.rejects(()=>demoBody(req([])))
+})
+
+test('demo client preserves actionable failures, aborts slow login and only accepts its job destination',async()=>{
+ const next='/sites/33333333-3333-4333-8333-333333333333/electrical';
+ const fetcher=async(url,init)=>{assert.equal(url,'/api/demo');assert.equal(init.cache,'no-store');assert.ok(init.signal);return Response.json({next})};
+ assert.equal(await signInDemo('demo','synthetic',{fetcher}),next);
+ await assert.rejects(signInDemo('demo','wrong',{fetcher:async()=>Response.json({error:'Check the supplied demo passphrase.'},{status:401})}),/Check the supplied/);
+ await assert.rejects(signInDemo('demo','synthetic',{fetcher:async()=>new Response('bad response')}),/unreadable response/);
+ await assert.rejects(signInDemo('demo','synthetic',{fetcher:async()=>Response.json({next:'https://unrelated.invalid'})}),/valid job/);
+ await assert.rejects(signInDemo('demo','synthetic',{timeoutMs:5,fetcher:async(_url,init)=>new Promise((_,reject)=>init.signal.addEventListener('abort',()=>reject(Error('aborted'))))}),/took too long/);
 })

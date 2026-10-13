@@ -73,6 +73,7 @@ test('WebKit sign-in, captured local confirmation, company setup and draft reloa
   await expect(page.getByRole('heading', { name: 'Start a report', exact: true })).toBeVisible()
   companyId = expectSuccess(await owner.from('ts_members').select('company_id').single()).company_id
   await login(page) // Actual password sign-in, independently of callback success.
+  const deferred=await page.request.post('/api/analyze-photo',{data:{}});expect(deferred.status()).toBe(503);expect((await deferred.json()).code).toBe('analysis_deferred')
   await page.goto('/report/new?company=' + companyId)
   await page.getByRole('button', { name: 'Create saved draft', exact: true }).click()
   await page.waitForURL(/\/report\/[a-f0-9-]{36}$/)

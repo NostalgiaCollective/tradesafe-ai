@@ -5,7 +5,14 @@ import {createClient} from '@supabase/supabase-js'
 import {APP_ORIGIN} from '../../scripts/ci/local-environment.mjs'
 test('WebKit phone demo: fresh entry, saved edits, stale visitors, private sample evidence and restricted access',async({browser})=>{
  const f=JSON.parse(readFileSync('.ci-local/phone-demo.json','utf8')),contexts=[]
- async function visitor(){const c=await browser.newContext({baseURL:APP_ORIGIN,viewport:{width:390,height:844}});contexts.push(c);const p=await c.newPage();await p.goto('/demo');await p.getByLabel('Demo login',{exact:true}).fill(f.login);await p.getByLabel('Demo passphrase',{exact:true}).fill(f.passphrase);await p.getByRole('button',{name:'Open demo job'}).click();await p.waitForURL('**/sites/'+f.site+'/electrical');await expect(p.getByRole('heading',{name:'Electrical job',exact:true})).toBeVisible();return p}
+ async function visitor(){const c=await browser.newContext({baseURL:APP_ORIGIN,viewport:{width:390,height:844}});contexts.push(c);const p=await c.newPage();await p.goto('/demo');
+  if(contexts.length===1){
+   const field=p.getByLabel('Demo login',{exact:true});await field.fill('wrong');await p.getByLabel('Demo passphrase',{exact:true}).fill('synthetic wrong passphrase');
+   await field.focus();await expect(field).toBeFocused();expect(await field.evaluate(e=>parseFloat(getComputedStyle(e).minHeight))).toBeGreaterThanOrEqual(48);
+   await p.getByRole('button',{name:'Open demo job'}).click();await expect(p.locator('#demo-error')).toHaveAttribute('role','alert');await expect(p.locator('#demo-error')).toContainText('Check the demo login');await expect(field).toHaveValue('wrong');
+   expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  }
+  await p.getByLabel('Demo login',{exact:true}).fill(f.login);await p.getByLabel('Demo passphrase',{exact:true}).fill(f.passphrase);await p.getByRole('button',{name:'Open demo job'}).click();await p.waitForURL('**/sites/'+f.site+'/electrical');await expect(p.getByRole('heading',{name:'Electrical job',exact:true})).toBeVisible();return p}
  const raw=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
  await raw.auth.signInWithPassword({email:f.email,password:f.password})
  const coordinator=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})

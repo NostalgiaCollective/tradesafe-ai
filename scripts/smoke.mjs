@@ -41,7 +41,7 @@ try {
     assert.match(await response.text(), /setup|configured/i, path + ' explains unavailable configuration')
     checks++
   }
-  for (const path of ['/dashboard', '/report/new', '/report/11111111-1111-4111-8111-111111111111', '/settings', '/actions', '/reports']) {
+  for (const path of ['/dashboard', '/report/new', '/report/11111111-1111-4111-8111-111111111111', '/settings', '/actions', '/reports', '/sites', '/briefs', '/brief-content', '/concerns/new', '/my-work', '/device-drafts', '/help']) {
     const response = await request(path)
     assert.equal(response.status, 503, path)
     assert.match(response.headers.get('cache-control'), /no-store/)

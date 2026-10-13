@@ -1,82 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { authenticatedClient } from '@/lib/server/auth'
-import { requireService } from '@/lib/server/config'
 import { AppError, errorResponse } from '@/lib/domain/errors'
-import { isTrade } from '@/lib/domain/templates'
 
-import { photoReviewPrompt } from '@/lib/domain/photo-instructions'
-
-export async function POST(request) {
+// The legacy endpoint has no supported pilot workflow. It must never send evidence
+// to an AI provider or consume credits. Reintroduction requires a separate review.
+export async function POST() {
   try {
     await authenticatedClient()
-    requireService('anthropic')
-    let formData
-    try { formData = await request.formData() }
-    catch { throw new AppError('invalid_request') }
-    const file = formData.get('photo')
-    const trade = formData.get('trade')
-
-    if (!(file instanceof File) || !trade) {
-      throw new AppError('invalid_request')
-    }
-
-    if (!isTrade(trade)) {
-      throw new AppError('invalid_request')
-    }
-
-    if (file.size > 10 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) throw new AppError('invalid_request')
-
-    // Convert file to base64
-    const bytes = await file.arrayBuffer()
-    const base64 = Buffer.from(bytes).toString('base64')
-
-    // Determine media type
-    const mimeType = file.type || 'image/jpeg'
-
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mimeType,
-                data: base64,
-              },
-            },
-            {
-              type: 'text',
-              text: photoReviewPrompt(trade),
-            },
-          ],
-        },
-      ],
-    })
-
-    const text = response.content[0]?.text
-    if (typeof text !== 'string' || !text.trim()) throw new AppError('unavailable')
-    // Parse the JSON array from Claude's response
-    let observations
-    try {
-      // Handle case where Claude wraps in markdown code block
-      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      observations = JSON.parse(cleaned)
-    } catch {
-      // Fallback: split by newlines if JSON parsing fails
-      observations = text
-        .split('\n')
-        .map((line) => line.replace(/^[-*\d.]+\s*/, '').trim())
-        .filter(Boolean)
-        .slice(0, 6)
-    }
-
-    if (!Array.isArray(observations) || observations.some(item => typeof item !== 'string')) throw new AppError('unavailable')
-    return Response.json({ observations: observations.slice(0, 6).map(item => item.slice(0, 1000)) }, { headers: { 'Cache-Control': 'no-store' } })
+    throw new AppError('analysis_deferred')
   } catch (error) { return errorResponse(error) }
 }

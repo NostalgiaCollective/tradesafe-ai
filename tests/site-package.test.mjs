@@ -13,3 +13,8 @@ test('package manifest removes internal paths and request identifiers, HTML esca
  const html=packageIndex({site:{id:'test',revision:1,document:{name:'<script>alert(1)</script>',address:'Synthetic'}},firstDay:'2026-10-01',lastDay:'2026-10-02',timezone:'America/Toronto',history:[],actions:[],concerns:[],photos:[],notes:[]},[],'now')
  assert.ok(!html.includes('<script>'));assert.ok(html.includes('not an atomic'));assert.ok(html.includes('Not a compliance'))
 })
+
+test('readable package separates completion submission, server upload time and historical transitions',()=>{
+ const html=packageIndex({site:{id:'test',revision:1,document:{name:'Synthetic',address:'Fictional'}},history:[],actions:[],concerns:[],photos:[],notes:[],actionUpdates:[{id:'u',action_id:'a',basis_revision:2,submitted_revision:3,actor_label:'Worker',notes:'Corrected label',state:'awaiting_verification',recorded_at:'2026-10-12T10:01:00Z',evidence_snapshot:[{id:'photo',caption:'After correction',sha256:'a'.repeat(64),uploaded_at:'2026-10-12T10:00:00Z'}]}],actionEvents:[{entity_id:'a',actor_id:'supervisor',kind:'action_updated',occurred_at:'2026-10-12T10:02:00Z',before_value:{state:'awaiting_verification'},after_value:{state:'closed'}}]},[],'now')
+ assert.ok(html.includes('2026-10-12T10:00:00Z'));assert.ok(html.includes('2026-10-12T10:02:00Z'));assert.ok(html.includes('Corrected label'));assert.ok(html.includes('closed'));assert.ok(html.includes('does not verify closure'));assert.ok(html.includes('photos/photo.jpg'))
+})

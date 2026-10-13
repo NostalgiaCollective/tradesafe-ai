@@ -3,7 +3,7 @@ import {browserRunPassed} from './browser-contract.mjs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|phone-demo|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|electrical-job|electrical-recovery|brief-repair|site-signin|handover|operations|device-drafts|phone-demo|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|action-completion|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|phone-demo|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|electrical-job|electrical-recovery|brief-repair|site-signin|handover|operations|device-drafts|phone-demo|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     const assertions=result.errors.flatMap(e=>{
       // Strip terminal formatting before extracting method names, never field values/URLs.
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
@@ -26,6 +26,7 @@ export default class LocalReporter {
     if(!recovery&&existsSync('test-results/handover-stage.json'))console.log('HANDOVER_STAGE '+readFileSync('test-results/handover-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/operations-stage.json'))console.log('OPERATIONS_STAGE '+readFileSync('test-results/operations-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/concern-stage.json'))console.log('CONCERN_STAGE '+readFileSync('test-results/concern-stage.json','utf8'))
+    if(!recovery&&existsSync('test-results/electrical-workday-stage.json'))console.log('ELECTRICAL_WORKDAY_STAGE '+readFileSync('test-results/electrical-workday-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/workday-stage.json'))console.log('WORKDAY_STAGE '+readFileSync('test-results/workday-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/crew-stage.json'))console.log('CREW_STAGE '+readFileSync('test-results/crew-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/site-stage.json'))console.log('SITE_STAGE '+readFileSync('test-results/site-stage.json','utf8'))

@@ -22,6 +22,15 @@ test('archive checks fail for changed inventories, missing/corrupt objects or pa
   const local={...manifest,sourceKind:'synthetic-local',sourceProject:'tradesafe-ci',sourceUrl:'http://127.0.0.1:54321',sourceMigrationVersions:manifest.migrations.map(m=>m.name.slice(0,14)),artifacts:[...manifest.artifacts.filter(a=>a.kind==='migration'),...databasePaths.map(path=>({kind:'database',path,bytes:bytes.length,sha256}))]}
   assert.equal((await verifyRecoverySet(root,local)).status,'ARCHIVE_VALIDATED_ONLY')
   assert.equal((await verifyRecoverySet(root,local)).migrationLedger,'MATCHED_DECLARED_LEDGER')
+  // Archive format 2 explicitly includes immutable completion/package bytes;
+  // legacy two-bucket archives remain distinguishable, not silently upgraded.
+  await writeFile(join(root,'retained-package.bin'),bytes)
+  const packageArtifact={kind:'object',bucket:'tradesafe-packages',name:'synthetic/package.zip',path:'retained-package.bin',bytes:bytes.length,sha256}
+  const extended={...local,version:2,buckets:[...local.buckets,'tradesafe-packages'],artifacts:[...local.artifacts,packageArtifact],readyReferences:[{artifact:packageArtifact.path,bytes:bytes.length,sha256}]}
+  assert.equal((await verifyRecoverySet(root,extended)).readyReferences,1)
+  await assert.rejects(verifyRecoverySet(root,{...extended,buckets:local.buckets}))
+  await assert.rejects(verifyRecoverySet(root,{...extended,artifacts:local.artifacts}))
+  await assert.rejects(verifyRecoverySet(root,{...extended,artifacts:[...local.artifacts,{...packageArtifact,bucket:'unrelated'}]}))
   for(const change of [
    {migrations:[...local.migrations,local.migrations[0]]},
    {migrations:local.migrations.map((m,i)=>i===0?{...m,sha256:'0'.repeat(64)}:m)},

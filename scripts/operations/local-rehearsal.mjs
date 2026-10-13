@@ -69,9 +69,9 @@ export async function capture(source, status) {
   assertIdentity(source); assert.equal(source.project, 'tradesafe-ci')
   const started = performance.now(), storage = client(status)
   mkdirSync(ARCHIVE, { mode: 0o700 })
-  const manifest = { version: 1, sourceKind: 'synthetic-local', sourceProject: source.project, sourceUrl: API_ORIGIN,
+  const manifest = { version: 2, sourceKind: 'synthetic-local', sourceProject: source.project, sourceUrl: API_ORIGIN,
     schemaCoverage: ['public', 'auth'], grantsAndPoliciesIncluded: true, quietCaptureVerified: true,
-    buckets: ['tradesafe-evidence', 'tradesafe-exports'], artifacts: [], readyReferences: [], migrations: [],
+    buckets: ['tradesafe-evidence', 'tradesafe-exports', 'tradesafe-packages'], artifacts: [], readyReferences: [], migrations: [],
     beforeInventory: inventory(source.container), protections: protections(source.container) }
   const add = (path, kind, bytes, extra = {}) => {
     writeFileSync(ARCHIVE + '/' + path, bytes, { mode: 0o600 })
@@ -99,7 +99,9 @@ export async function capture(source, status) {
   const references = json(source.container, `select coalesce(json_agg(r),'[]') from (
     select 'tradesafe-evidence' as bucket,object_path,sha256,byte_size from public.ts_evidence where state='ready'
     union all select 'tradesafe-evidence',object_path,sha256,byte_size from public.ts_concern_photos where state='ready'
-    union all select 'tradesafe-exports',object_path,sha256,byte_size from public.ts_exports where state='ready') r`)
+    union all select 'tradesafe-evidence',object_path,sha256,byte_size from public.ts_action_photos where state='ready'
+    union all select 'tradesafe-exports',object_path,sha256,byte_size from public.ts_exports where state='ready'
+    union all select 'tradesafe-packages',object_path,sha256,byte_size from public.ts_site_packages where state='ready') r`)
   assert.ok(references.length >= 2)
   for (const r of references) {
     const a = manifest.artifacts.find(a => a.kind === 'object' && a.bucket === r.bucket && a.name === r.object_path)
@@ -184,7 +186,7 @@ export async function restore(target, source, status, manifest) {
   console.log('Recovery: bucket restrictions restored')
   for (const a of manifest.artifacts.filter(a => a.kind === 'object')) {
     assertIdentity(target)
-    good(await storage.storage.from(a.bucket).upload(a.name, readFileSync(ARCHIVE + '/' + a.path), { upsert: false, contentType: a.bucket === 'tradesafe-evidence' ? 'image/jpeg' : 'application/pdf' }))
+    good(await storage.storage.from(a.bucket).upload(a.name, readFileSync(ARCHIVE + '/' + a.path), { upsert: false, contentType: { 'tradesafe-evidence': 'image/jpeg', 'tradesafe-exports': 'application/pdf', 'tradesafe-packages': 'application/zip' }[a.bucket] }))
     const blob = good(await storage.storage.from(a.bucket).download(a.name))
     const bytes = Buffer.from(await blob.arrayBuffer()); assert.equal(bytes.length, a.bytes); assert.equal(sha(bytes), a.sha256)
   }
@@ -208,7 +210,8 @@ export async function restore(target, source, status, manifest) {
   assert.deepEqual(restoredProtections, manifest.protections)
   console.log('Recovery: authorization catalog verified')
   const buckets = good(await storage.storage.listBuckets())
-  assert.ok(buckets.length === 2 && buckets.every(b => !b.public))
+  assert.deepEqual(buckets.map(b => b.id).sort(), [...manifest.buckets].sort())
+  assert.ok(buckets.every(b => !b.public))
   sql(target.container, "NOTIFY pgrst, 'reload schema'")
   return { restoreMs: Math.round(performance.now() - started), databaseInventory: 'all captured table row counts and digests equal before restored sign-in', protections: 'RLS, policies, table grants, function grants/security/search paths match source', objects: manifest.artifacts.filter(a => a.kind === 'object').map(a => ({ bucket: a.bucket, bytes: a.bytes, sha256: a.sha256 })), versions: { postgres: sql(target.container, 'show server_version'), pgDump: docker(target.container, ['pg_dump', '--version']).toString().trim(), supabase: run('supabase', ['--version']).toString().trim(), node: process.version } }
 }
