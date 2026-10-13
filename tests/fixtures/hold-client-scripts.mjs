@@ -13,11 +13,12 @@ export async function holdClientScripts(page,origin){
  await page.route(pattern,handler)
  return {count:()=>count,release:()=>releasing||=(async()=>{
   releaseGate()
-  try{await page.unroute(pattern,handler)}catch(error){failures.push(error)}
-  // unroute removes the handler but does not wait for invocations already in
-  // flight. Drain them before a test closes the page/context. Surface failure
-  // here once, rather than as a late unhandled route error during cleanup.
+  // Playwright 1.63 removes a last page interceptor by automatically continuing
+  // its in-flight routes. Our own continues must finish BEFORE unroute, or both
+  // paths handle the same request. The client removes this handler synchronously
+  // when unroute begins, so no new invocation can join after this drained set.
   while(active.size)await Promise.all([...active])
+  try{await page.unroute(pattern,handler)}catch(error){failures.push(error)}
   if(failures.length)throw failures[0]
  })()}
 }

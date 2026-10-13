@@ -4,7 +4,7 @@ Status: reviewed staging candidate preparation; no integration, hosted migration
 
 ## Starting point and scope
 
-PR1 is open at `43ad500271cbc62eedb22292d5bd0f04abfed4fe` targeting `astra/production-mvp`. PR2 is open at `a4a56993f232fa41b1b451200211261423659ac8` targeting PR1's branch; it already contains the parent work. Repairs remain on PR2's existing suppressed branch. Original development checkout is `88f6d5aca3e7ba7e34ba1d25298cff029d3a896f`; research/raw files are untouched. Independent client, server and database review passes were separated from authoring.
+PR1 is open at `43ad500271cbc62eedb22292d5bd0f04abfed4fe` targeting `astra/production-mvp`. PR2 started this review at `a4a56993f232fa41b1b451200211261423659ac8` and targets PR1's branch; it already contains the parent work. Repairs remain on PR2's existing suppressed branch. Original development checkout is `88f6d5aca3e7ba7e34ba1d25298cff029d3a896f`; research/raw files are untouched. Independent client, server and database review passes were separated from authoring.
 
 Daniel reported that the application is confusing. This is a user statement, not a participant task score or a qualified content decision. Broad navigation alternatives remain research hypotheses.
 
@@ -25,6 +25,14 @@ No additional blocking bypass was identified in the reviewed company/assignment 
 Existing separate-role synthetic workflows exercise: site concern capture -> original concern/follow-up -> permitted assignment -> worker completion notes/photo -> supervisor review/closure -> owner retained handover. Actual local WebKit captures are retained as a seven-day CI artifact under `electrical-phone-review`; only fictional fixture screens, no login pages or credentials. Inspect the captured screens after the final run. Automated phone-width operation is not observed participant usability or physical iPhone acceptance.
 
 Check each screen for site/source identity, next permitted control, device vs server state, unsubmitted photo status, review authority and return link. Current modules are reused; no dashboard or workflow clone is introduced. More prominent job identity, shorter terminology and fewer competing controls remain participant-research hypotheses unless a specific demonstrated defect is recorded.
+
+## Verification interpretation
+
+Run 38404907567 was already complete on resume and was reused. Its quality job and connected concern-to-handover browser case passed, while a later crew-selection case failed. Subsequent failures exposed a reloaded completion-history problem and then a held-script test-harness problem. Neither a passing quality job nor script discovery establishes a passing browser workflow. The final exact-commit results, executed/skipped counts and sanitized failure receipts belong in the delivery record; do not combine partial runs into a full pass.
+
+The held-script helper was also repaired after a real loopback HTTP/Chromium reproduction: Playwright 1.63 automatically continues active requests when removing its last page interceptor, so removing it before draining our continuations caused double handling. The helper drains before removal and preserves errors; this is test infrastructure evidence, not an application pass.
+
+The original recovery run at a4a5699 did execute a distinct-target restore, but its storage-policy filter omitted the private-package guard. Its prior catalog-equivalence claim is qualified by this review. The repaired full-policy restore and rollback-only denial probe must execute before this gap is considered closed.
 
 ## Read-only release preflight
 

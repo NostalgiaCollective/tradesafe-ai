@@ -15,6 +15,9 @@ test('delayed-script barrier releases once and drains continuing requests before
  void release.then(()=>{released=true})
  await Promise.resolve();await Promise.resolve()
  assert.equal(continued,true);assert.equal(released,false)
+ // Removing the interceptor before this continuation settles causes Playwright
+ // 1.63 to continue it again. This ordering regression failed the prior helper.
+ assert.equal(p.unrouteCalls,0)
  allowContinue();await release;await handler
  assert.equal(released,true);assert.equal(p.unrouteCalls,1)
 })
