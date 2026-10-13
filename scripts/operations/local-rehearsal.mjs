@@ -51,7 +51,7 @@ function inventory(id) {
 function protections(id) {
   const result = json(id, `select jsonb_build_object(
     'defaults',(select jsonb_agg(jsonb_build_array(pg_get_userbyid(d.defaclrole),d.defaclobjtype,d.defaclacl) order by pg_get_userbyid(d.defaclrole),d.defaclobjtype) from pg_default_acl d join pg_namespace n on n.oid=d.defaclnamespace where n.nspname='public'),
-    'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or policyname='ts_private_objects'),
+    'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or (schemaname='storage' and tablename='objects')),
     'tables',(select jsonb_agg(jsonb_build_array(c.relname,c.relrowsecurity,coalesce(c.relacl,acldefault('r',c.relowner)),pg_get_userbyid(c.relowner),c.relforcerowsecurity) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'),
     'functions',(select jsonb_agg(jsonb_build_array(p.proname,pg_get_function_identity_arguments(p.oid),p.prosecdef,p.proconfig,coalesce(p.proacl,acldefault('f',p.proowner)),pg_get_userbyid(p.proowner)) order by p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'))`)
   // PostgreSQL ACL ordering has no authorization meaning and pg_restore may reorder it.
@@ -137,6 +137,23 @@ export async function negativeArchiveChecks(manifest) {
   await verifyRecoverySet(ARCHIVE, manifest)
   return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing unreferenced manifest object rejected', 'unlisted storage object rejected', 'duplicate storage inventory object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected', 'omitted migration source rejected', 'migration ledger mismatch rejected']
 }
+// Restore every captured object policy. A fixed name list can silently omit new guards.
+export function storagePolicyArchiveEntry(line) {
+  return /^\d+;\s+\d+\s+\d+\s+POLICY storage objects /.test(line)
+}
+// The disposable target probe deliberately adds a permissive rule inside a rollback-only
+// transaction. Restrictive private guards must still deny both ordinary database roles.
+export function privateStorageProbeSql() {
+  return `BEGIN;
+    CREATE POLICY ts_recovery_probe_permissive ON storage.objects FOR SELECT TO anon,authenticated USING(true);
+    SET LOCAL ROLE authenticated;
+    SELECT 'authenticated:'||count(*) FROM storage.objects WHERE bucket_id IN ('tradesafe-evidence','tradesafe-exports','tradesafe-packages');
+    RESET ROLE;
+    SET LOCAL ROLE anon;
+    SELECT 'anon:'||count(*) FROM storage.objects WHERE bucket_id IN ('tradesafe-evidence','tradesafe-exports','tradesafe-packages');
+    RESET ROLE;
+    ROLLBACK;`
+}
 export async function restore(target, source, status, manifest) {
   const started = performance.now()
   await verifyRecoverySet(ARCHIVE, manifest); assertEmptyTarget(target, source)
@@ -181,7 +198,7 @@ export async function restore(target, source, status, manifest) {
   // Supabase provides an empty public schema; skip only its CREATE SCHEMA entry.
   restoreArchive('public.dump', line => !/ SCHEMA - public /.test(line))
   restoreArchive('migrations.dump')
-  restoreArchive('storage-policy.dump', line => / POLICY storage objects ts_private_objects /.test(line))
+  restoreArchive('storage-policy.dump', storagePolicyArchiveEntry)
   const storage = client(status)
   console.log('Recovery: restore private buckets/objects and compare inventories/protections')
   for (const b of manifest.bucketConfiguration) {
@@ -213,10 +230,16 @@ export async function restore(target, source, status, manifest) {
     if (JSON.stringify(table) !== JSON.stringify(restored)) console.error('Recovery table permission metadata: ' + JSON.stringify({ source: table, target: restored }))
   }
   assert.deepEqual(restoredProtections, manifest.protections)
+  assertIdentity(target)
+  assert.ok(Number(sql(target.container, "select count(*) from storage.objects where bucket_id='tradesafe-packages'"))>0, 'Private-package recovery probe requires retained synthetic bytes')
+  const probe = docker(target.container, ['psql','-X','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1','-Atc',privateStorageProbeSql()]).toString().trim().split('\n').filter(line => /^(authenticated|anon):/.test(line))
+  assert.deepEqual(probe, ['authenticated:0','anon:0'], 'Restored restrictive private-storage policies failed')
+  assert.deepEqual(protections(target.container), manifest.protections, 'Policy probe must leave no changes')
+  console.log('Recovery: restored private storage denies authenticated and anonymous reads under a permissive-policy probe')
   console.log('Recovery: authorization catalog verified')
   const buckets = good(await storage.storage.listBuckets())
   assert.deepEqual(buckets.map(b => b.id).sort(), [...manifest.buckets].sort())
   assert.ok(buckets.every(b => !b.public))
   sql(target.container, "NOTIFY pgrst, 'reload schema'")
-  return { restoreMs: Math.round(performance.now() - started), databaseInventory: 'all captured table row counts and digests equal before restored sign-in', protections: 'RLS, policies, table grants, function grants/security/search paths match source', objects: manifest.artifacts.filter(a => a.kind === 'object').map(a => ({ bucket: a.bucket, bytes: a.bytes, sha256: a.sha256 })), versions: { postgres: sql(target.container, 'show server_version'), pgDump: docker(target.container, ['pg_dump', '--version']).toString().trim(), supabase: run('supabase', ['--version']).toString().trim(), node: process.version } }
+  return { restoreMs: Math.round(performance.now() - started), databaseInventory: 'all captured table row counts and digests equal before restored sign-in', protections: 'RLS, public and storage object policies, table grants, function grants/security/search paths match source', privateStorageProbe: 'Authenticated and anonymous reads denied for private evidence, PDFs and packages despite a temporary permissive policy; transaction rolled back', objects: manifest.artifacts.filter(a => a.kind === 'object').map(a => ({ bucket: a.bucket, bytes: a.bytes, sha256: a.sha256 })), versions: { postgres: sql(target.container, 'show server_version'), pgDump: docker(target.container, ['pg_dump', '--version']).toString().trim(), supabase: run('supabase', ['--version']).toString().trim(), node: process.version } }
 }
