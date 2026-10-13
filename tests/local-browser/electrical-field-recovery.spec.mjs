@@ -1,0 +1,112 @@
+import {test,expect as baseExpect,devices} from '@playwright/test'
+import {createClient} from '@supabase/supabase-js'
+import {randomBytes,randomUUID,createHash} from 'node:crypto'
+import sharp from 'sharp'
+import {mkdirSync} from 'node:fs'
+import {API_ORIGIN,APP_ORIGIN,localEnvironment} from '../../scripts/ci/local-environment.mjs'
+import {expectSuccess} from '../../scripts/staging/assertions.mjs'
+import {prepareConcerns} from '../fixtures/concerns.mjs'
+import {getTemplate,buildChecklistState} from '../../lib/domain/templates.ts'
+import {emptyElectricalJob} from '../../lib/domain/electrical-job.mjs'
+import {todayInZone} from '../../lib/domain/handover.mjs'
+import {readPackage} from '../fixtures/operations.mjs'
+const expect=baseExpect.configure({timeout:30000}),hash=b=>createHash('sha256').update(b).digest('hex')
+test('WebKit device recovery: electrical text, missing photo selection, exact completion receipt and retained package after reopening',async({browser})=>{
+ localEnvironment({API_URL:process.env.NEXT_PUBLIC_SUPABASE_URL,ANON_KEY:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY})
+ const config={auth:{persistSession:false,autoRefreshToken:false}},admin=createClient(API_ORIGIN,process.env.SUPABASE_SERVICE_ROLE_KEY,config),actors={},contexts=[]
+ let releaseReceiptRefresh=()=>{},receiptRefreshTask=null,receiptRefreshFailure=null,primaryFailure=null
+ for(const role of ['OWNER','WORKER','SUPERVISOR','OUTSIDER']){
+  const credentials={email:'completion-'+role.toLowerCase()+'-'+randomUUID()+'@example.test',password:randomBytes(24).toString('base64url')}
+  const {user}=expectSuccess(await admin.auth.admin.createUser({...credentials,email_confirm:true})),client=createClient(API_ORIGIN,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,config)
+  expectSuccess(await client.auth.signInWithPassword(credentials));actors[role]={...credentials,id:user.id,client,apiOrigin:API_ORIGIN}
+ }
+ const f=await prepareConcerns(actors,'SYNTHETIC electrical completion',true),date=todayInZone(),origin=APP_ORIGIN
+ const capture=async(page,name)=>{expect(new URL(page.url()).pathname.startsWith('/auth')).toBe(false);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);mkdirSync('test-results/electrical-release-review',{recursive:true});await page.screenshot({path:'test-results/electrical-release-review/'+name+'.png',fullPage:true})}
+
+ const rpc=(role,fn,command,p)=>actors[role].client.rpc(fn,{command,p:{companyId:f.company,requestId:randomUUID(),...p}}).then(expectSuccess)
+ const rows=(table,key,id)=>actors.OWNER.client.from(table).select('*').eq(key,id).then(expectSuccess)
+ async function login(role){const c=await browser.newContext({...devices['iPhone 13']});contexts.push(c);await c.route('**/*',r=>[origin,API_ORIGIN].includes(new URL(r.request().url()).origin)?r.continue():r.abort());const p=await c.newPage();p.setDefaultTimeout(30000);p.setDefaultNavigationTimeout(90000);await p.goto(origin+'/auth/login');await p.getByLabel('Email',{exact:true}).fill(actors[role].email);await p.getByLabel('Password',{exact:true}).fill(actors[role].password);await p.getByRole('button',{name:'Sign In',exact:true}).click();await p.waitForURL('**/dashboard');return p}
+ try{
+  await rpc('OWNER','ts_electrical_command','save',{siteId:f.siteId,revision:0,document:{...emptyElectricalJob(),workKind:'alteration',scope:'SYNTHETIC kitchen circuit completion'}})
+  let report=await rpc('OWNER','ts_site_command','create_report',{id:randomUUID(),siteId:f.siteId,templateId:getTemplate('electrical').id})
+  const answers=buildChecklistState('electrical');Object.values(answers).forEach((a,i)=>Object.assign(a,{state:i===0?'attention':'not_applicable',note:'SYNTHETIC test observation',controls:i===0?'SYNTHETIC correction required':''}))
+  report=await rpc('OWNER','ts_command','save_report',{id:report.id,revision:report.revision,document:{job:{address:'SYNTHETIC electrical kitchen',client:'SYNTHETIC customer',date},answers}})
+  report=await rpc('OWNER','ts_command','finalize',{id:report.id,revision:report.revision,acknowledged:true})
+  let action=(await rows('ts_actions','report_id',report.id))[0]
+  action=await rpc('SUPERVISOR','ts_command','update_action',{id:action.id,revision:action.revision,state:'open',responsibleId:actors.WORKER.id,targetDate:'',priority:'normal',controls:action.controls,resolution:''})
+  const original=JSON.stringify((await rows('ts_reports','id',report.id))[0]),supervisor=await login('SUPERVISOR'),owner=await login('OWNER'),outsider=await login('OUTSIDER');let worker=await login('WORKER')
+  const actionUrl=origin+'/actions?'+new URLSearchParams({company:f.company,focus:action.id,status:'all',site:f.siteId}),api=origin+'/api/actions/'+action.id
+  await owner.goto(origin+'/sites/'+f.siteId+'/electrical');await owner.getByLabel('Keep unfinished text on this device',{exact:true}).check();await owner.locator('#ej-scope').fill('SYNTHETIC unsent electrical recovery');await expect(owner.getByRole('status').filter({hasText:'Saved on this device; upload pending.'})).toBeVisible();await owner.reload();await expect(owner.getByRole('heading',{name:'Review device work',exact:true})).toBeVisible();await owner.getByRole('button',{name:'Resume device work',exact:true}).click();await expect(owner.locator('#ej-scope')).toHaveValue('SYNTHETIC unsent electrical recovery');await capture(owner,'owner-electrical-device-restored');let electricalLost=false;await owner.context().route(origin+'/api/sites/'+f.siteId+'/electrical',async r=>{if(r.request().method()==='POST'&&!electricalLost){electricalLost=true;expect((await r.fetch()).status()).toBe(200);return r.abort()}return r.continue()});await owner.getByRole('button',{name:'Save electrical job',exact:true}).click();await expect(owner.getByRole('button',{name:'Retry same operation',exact:true})).toBeEnabled();await owner.context().unroute(origin+'/api/sites/'+f.siteId+'/electrical');await owner.reload();await owner.getByRole('button',{name:'Resume device work',exact:true}).click();await expect(owner.getByRole('button',{name:'Save electrical job',exact:true})).toBeDisabled();const savedElectrical=(await rows('ts_electrical_jobs','site_id',f.siteId))[0];expect(savedElectrical.document.scope).toBe('SYNTHETIC unsent electrical recovery');expect(savedElectrical.revision).toBe(2)
+  await worker.goto(actionUrl);let card=worker.locator('#action-'+action.id);await card.getByLabel('Keep unfinished text on this device',{exact:true}).check()
+  await expect(card.getByRole('heading',{name:'Original finding',exact:true})).toBeVisible()
+  // A caption is unsent input even before notes or a file are selected.
+  await card.getByLabel('Completion photo caption',{exact:true}).fill('SYNTHETIC caption-only draft')
+  await expect(card.getByRole('status').filter({hasText:'Completion update not yet saved.'})).toBeVisible()
+  await expect(card.getByRole('button',{name:'Save progress',exact:true})).toBeDisabled()
+  await expect(worker.getByRole('status').filter({hasText:'Action update saved.'})).toHaveCount(0)
+  await card.getByLabel('Completion photo caption',{exact:true}).fill('')
+  await expect(card.getByRole('button',{name:'Save progress',exact:true})).toBeEnabled()
+  await card.getByLabel('Completion update notes',{exact:true}).fill('SYNTHETIC label corrected; please review retained photo')
+  await worker.keyboard.press('Tab');await expect(card.getByLabel('After recording this update',{exact:true})).toBeFocused()
+  await card.getByLabel('After recording this update',{exact:true}).selectOption('awaiting_verification')
+  const photo=await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240"><rect width="400" height="240" fill="navy"/><text x="20" y="120" fill="white" font-size="24">SYNTHETIC CORRECTED LABEL</text></svg>')).jpeg().withExif({IFD0:{Artist:'Synthetic untrusted metadata'}}).toBuffer()
+  let uploadAttempt=0;await worker.context().route(api+'/evidence',async r=>{if(r.request().method()==='POST'){uploadAttempt++;if(uploadAttempt===1)return r.abort();if(uploadAttempt===2){expect((await r.fetch({postData:photo})).status()).toBe(200);return r.abort()}}return r.continue()})
+  await card.getByLabel('Completion photo (optional)',{exact:true}).setInputFiles({name:'synthetic-corrected-label.jpg',mimeType:'image/jpeg',buffer:photo})
+  await card.getByLabel('Completion photo caption',{exact:true}).fill('SYNTHETIC corrected panel label')
+  await card.getByRole('button',{name:'Upload completion photo',exact:true}).click();await expect(card.getByRole('button',{name:'Retry photo upload',exact:true})).toBeEnabled();await worker.reload();await card.getByRole('button',{name:'Resume device work',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'Select the original photo again. The caption'})).toBeVisible();expect(await rows('ts_action_photos','action_id',action.id)).toHaveLength(0);expect(await rows('ts_action_updates','action_id',action.id)).toHaveLength(0);await expect(worker.getByRole('status').filter({hasText:'Action update saved.'})).toHaveCount(0);await expect(worker.getByRole('status').filter({hasText:'Current action checked. No new update was saved.'})).toBeVisible();await expect(card.getByLabel('Completion photo caption',{exact:true})).toHaveValue('SYNTHETIC corrected panel label');await card.getByLabel('Completion photo (optional)',{exact:true}).setInputFiles({name:'synthetic-corrected-label.jpg',mimeType:'image/jpeg',buffer:photo});await card.getByRole('button',{name:'Retry photo upload',exact:true}).click();await expect(card.getByRole('button',{name:'Retry photo upload',exact:true})).toBeEnabled();await worker.context().unroute(api+'/evidence');await worker.reload();await expect(card.getByRole('heading',{name:'Review device work',exact:true})).toBeVisible();await card.getByRole('button',{name:'Resume device work',exact:true}).click();await expect(card.getByRole('link',{name:'SYNTHETIC corrected panel label',exact:true})).toBeVisible();expect(await card.getByLabel('Completion photo (optional)',{exact:true}).evaluate(e=>e.files.length)).toBe(0);await capture(worker,'worker-completion-notes-and-photo')
+  let submitLost=false;await worker.context().route(api+'/completion-updates',async r=>{if(r.request().method()==='POST'&&!submitLost){submitLost=true;expect((await r.fetch()).status()).toBe(200);return r.abort()}return r.continue()})
+  await card.getByRole('button',{name:'Submit completion for verification',exact:true}).click();await expect(card.getByRole('button',{name:'Retry the same completion update',exact:true})).toBeEnabled();await expect(card.getByLabel('Completion update notes',{exact:true})).toHaveValue('SYNTHETIC label corrected; please review retained photo');const retainedStorage=await worker.context().storageState();await worker.context().close();const recoveredContext=await browser.newContext({...devices['iPhone 13'],storageState:{...retainedStorage,cookies:[]}});contexts.push(recoveredContext);await recoveredContext.route('**/*',r=>[origin,API_ORIGIN].includes(new URL(r.request().url()).origin)?r.continue():r.abort());worker=await recoveredContext.newPage();worker.setDefaultTimeout(30000);
+  // Simulated authentication loss, not natural expiry: retain opted-in device text
+  // but remove every session cookie before reopening. Sign in through the real UI.
+  await worker.goto(actionUrl);await worker.waitForURL(u=>u.pathname==='/auth/login');const destination=new URL(worker.url()).searchParams.get('redirect');expect(new URL(destination,origin).pathname).toBe('/actions');expect(new URL(destination,origin).searchParams.get('focus')).toBe(action.id);await expect(worker.getByText('SYNTHETIC label corrected; please review retained photo',{exact:true})).toHaveCount(0);await worker.getByLabel('Email',{exact:true}).fill(actors.WORKER.email);await worker.getByLabel('Password',{exact:true}).fill(actors.WORKER.password);await worker.getByRole('button',{name:'Sign In',exact:true}).click();await worker.waitForURL(u=>u.pathname==='/actions'&&u.searchParams.get('focus')===action.id&&u.searchParams.get('site')===f.siteId);card=worker.locator('#action-'+action.id);await expect(card.getByRole('heading',{name:'Review device work',exact:true})).toBeVisible();await card.getByRole('button',{name:'Resume device work',exact:true}).click();await expect(card.getByRole('status').filter({hasText:'already saved to the server. No duplicate'})).toBeVisible();await expect(card.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  // The same retained browser text cannot be exposed under another account.
+  const unrelatedState=await outsider.context().storageState(),unrelatedContext=await browser.newContext({...devices['iPhone 13'],storageState:{cookies:unrelatedState.cookies,origins:retainedStorage.origins}});contexts.push(unrelatedContext);await unrelatedContext.route('**/*',r=>[origin,API_ORIGIN].includes(new URL(r.request().url()).origin)?r.continue():r.abort());const unrelated=await unrelatedContext.newPage();await unrelated.goto(actionUrl);await expect(unrelated.getByRole('heading',{name:'Review device work',exact:true})).toHaveCount(0);await expect(unrelated.getByText('SYNTHETIC label corrected; please review retained photo',{exact:true})).toHaveCount(0);const deniedDevice=await unrelatedContext.request.get(origin+'/api/device-drafts?'+new URLSearchParams({kind:'action',id:action.id,company:f.company,siteId:f.siteId}),{headers:{'X-Expected-Actor':actors.OUTSIDER.id}});expect(deniedDevice.status()).toBe(403);expect(await deniedDevice.text()).not.toContain('SYNTHETIC label corrected');await unrelatedContext.close()
+  const updates=await rows('ts_action_updates','action_id',action.id),photos=await rows('ts_action_photos','action_id',action.id);expect(updates).toHaveLength(1);expect(photos).toHaveLength(1);expect(updates[0].actor_id).toBe(actors.WORKER.id);expect(updates[0].evidence_snapshot[0].id).toBe(photos[0].id);expect((await rows('ts_actions','id',action.id))[0].state).toBe('awaiting_verification')
+  const photoUrl=api+'/evidence/'+photos[0].id,retainedPhoto=await(await worker.context().request.get(photoUrl)).body();expect(hash(retainedPhoto)).toBe(photos[0].sha256);expect((await sharp(retainedPhoto).metadata()).exif).toBeUndefined()
+  expect((await outsider.context().request.get(photoUrl)).status()).toBe(404)
+  await worker.reload();await card.getByText('Recorded completion updates',{exact:true}).click();await expect(card.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible();expect(await worker.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  await supervisor.goto(actionUrl);const review=supervisor.locator('#action-'+action.id);await review.getByText('Recorded completion updates',{exact:true}).click();await expect(review.getByRole('link',{name:'Completion photo: SYNTHETIC corrected panel label',exact:true})).toBeVisible();await capture(supervisor,'supervisor-completion-review');await review.getByLabel('Status after saving',{exact:true}).selectOption('closed');await review.getByRole('button',{name:'Verify and close',exact:true}).click();await expect(review.getByRole('status').filter({hasText:'Action update saved.'})).toBeVisible()
+  expect((await rows('ts_actions','id',action.id))[0].verified_by).toBe(actors.SUPERVISOR.id)
+  // Bounded PDF preparation remains separate from package generation.
+  const packageUrl=origin+'/api/sites/'+f.siteId+'/package',range=new URLSearchParams({start:date,end:date,timezone:'America/Toronto'})
+  const preparation=await owner.context().request.get(packageUrl+'?'+range);expect(preparation.status()).toBe(200);expect(JSON.stringify(await preparation.json())).toContain(report.id)
+  const pdfResponse=await owner.context().request.post(origin+'/api/reports/'+report.id+'/exports',{headers:{origin,'X-Expected-Actor':actors.OWNER.id},timeout:90000});expect(pdfResponse.status()).toBe(200);const pdf=await pdfResponse.json(),pdfBytes=await(await owner.context().request.get(origin+pdf.download)).body()
+  let generation=null,packageLost=false,receiptRefreshHeld=false;const generations=[]
+  const receiptRefreshReleased=new Promise(resolve=>{releaseReceiptRefresh=resolve})
+  await owner.context().route(packageUrl+'?*',async r=>{
+   if(r.request().method()==='POST'){const id=new URL(r.request().url()).searchParams.get('generation');generations.push(id);if(!packageLost){packageLost=true;generation=id;const committed=await r.fetch({timeout:120000});expect(committed.status()).toBe(200);expect(committed.headers()['x-package-id']).toBe(id);return r.abort()}}
+   // The package has already downloaded. Hold its real receipt-list response,
+   // then lose that response to prove receipt refresh is a separate operation.
+   if(r.request().method()==='GET'&&generations.length===2&&!new URL(r.request().url()).searchParams.has('generation')&&!receiptRefreshTask){
+    receiptRefreshTask=(async()=>{const response=await r.fetch();expect(response.status()).toBe(200);receiptRefreshHeld=true;await receiptRefreshReleased;await r.abort()})().catch(error=>{receiptRefreshFailure=error})
+    await receiptRefreshTask;return
+   }
+   return r.continue()
+  })
+  await owner.goto(origin+'/sites/'+f.siteId);const panel=owner.getByRole('region',{name:'Evidence package',exact:true});await panel.getByLabel('Package from',{exact:true}).fill(date);await panel.getByLabel('Package through',{exact:true}).fill(date);await panel.getByLabel('Keep unfinished text on this device',{exact:true}).check();await panel.getByRole('button',{name:'Download evidence package',exact:true}).click();await expect(panel.getByRole('button',{name:'Retry evidence package',exact:true})).toBeEnabled()
+  await owner.reload();await expect(panel.getByRole('heading',{name:'Review device work',exact:true})).toBeVisible();await panel.getByRole('button',{name:'Resume device work',exact:true}).click();const downloadPromise=owner.waitForEvent('download');await panel.getByRole('button',{name:'Retry evidence package',exact:true}).click();const download=await downloadPromise,stream=await download.createReadStream(),chunks=[];for await(const chunk of stream)chunks.push(chunk);const archive=Buffer.concat(chunks),parsed=readPackage(archive);expect(generations).toEqual([generation,generation])
+  await expect.poll(()=>receiptRefreshHeld).toBe(true)
+  const received=panel.getByRole('status').filter({hasText:'Complete package received; download requested.'})
+  await expect(received).toBeVisible()
+  await expect(panel.getByRole('button',{name:'Refreshing retained packages…',exact:true})).toBeDisabled()
+  await expect(panel.getByRole('status').filter({hasText:'Refreshing the retained package list.'})).toBeVisible()
+  await expect(panel.getByRole('button',{name:'Preparing evidence package…',exact:true})).toHaveCount(0)
+  await expect(panel.getByRole('status').filter({hasText:'Preparing and checking the requested files.'})).toHaveCount(0)
+  await capture(owner,'owner-package-receipt-refresh')
+  releaseReceiptRefresh();await receiptRefreshTask;if(receiptRefreshFailure)throw receiptRefreshFailure
+  await expect(panel.getByRole('alert')).toContainText('The package was received, but the retained list could not refresh.')
+  await expect(received).toBeVisible()
+  await panel.getByText('Retained packages',{exact:true}).click()
+  await panel.getByRole('button',{name:'Find retained packages',exact:true}).click()
+  await expect(panel.getByRole('link',{name:'Download generation '+generation,exact:true})).toBeVisible()
+  await expect(received).toBeVisible();expect(generations).toEqual([generation,generation])
+  await owner.context().unroute(packageUrl+'?*');await capture(owner,'owner-retained-evidence-package')
+  expect(parsed.files['reports/'+report.id+'.pdf']).toEqual(pdfBytes);expect(JSON.stringify(parsed.records)).toContain(updates[0].id);expect(JSON.stringify(parsed.records)).toContain('SYNTHETIC label corrected');expect(Object.values(parsed.files).some(b=>b.equals(retainedPhoto))).toBe(true);expect(Object.values(parsed.files).some(b=>b.toString().includes('SYNTHETIC unsent electrical recovery'))).toBe(true)
+  action=(await rows('ts_actions','id',action.id))[0];await rpc('SUPERVISOR','ts_command','update_action',{id:action.id,revision:action.revision,state:'open',responsibleId:action.responsible_id,targetDate:'',priority:action.priority,controls:action.controls,resolution:'SYNTHETIC new review question'})
+  const again=await owner.context().request.get(packageUrl+'?generation='+generation);expect(again.status()).toBe(200);expect(await again.body()).toEqual(archive);expect(JSON.stringify((await rows('ts_reports','id',report.id))[0])).toBe(original);expect(await rows('ts_action_updates','action_id',action.id)).toEqual(updates);expect(hash(await(await owner.context().request.get(photoUrl)).body())).toBe(photos[0].sha256)
+ }catch(error){primaryFailure=error;throw error}finally{
+  releaseReceiptRefresh();await receiptRefreshTask
+  const cleanup=await Promise.allSettled(contexts.map(c=>c.close())),failed=cleanup.find(result=>result.status==='rejected')
+  if(!primaryFailure){if(receiptRefreshFailure)throw receiptRefreshFailure;if(failed)throw failed.reason}
+ }
+})

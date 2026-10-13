@@ -7,6 +7,7 @@ import { APP_ORIGIN, localEnvironment } from './local-environment.mjs'
 import { capture, negativeArchiveChecks, restore, identity, assertIdentity, TARGET } from '../operations/local-rehearsal.mjs'
 import {createClient} from '@supabase/supabase-js'
 import {completionConcurrency} from './action-completion-concurrency.mjs'
+import {fieldInterruption,storageMaintenanceExecution} from './field-interruption.mjs'
 import {newDemoState,prepareDemoFixture} from '../staging/demo-fixture.mjs'
 
 let stage = 'runner guard', server
@@ -46,6 +47,8 @@ try {
   const env = { ...process.env, GITHUB_SHA: run('git', ['rev-parse','HEAD']).toString().trim(), ...localEnvironment(status), RECOVERY_REHEARSAL: '1' }
   stage='actual concurrent action transactions'
   console.log('ACTION_COMPLETION_CONCURRENCY '+JSON.stringify(await completionConcurrency(env)))
+  stage='actual HTTP storage interruption recovery'
+  console.log('FIELD_INTERRUPTION '+JSON.stringify(await fieldInterruption(env)))
   stage='synthetic shared phone demo preparation'
   const demo=newDemoState(),saveDemo=()=>writeFileSync('.ci-local/phone-demo.json',JSON.stringify(demo),{mode:0o600})
   await prepareDemoFixture({env,admin:createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}}),state:demo,save:saveDemo})
@@ -61,6 +64,10 @@ try {
   const result = JSON.parse(readFileSync('test-results/local-webkit.json', 'utf8'))
   assert.equal(result.status, 'passed'); assert.equal(result.executed, LOCAL_WORKFLOW_COUNT); assert.equal(result.skipped, 0)
   console.log(`PASS: ${LOCAL_WORKFLOW_COUNT} executed WebKit local-integration tests; zero skipped. No hosted/email-delivery/physical-device claim.`)
+  stage = 'retained evidence cleanup exclusion'
+  const maintenance=await storageMaintenanceExecution(env)
+  assert.equal(maintenance.status,'PASSED')
+  console.log('STORAGE_MAINTENANCE '+JSON.stringify(maintenance))
   stage = 'quiesced synthetic backup'
   await stopApp()
   const source = identity('tradesafe-ci')

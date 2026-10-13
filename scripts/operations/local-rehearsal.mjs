@@ -51,7 +51,7 @@ function inventory(id) {
 function protections(id) {
   const result = json(id, `select jsonb_build_object(
     'defaults',(select jsonb_agg(jsonb_build_array(pg_get_userbyid(d.defaclrole),d.defaclobjtype,d.defaclacl) order by pg_get_userbyid(d.defaclrole),d.defaclobjtype) from pg_default_acl d join pg_namespace n on n.oid=d.defaclnamespace where n.nspname='public'),
-    'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or policyname='ts_private_objects'),
+    'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname='public' or (schemaname='storage' and tablename='objects')),
     'tables',(select jsonb_agg(jsonb_build_array(c.relname,c.relrowsecurity,coalesce(c.relacl,acldefault('r',c.relowner)),pg_get_userbyid(c.relowner),c.relforcerowsecurity) order by c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'),
     'functions',(select jsonb_agg(jsonb_build_array(p.proname,pg_get_function_identity_arguments(p.oid),p.prosecdef,p.proconfig,coalesce(p.proacl,acldefault('f',p.proowner)),pg_get_userbyid(p.proowner)) order by p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'))`)
   // PostgreSQL ACL ordering has no authorization meaning and pg_restore may reorder it.
@@ -69,10 +69,10 @@ export async function capture(source, status) {
   assertIdentity(source); assert.equal(source.project, 'tradesafe-ci')
   const started = performance.now(), storage = client(status)
   mkdirSync(ARCHIVE, { mode: 0o700 })
-  const manifest = { version: 2, sourceKind: 'synthetic-local', sourceProject: source.project, sourceUrl: API_ORIGIN,
+  const manifest = { version: 3, sourceKind: 'synthetic-local', sourceProject: source.project, sourceUrl: API_ORIGIN,
     schemaCoverage: ['public', 'auth'], grantsAndPoliciesIncluded: true, quietCaptureVerified: true,
     buckets: ['tradesafe-evidence', 'tradesafe-exports', 'tradesafe-packages'], artifacts: [], readyReferences: [], migrations: [],
-    beforeInventory: inventory(source.container), protections: protections(source.container) }
+    beforeInventory: inventory(source.container), beforeStorageInventory: storageInventory(source.container), protections: protections(source.container) }
   const add = (path, kind, bytes, extra = {}) => {
     writeFileSync(ARCHIVE + '/' + path, bytes, { mode: 0o600 })
     const a = { path, kind, bytes: bytes.length, sha256: sha(bytes), ...extra }; manifest.artifacts.push(a); return a
@@ -90,7 +90,7 @@ export async function capture(source, status) {
   manifest.bucketConfiguration = good(await storage.storage.listBuckets()).map(b => ({ id: b.id, public: b.public, fileSizeLimit: b.file_size_limit, allowedMimeTypes: b.allowed_mime_types })).sort((a,b) => a.id.localeCompare(b.id))
   assert.deepEqual(manifest.bucketConfiguration.map(b => b.id), manifest.buckets)
   assert.ok(manifest.bucketConfiguration.every(b => b.public === false))
-  const objects = storageInventory(source.container)
+  const objects = manifest.beforeStorageInventory
   for (const [index, object] of objects.entries()) {
     assert.ok(manifest.buckets.includes(object.bucket))
     const blob = good(await storage.storage.from(object.bucket).download(object.name))
@@ -109,13 +109,16 @@ export async function capture(source, status) {
     manifest.readyReferences.push({ artifact: a.path, sha256: r.sha256, bytes: r.byte_size })
   }
   manifest.afterInventory = inventory(source.container)
-  assert.deepEqual(storageInventory(source.container), objects)
+  manifest.afterStorageInventory = storageInventory(source.container)
+  assert.deepEqual(manifest.afterStorageInventory, objects)
   await verifyRecoverySet(ARCHIVE, manifest)
   writeFileSync(ARCHIVE + '/manifest.json', JSON.stringify(manifest), { mode: 0o600 })
   return { manifest, backupMs: Math.round(performance.now() - started) }
 }
 export async function negativeArchiveChecks(manifest) {
-  const object = manifest.artifacts.find(a => a.kind === 'object'), path = ARCHIVE + '/' + object.path
+  const object = manifest.artifacts.find(a => a.kind === 'object' && !manifest.readyReferences.some(r => r.artifact === a.path))
+  assert.ok(object, 'Synthetic interruption fixture must supply unreferenced storage bytes')
+  const path = ARCHIVE + '/' + object.path
   const bytes = readFileSync(path)
   renameSync(path, path + '.missing')
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { renameSync(path + '.missing', path) }
@@ -123,6 +126,8 @@ export async function negativeArchiveChecks(manifest) {
   writeFileSync(path, corrupt)
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(path, bytes) }
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== object.path) }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, beforeStorageInventory: manifest.beforeStorageInventory.filter(a => a.bucket !== object.bucket || a.name !== object.name), afterStorageInventory: manifest.afterStorageInventory.filter(a => a.bucket !== object.bucket || a.name !== object.name) }))
+  await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, beforeStorageInventory: [...manifest.beforeStorageInventory, {bucket:object.bucket,name:object.name}], afterStorageInventory: [...manifest.afterStorageInventory, {bucket:object.bucket,name:object.name}] }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== 'auth.dump') }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, artifacts: manifest.artifacts.filter(a => a.path !== manifest.migrations[0].name) }))
   await assert.rejects(verifyRecoverySet(ARCHIVE, { ...manifest, sourceMigrationVersions: manifest.sourceMigrationVersions.slice(1) }))
@@ -130,7 +135,24 @@ export async function negativeArchiveChecks(manifest) {
   damaged[0] ^= 255; writeFileSync(databasePath, damaged)
   try { await assert.rejects(verifyRecoverySet(ARCHIVE, manifest)) } finally { writeFileSync(databasePath, database) }
   await verifyRecoverySet(ARCHIVE, manifest)
-  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing manifest object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected', 'omitted migration source rejected', 'migration ledger mismatch rejected']
+  return ['missing physical object rejected', 'same-length byte corruption rejected', 'missing unreferenced manifest object rejected', 'unlisted storage object rejected', 'duplicate storage inventory object rejected', 'omitted Auth archive rejected', 'corrupt database archive rejected', 'omitted migration source rejected', 'migration ledger mismatch rejected']
+}
+// Restore every captured object policy. A fixed name list can silently omit new guards.
+export function storagePolicyArchiveEntry(line) {
+  return /^\d+;\s+\d+\s+\d+\s+POLICY storage objects /.test(line)
+}
+// The disposable target probe deliberately adds a permissive rule inside a rollback-only
+// transaction. Restrictive private guards must still deny both ordinary database roles.
+export function privateStorageProbeSql() {
+  return `BEGIN;
+    CREATE POLICY ts_recovery_probe_permissive ON storage.objects FOR SELECT TO anon,authenticated USING(true);
+    SET LOCAL ROLE authenticated;
+    SELECT 'authenticated:'||count(*) FROM storage.objects WHERE bucket_id IN ('tradesafe-evidence','tradesafe-exports','tradesafe-packages');
+    RESET ROLE;
+    SET LOCAL ROLE anon;
+    SELECT 'anon:'||count(*) FROM storage.objects WHERE bucket_id IN ('tradesafe-evidence','tradesafe-exports','tradesafe-packages');
+    RESET ROLE;
+    ROLLBACK;`
 }
 export async function restore(target, source, status, manifest) {
   const started = performance.now()
@@ -176,7 +198,7 @@ export async function restore(target, source, status, manifest) {
   // Supabase provides an empty public schema; skip only its CREATE SCHEMA entry.
   restoreArchive('public.dump', line => !/ SCHEMA - public /.test(line))
   restoreArchive('migrations.dump')
-  restoreArchive('storage-policy.dump', line => / POLICY storage objects ts_private_objects /.test(line))
+  restoreArchive('storage-policy.dump', storagePolicyArchiveEntry)
   const storage = client(status)
   console.log('Recovery: restore private buckets/objects and compare inventories/protections')
   for (const b of manifest.bucketConfiguration) {
@@ -208,10 +230,16 @@ export async function restore(target, source, status, manifest) {
     if (JSON.stringify(table) !== JSON.stringify(restored)) console.error('Recovery table permission metadata: ' + JSON.stringify({ source: table, target: restored }))
   }
   assert.deepEqual(restoredProtections, manifest.protections)
+  assertIdentity(target)
+  assert.ok(Number(sql(target.container, "select count(*) from storage.objects where bucket_id='tradesafe-packages'"))>0, 'Private-package recovery probe requires retained synthetic bytes')
+  const probe = docker(target.container, ['psql','-X','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1','-Atc',privateStorageProbeSql()]).toString().trim().split('\n').filter(line => /^(authenticated|anon):/.test(line))
+  assert.deepEqual(probe, ['authenticated:0','anon:0'], 'Restored restrictive private-storage policies failed')
+  assert.deepEqual(protections(target.container), manifest.protections, 'Policy probe must leave no changes')
+  console.log('Recovery: restored private storage denies authenticated and anonymous reads under a permissive-policy probe')
   console.log('Recovery: authorization catalog verified')
   const buckets = good(await storage.storage.listBuckets())
   assert.deepEqual(buckets.map(b => b.id).sort(), [...manifest.buckets].sort())
   assert.ok(buckets.every(b => !b.public))
   sql(target.container, "NOTIFY pgrst, 'reload schema'")
-  return { restoreMs: Math.round(performance.now() - started), databaseInventory: 'all captured table row counts and digests equal before restored sign-in', protections: 'RLS, policies, table grants, function grants/security/search paths match source', objects: manifest.artifacts.filter(a => a.kind === 'object').map(a => ({ bucket: a.bucket, bytes: a.bytes, sha256: a.sha256 })), versions: { postgres: sql(target.container, 'show server_version'), pgDump: docker(target.container, ['pg_dump', '--version']).toString().trim(), supabase: run('supabase', ['--version']).toString().trim(), node: process.version } }
+  return { restoreMs: Math.round(performance.now() - started), databaseInventory: 'all captured table row counts and digests equal before restored sign-in', protections: 'RLS, public and storage object policies, table grants, function grants/security/search paths match source', privateStorageProbe: 'Authenticated and anonymous reads denied for private evidence, PDFs and packages despite a temporary permissive policy; transaction rolled back', objects: manifest.artifacts.filter(a => a.kind === 'object').map(a => ({ bucket: a.bucket, bytes: a.bytes, sha256: a.sha256 })), versions: { postgres: sql(target.container, 'show server_version'), pgDump: docker(target.container, ['pg_dump', '--version']).toString().trim(), supabase: run('supabase', ['--version']).toString().trim(), node: process.version } }
 }

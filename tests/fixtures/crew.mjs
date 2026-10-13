@@ -16,7 +16,7 @@ export async function prepareCrew(actors,label='SYNTHETIC crew coordination'){
  return {company,tag,siteId:site.id,briefId:brief.id,version:brief.revision,actionId:action.id}
 }
 export async function crewWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{}}){
- let stage='fixtures';const contexts=[]
+ let stage='fixtures';const contexts=[],views={};let historyBeforeClick=null
  const mark=s=>{stage=s}
  const fixture=await prepareCrew(actors),{company,briefId,version,actionId}=fixture
  const rpc=(role,fn,command,p={})=>actors[role].client.rpc(fn,{command,p:{companyId:company,requestId:randomUUID(),...p}})
@@ -29,7 +29,7 @@ export async function crewWorkflow({browser,origin,actors,options={},capture=asy
  async function revise(){let b=await read();b=await brief('SUPERVISOR','revise',{revision:b.revision});b=await brief('SUPERVISOR','save',{revision:b.revision,document:{...b.document,briefingNote:'SYNTHETIC revised discussion',steps:[{...b.document.steps[0],control:'SYNTHETIC revised proposal '+b.revision}]}});await brief('SUPERVISOR','record',{revision:b.revision});return b.revision}
  const screen=async(p,n)=>{expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await capture(p,n)}
  try{
-  const worker=await login('WORKER'),supervisor=await login('SUPERVISOR'),stale=await login('SUPERVISOR')
+  const worker=await login('WORKER'),supervisor=await login('SUPERVISOR'),stale=await login('SUPERVISOR');views.worker=worker;views.supervisor=supervisor
   mark('personal-and-supervisor-counts');await worker.goto(origin+work);await expect(worker.getByRole('status').filter({hasText:'1 briefings awaiting your response'})).toBeVisible();await expect(worker.getByRole('status').filter({hasText:'1 outstanding actions assigned to you'})).toBeVisible();await screen(worker,'my-work');await worker.getByRole('link',{name:'Open site',exact:true}).first().click();await worker.getByRole('link',{name:'Back to My work',exact:true}).click();await expect(worker).toHaveURL(origin+work)
   await supervisor.goto(origin+crew);await expect(supervisor.getByText('0 acknowledged · 1 awaiting acknowledgement',{exact:true})).toBeVisible()
   mark('keyboard-brief-link');const link=worker.locator('a[href^="/briefs/'+briefId+'?"]');await link.focus();await worker.keyboard.press('Shift+Tab');await worker.keyboard.press('Tab');await expect(link).toBeFocused();expect(await link.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');await worker.keyboard.press('Enter');await expect(worker.getByRole('button',{name:'Acknowledge this version',exact:true})).toBeVisible()
@@ -46,7 +46,23 @@ export async function crewWorkflow({browser,origin,actors,options={},capture=asy
   const before=await events();let assignmentLost=false;const actionApi=origin+'/api/workspace';await supervisor.context().route(actionApi,async r=>{if(r.request().postDataJSON()?.command==='update_action'&&!assignmentLost){assignmentLost=true;expect((await r.fetch()).status()).toBe(200);await r.abort()}else await r.continue()})
   await supervisor.getByRole('button',{name:'Save progress',exact:true}).click();await expect(supervisor.getByRole('button',{name:'Retry action update',exact:true})).toBeVisible();await supervisor.getByRole('button',{name:'Retry action update',exact:true}).click();await expect(supervisor.getByText('Action update saved.',{exact:true})).toBeVisible();await supervisor.context().unroute(actionApi);expect(await events()).toHaveLength(before.length+1)
   await stale.getByLabel('Progress or resolution notes',{exact:true}).fill('SYNTHETIC losing editor input');await stale.getByRole('button',{name:'Save progress',exact:true}).click();await expect(stale.getByRole('alert').filter({hasText:'newer version'})).toBeVisible();await expect(stale.getByLabel('Progress or resolution notes',{exact:true})).toHaveValue('SYNTHETIC losing editor input')
-  await worker.goto(origin+work);await expect(worker.getByText('Nothing assigned to you needs follow-up.',{exact:true})).toBeVisible();await supervisor.reload();await supervisor.getByText('Action history',{exact:true}).click();await expect(supervisor.getByText('Assignment:',{exact:false})).toBeVisible();await supervisor.getByRole('link',{name:'Back to My work',exact:true}).click();await expect(supervisor).toHaveURL(origin+crew)
+  mark('reassigned-worker-personal-empty')
+  await worker.goto(origin+work)
+  await expect(worker.getByText('Nothing assigned to you needs follow-up.',{exact:true})).toBeVisible()
+  mark('assignment-history-reload')
+  await supervisor.reload()
+  const historyPanel=supervisor.getByText('Action history',{exact:true}).locator('..')
+  historyBeforeClick={open:await historyPanel.evaluate(e=>e.open),assignmentNodes:await supervisor.getByText('Assignment:',{exact:false}).count(),statusDisabled:await supervisor.getByLabel('Status after saving',{exact:true}).isDisabled()}
+  mark('assignment-history-ready')
+  await expect(supervisor.getByLabel('Status after saving',{exact:true})).toBeEnabled()
+  mark('assignment-history-toggle')
+  await supervisor.getByText('Action history',{exact:true}).click()
+  await expect(historyPanel).toHaveAttribute('open','')
+  mark('assignment-history-visible')
+  await expect(supervisor.getByText('Assignment:',{exact:false})).toBeVisible()
+  mark('assignment-history-return')
+  await supervisor.getByRole('link',{name:'Back to My work',exact:true}).click()
+  await expect(supervisor).toHaveURL(origin+crew)
   let a=await action();const update={id:actionId,revision:a.revision,state:'open',responsibleId:actors.WORKER.id,controls:a.controls,resolution:a.resolution,targetDate:''}
   expectDatabaseError(await rpc('WORKER','ts_command','update_action',update),'TS_denied');a=await cmd('SUPERVISOR','update_action',update)
   expectDatabaseError(await rpc('WORKER','ts_command','update_action',{...update,revision:a.revision,state:'closed',resolution:'SYNTHETIC denied close'}),'TS_denied')
@@ -58,5 +74,10 @@ export async function crewWorkflow({browser,origin,actors,options={},capture=asy
   const other=randomUUID();await cmd('OWNER','create_company',{id:other,name:'SYNTHETIC unrelated crew'});await supervisor.goto(origin+'/my-work?company='+other);await expect(supervisor.getByRole('heading',{name:'Company access unavailable',exact:true})).toBeVisible()
   expect((await rows('OWNER','ts_brief_versions','brief_id',briefId)).find(v=>v.version===version)).toEqual(original)
   record('Crew personal/supervisor counts, exact-version acknowledgement, stale-screen denial, real retry deduplication, reassignment/history/reload and revoked/cross-company denial PASS',fixture)
- }catch(e){mkdirSync('test-results',{recursive:true});writeFileSync('test-results/crew-stage.json',JSON.stringify({stage,name:e.name}));throw e}finally{for(const c of contexts)await c.close()}
+ }catch(e){
+  const diagnostics={historyBeforeClick}
+  try{const current=await action(),history=await events(),assigned=expectSuccess(await actors.OWNER.client.from('ts_actions').select('id').eq('company_id',company).eq('responsible_id',actors.WORKER.id).neq('state','closed'));diagnostics.server={workerAssignedOpen:assigned.length,responsibleWorker:current?.responsible_id===actors.WORKER.id,responsibleSupervisor:current?.responsible_id===actors.SUPERVISOR.id,assignmentEvents:history.filter(v=>v.before_value?.responsible_id!==v.after_value?.responsible_id).length}}catch{diagnostics.server='unavailable'}
+  for(const [role,page] of Object.entries(views))try{diagnostics[role]=await page.evaluate(()=>{const history=[...document.querySelectorAll('summary')].find(e=>e.textContent==='Action history')?.parentElement,assignment=[...(history?.querySelectorAll('p')||[])].filter(e=>e.textContent.startsWith('Assignment:')),status=document.querySelector('select[id^="state-"]');return {historyOpen:history?.open??null,assignmentNodes:assignment.length,assignmentVisible:assignment.some(e=>Boolean(e.getClientRects().length)),statusDisabled:status?status.matches(':disabled'):null,recoveryHoldVisible:[...document.querySelectorAll('[id^="action-hold-"]')].some(e=>Boolean(e.getClientRects().length)),personalEmptyVisible:[...document.querySelectorAll('p')].some(e=>e.textContent==='Nothing assigned to you needs follow-up.'&&Boolean(e.getClientRects().length))}})}catch{diagnostics[role]='unavailable'}
+  mkdirSync('test-results',{recursive:true});writeFileSync('test-results/crew-stage.json',JSON.stringify({stage,name:e.name,diagnostics}));throw e
+ }finally{for(const c of contexts)await c.close()}
 }

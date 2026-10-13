@@ -2,6 +2,7 @@ import {handoverWorkflow} from '../fixtures/handover.mjs'
 import {test,devices} from '@playwright/test'
 import {createClient} from '@supabase/supabase-js'
 import {randomBytes,randomUUID} from 'node:crypto'
+import {mkdirSync} from 'node:fs'
 import {API_ORIGIN,APP_ORIGIN,localEnvironment} from '../../scripts/ci/local-environment.mjs'
 import {expectSuccess} from '../../scripts/staging/assertions.mjs'
 import {concernWorkflow,workdayWorkflow,prepareConcerns} from '../fixtures/concerns.mjs'
@@ -26,7 +27,7 @@ test('WebKit electrical recovery: superseded replay, explicit comparison, lazy d
  await electricalRecoveryWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
 })
 test('WebKit site concerns: private photo capture, reliable submission, ownership and verified follow-up',async({browser})=>{
- await concernWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})
+ await concernWorkflow({browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true},capture:async(page,name)=>{if(name!=='submitted-concern')return;if(!new URL(page.url()).pathname.startsWith('/concerns/'))throw Error('Release capture must remain on a synthetic concern');mkdirSync('test-results/electrical-release-review',{recursive:true});await page.screenshot({path:'test-results/electrical-release-review/worker-submitted-concern-follow-up.png',fullPage:true})}})
 })
 test('WebKit complete workday: site brief, exact acknowledgement, concern ownership, verified closure and revision',async({browser})=>{
  await workdayWorkflow({practice:true,browser,origin:APP_ORIGIN,actors:await localActors(),options:{...devices['iPhone 13'],localOnly:true}})

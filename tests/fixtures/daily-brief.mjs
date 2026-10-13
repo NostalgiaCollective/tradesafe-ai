@@ -1,4 +1,6 @@
 import {navigationDiagnostic} from './navigation-diagnostic.mjs'
+import {holdClientScripts} from './hold-client-scripts.mjs'
+import {browserFailure} from '../../scripts/ci/browser-failure.mjs'
 import {mkdirSync,writeFileSync} from 'node:fs'
 import {expect as baseExpect} from '@playwright/test'
 import {randomUUID,randomBytes} from 'node:crypto'
@@ -6,6 +8,7 @@ import {expectSuccess,expectDatabaseError} from '../../scripts/staging/assertion
 const expect=baseExpect.configure({timeout:30000})
 export async function dailyBriefWorkflow({browser,origin,actors,options={},capture=async()=>{},record=()=>{}}){
  const company=randomUUID(),other=randomUUID(),tag='SYNTHETIC daily brief '+company.slice(0,6),contexts=[]
+ let stage='setup',releaseCrewSave=()=>{},removeCrewRoute=async()=>{},crewSaveTask=null,crewSaveFailure=null,crewPage=null,failure=null,diagnostic=null
  const command=(role,command,p={})=>actors[role].client.rpc('ts_command',{command,p:{companyId:company,requestId:randomUUID(),...p}}).then(expectSuccess)
  const brief=(role,command,p={})=>actors[role].client.rpc('ts_brief_command',{command,p:{companyId:company,requestId:randomUUID(),...p}}).then(expectSuccess)
  const query=(role,table,id,column='brief_id')=>actors[role].client.from(table).select('*').eq(column,id).then(expectSuccess)
@@ -35,10 +38,53 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   await worker.keyboard.press('Tab');await expect(worker.getByLabel('Work date',{exact:true})).toBeFocused()
   expect(await worker.getByLabel('Work date',{exact:true}).evaluate(e=>getComputedStyle(e).outlineStyle)).toBe('solid')
   await worker.getByRole('button',{name:'Continue',exact:true}).click();await expect(worker.locator('#brief-step')).toBeFocused()
+  // Crew controls must remain disabled until the actual client handlers attach.
+  // Opening a slow-loading page must not accept selections and then erase them.
+  stage='crew-hydration'
+  const hydration=await holdClientScripts(worker,origin)
+  let hydrationFailure=null
+  try{
+   await worker.reload({waitUntil:'commit'});await expect.poll(hydration.count).toBeGreaterThan(0)
+   await expect(worker.getByLabel('Today’s work',{exact:true})).toBeVisible()
+   await expect(worker.getByLabel('Today’s work',{exact:true})).toBeDisabled()
+   const serverCrew=worker.locator('.brief-journey .work-fieldset input[type=checkbox]')
+   expect(await serverCrew.count()).toBeGreaterThan(0)
+   for(const checkbox of await serverCrew.all())await expect(checkbox).toBeDisabled()
+   await hydration.release();await expect(worker.getByLabel('Today’s work',{exact:true})).toBeEditable()
+  }catch(error){hydrationFailure=error;throw error}finally{try{await hydration.release()}catch(error){if(!hydrationFailure)throw error}}
+  // Keep the first real save response in flight while selecting crew. Inputs must
+  // remain usable, and that older response must not erase the later selections.
+  stage='crew-save-barrier';crewPage=worker
+  let crewSaveHeld=false
+  const crewSaveReleased=new Promise(resolve=>{releaseCrewSave=resolve})
+  const holdCrewSave=async route=>{
+   if(route.request().postDataJSON()?.command!=='save'||crewSaveHeld)return route.continue()
+   crewSaveHeld=true
+   crewSaveTask=(async()=>{const response=await route.fetch();expect(response.status()).toBe(200);await crewSaveReleased;await route.fulfill({response})})().catch(error=>{crewSaveFailure=error})
+   await crewSaveTask
+  }
+  await context.route(api,holdCrewSave)
+  removeCrewRoute=()=>context.unroute(api,holdCrewSave)
   await worker.getByLabel('Today’s work',{exact:true}).fill('SYNTHETIC material movement')
+  await expect.poll(()=>crewSaveHeld).toBe(true);await expect(worker.locator('.save-state')).toHaveText('Saving')
   await worker.getByLabel('Responsible site contact',{exact:true}).fill('SYNTHETIC contact via local radio')
   const members=expectSuccess(await actors.OWNER.client.from('ts_members').select('*').eq('company_id',company)),name=role=>members.find(m=>m.user_id===actors[role].id).display_name
-  await worker.getByRole('checkbox',{name:name('WORKER'),exact:true}).check();await worker.getByRole('checkbox',{name:name('SUPERVISOR'),exact:true}).check();await saved(worker)
+  await worker.evaluate(()=>{
+   window.__briefCrewEvents=[]
+   for(const type of ['pointerdown','pointerup','click','input','change'])document.addEventListener(type,event=>{
+    const controls=Array.from(document.querySelectorAll('.brief-journey .work-fieldset input[type=checkbox]')),index=controls.indexOf(event.target)
+    if(index>=0&&window.__briefCrewEvents.length<30)window.__briefCrewEvents.push({type,index,checked:event.target.checked,disabled:event.target.matches(':disabled'),trusted:event.isTrusted})
+   },true)
+  })
+  const workerCrew=worker.getByRole('checkbox',{name:name('WORKER'),exact:true}),supervisorCrew=worker.getByRole('checkbox',{name:name('SUPERVISOR'),exact:true})
+  stage='crew-worker-check';await expect(workerCrew).toBeEnabled();await workerCrew.check();await expect(workerCrew).toBeChecked()
+  stage='crew-supervisor-check';await expect(supervisorCrew).toBeEnabled();await supervisorCrew.check();await expect(supervisorCrew).toBeChecked()
+  stage='crew-save-response';releaseCrewSave();await crewSaveTask;if(crewSaveFailure)throw crewSaveFailure;await saved(worker);await removeCrewRoute()
+  await expect(workerCrew).toBeChecked();await expect(supervisorCrew).toBeChecked()
+  const crewSaved=await read()
+  expect(crewSaved.document.crew.slice().sort()).toEqual([actors.WORKER.id,actors.SUPERVISOR.id].sort())
+  expect(crewSaved.document.contact).toBe('SYNTHETIC contact via local radio')
+  stage='crew-saved'
   await worker.getByRole('button',{name:'Continue',exact:true}).click()
   const promptSummary=worker.getByText('Task prompts and sources',{exact:true})
   await promptSummary.click();await expect(worker.getByLabel('Suggested task prompts',{exact:true})).toBeVisible()
@@ -161,5 +207,18 @@ export async function dailyBriefWorkflow({browser,origin,actors,options={},captu
   expect((await context.request.get(origin+'/api/briefs/'+id+'/export?version='+firstVersion)).status()).toBe(404)
   expectDatabaseError(await actors.WORKER.client.rpc('ts_brief_command',{command:'acknowledge',p:{companyId:company,id,version:secondVersion,requestId:randomUUID()}}),'TS_denied')
   record('existing Actions progress/reload/verification, original-version preservation, safe site reuse, cross-company and revoked brief/export denial PASS')
- }catch(e){mkdirSync('test-results',{recursive:true});writeFileSync('test-results/daily-brief-stage.json',JSON.stringify(await navigationDiagnostic(contexts,e)));throw e}finally{for(const context of contexts)await context.close()}
+ }catch(e){
+  failure=e;diagnostic=await navigationDiagnostic(contexts,e)
+  diagnostic.stage=stage
+  diagnostic.failure=['Clicking the checkbox did not change its state','intercepts pointer events','Element is not attached','strict mode violation','Timeout'].find(text=>(e.message||'').includes(text))||'other'
+  try{diagnostic.crew=await crewPage?.evaluate(()=>({events:window.__briefCrewEvents||[],controls:Array.from(document.querySelectorAll('.brief-journey .work-fieldset input[type=checkbox]')).map(e=>({checked:e.checked,disabled:e.matches(':disabled'),connected:e.isConnected})),step:Array.from(document.querySelectorAll('.work-steps button')).findIndex(e=>e.hasAttribute('aria-current'))+1}))}catch{}
+  throw e
+ }finally{
+  releaseCrewSave()
+  const routeCleanup=await Promise.allSettled([removeCrewRoute()]);await crewSaveTask
+  const cleanup=await Promise.allSettled(contexts.map(context=>context.close())),failed=[...routeCleanup,...cleanup].filter(r=>r.status==='rejected')
+  if(crewSaveFailure)failed.unshift({status:'rejected',reason:crewSaveFailure})
+  if(diagnostic||failed.length){mkdirSync('test-results',{recursive:true});writeFileSync('test-results/daily-brief-stage.json',JSON.stringify({...diagnostic,stage,cleanup:failed.map(r=>browserFailure(r.reason))}))}
+  if(!failure&&failed.length)throw failed[0].reason
+ }
 }

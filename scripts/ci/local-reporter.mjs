@@ -1,27 +1,29 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import {browserRunPassed} from './browser-contract.mjs'
+import {browserFailure} from './browser-failure.mjs'
 export default class LocalReporter {
   rows = []
   onTestEnd(test, result) {
-    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|action-completion|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|phone-demo|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|electrical-job|electrical-recovery|brief-repair|site-signin|handover|operations|device-drafts|phone-demo|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
+    const lines = [...new Set(result.errors.flatMap(e => [...(e.stack || '').matchAll(/(?:(?:workflows|restored|action-completion|electrical-field-recovery|follow-up|trades|concerns|crew|sites|daily-brief|operations|device-drafts|phone-demo|pilot)\.spec|follow-up|concerns|crew|sites|daily-brief|electrical-job|electrical-recovery|brief-repair|site-signin|handover|operations|device-drafts|phone-demo|pilot)\.mjs:(\d+)/g)].map(m => Number(m[1]))))]
     const assertions=result.errors.flatMap(e=>{
       // Strip terminal formatting before extracting method names, never field values/URLs.
       const message=(e.message||'').replace(/\x1b\[[0-9;]*m/g,'')
       return [...message.matchAll(/(?:expect\(locator\)\.(\w+)\(\)|(?:locator|page)\.(click|goto|waitForURL): Timeout)/g)].map(m=>m[1]||m[2]).concat(message.includes('strict mode violation')?['strict_locator']:[])
     })
-    const failureKinds=result.errors.map(e=>['interrupted by another navigation','Navigation is interrupted','WebKit encountered an internal error','cancelled','NSURLErrorDomain','ERR_CONNECTION','Target page, context or browser has been closed','Timeout'].find(k=>(e.message||'').includes(k))||'assertion or other error')
+    const failureKinds=result.errors.map(browserFailure)
     this.rows.push({ failureKinds, name: test.title, status: result.status, failureLines: lines, failureAssertions:assertions })
     console.log(result.status.toUpperCase() + ': ' + test.title + (lines.length ? ' at lines ' + lines.join(',') : '') + (assertions.length?' assertions '+assertions.join(','):'')+(failureKinds.length?' failure classes: '+failureKinds.join(','):''))
   }
   onStdOut() {}
   onStdErr() {}
-  onError() { console.error('FAIL: browser infrastructure error (sensitive diagnostics suppressed)') }
+  onError(error) { console.error('FAIL: browser runner error: '+browserFailure(error)+' (raw diagnostics suppressed)') }
   onEnd(result) {
     const skipped = this.rows.filter(r => r.status === 'skipped').length
     const recovery = process.env.RECOVERY_VALIDATION === '1'
     const status = browserRunPassed(result,this.rows,recovery) ? 'passed' : 'failed'
     // These receipts contain only synthetic IDs, hashes and named checks, never credentials.
     if(!recovery&&existsSync('test-results/daily-brief-stage.json'))console.log('DAILY_BRIEF_STAGE '+readFileSync('test-results/daily-brief-stage.json','utf8'))
+    if(!recovery&&existsSync('test-results/action-completion-stage.json'))console.log('ACTION_COMPLETION_STAGE '+readFileSync('test-results/action-completion-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/device-drafts-stage.json'))console.log('DEVICE_DRAFTS_STAGE '+readFileSync('test-results/device-drafts-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/handover-stage.json'))console.log('HANDOVER_STAGE '+readFileSync('test-results/handover-stage.json','utf8'))
     if(!recovery&&existsSync('test-results/operations-stage.json'))console.log('OPERATIONS_STAGE '+readFileSync('test-results/operations-stage.json','utf8'))

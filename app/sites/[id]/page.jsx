@@ -48,7 +48,7 @@ export default async function SitePage({params,searchParams}){
  <section aria-labelledby="site-concerns"><h2 id="site-concerns" tabIndex={-1}>Site concerns</h2>{submitted.length?<ul className="work-list">{submitted.map(c=><li key={c.id}>{concernLink(c)}</li>)}</ul>:<p>{savedConcerns.length?'Your concern drafts are in Continue saved work.':'No submitted concerns available to your account at this site.'}</p>}{concerns.data.length===20&&<p>Showing the 20 most recent concerns you can access, including drafts above. Older submitted concerns remain available through site Actions.</p>}<details><summary>Who can see a concern?</summary><p>Drafts are visible only to their reporter. Submitted concerns are available to their reporter, assignee and company supervisors/owners. No notifications are sent.</p></details></section>
   <SiteHandover key={w.user.id+id} site={site} actor={w.user.id} date={p.date} timezone={p.timezone}/>
   <SiteHistory key={'history'+w.user.id+id} site={site} actor={w.user.id}/>
-  <SitePackage key={'package'+w.user.id+id} site={site} actor={w.user.id}/>
+  <SitePackage key={'package'+w.user.id+id} site={site} actor={w.user.id} retainable={w.membership.role!=='worker'}/>
  <p className="work-footnote">These are record counts, not a safety or compliance assessment.</p>
  {canEdit&&<details><summary>Manage site</summary><SiteForm key={site.revision} site={site} companyId={company} actor={w.user.id} canArchive={w.membership.role!=='worker'}/></details>}
  </div></WorkspaceShell>

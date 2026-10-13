@@ -40,6 +40,15 @@ test('all migrations contain no destructive statements', async () => {
       assert.match(executable,/COMMIT;/)
       executable=executable.replace('ALTER TABLE public.ts_actions DROP CONSTRAINT ts_actions_priority_check;','')
     }
+    if(file==='20261012000400_storage_maintenance.sql'){
+      // Transactional state expansion adds an explicit terminal tombstone. Existing
+      // pending/ready values remain valid; storage-maintenance-db tests upgrade
+      // populated tables and prove retained bytes/references stay immutable.
+      assert.match(executable,/BEGIN;/)
+      assert.match(executable,/ADD CONSTRAINT ts_site_packages_state_check CHECK\(state IN \('pending','ready','abandoned'\)\);/)
+      assert.match(executable,/COMMIT;/)
+      executable=executable.replace('ALTER TABLE public.ts_site_packages DROP CONSTRAINT ts_site_packages_state_check;','')
+    }
     assert.doesNotMatch(executable, /\b(DROP|TRUNCATE|CASCADE)\b|\bDELETE\s+FROM\b/i, file)
   }
 })
